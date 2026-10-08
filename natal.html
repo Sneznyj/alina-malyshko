@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Натальная карта онлайн бесплатно — Алина Малышко, астролог</title>
+<meta name="description" content="Постройте натальную карту бесплатно: колесо карты, планеты в знаках и домах, аспекты, стихии и подробное толкование. Точные эфемериды, система домов Плацидус и другие.">
+<meta name="theme-color" content="#9b87d9">
+<meta property="og:title" content="Натальная карта онлайн — бесплатно">
+<meta property="og:image" content="https://sneznyj.github.io/alina-malyshko/assets/img/og-image.jpg">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&family=Caveat:wght@500;600;700&family=Noto+Sans+Symbols&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>try{var t=localStorage.getItem('am_theme');document.documentElement.setAttribute('data-theme',t?JSON.parse(t):(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}</script>
+</head>
+<body>
+<main id="main">
+  <section class="page-hero">
+    <div class="container hero-anim">
+      <span class="eyebrow">Бесплатный инструмент</span>
+      <h1>Натальная карта <em class="accent">онлайн</em></h1>
+      <p class="lead">Карта неба в момент вашего рождения: планеты в знаках и домах, аспекты, баланс стихий и подробное толкование. Расчёты по точным эфемеридам — как в профессиональных программах астрологов.</p>
+    </div>
+  </section>
+
+  <section class="section tight" style="padding-top:0">
+    <div class="container tool-layout">
+      <aside>
+        <div class="card">
+          <div id="birthForm"></div>
+          <div id="settingsBox" style="margin-top:14px"></div>
+          <button class="btn btn-primary btn-block" id="calcBtn" type="button" style="margin-top:18px">Построить карту</button>
+          <p class="tiny muted" style="margin:12px 0 0">Данные не отправляются на сервер — расчёт идёт прямо в вашем браузере.</p>
+        </div>
+        <div class="card" style="margin-top:16px" id="recentBox" hidden>
+          <h4 style="margin-bottom:10px">Недавние карты</h4>
+          <div class="recent" id="recentList"></div>
+        </div>
+      </aside>
+      <div id="result">
+        <div class="card result-empty">
+          <div class="big">☉&#xFE0E;</div>
+          <h3>Ваше небо ждёт</h3>
+          <p class="muted" style="max-width:46ch;margin-inline:auto">Введите дату, время и место рождения — и через секунду вы увидите свою натальную карту с толкованием.</p>
+          <div class="notice info" style="max-width:520px;margin:20px auto 0;text-align:left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.6v.1"/></svg><span>Точное время рождения важно для Асцендента и домов: за 4 минуты Асцендент смещается примерно на 1°. Время обычно указано в справке из роддома или в свидетельстве о рождении.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="js/content.js"></script>
+<script src="js/vendor/astronomy.browser.min.js"></script>
+<script src="js/chiron-data.js"></script>
+<script src="js/astro.js"></script>
+<script src="js/texts.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/wheel.js"></script>
+<script src="js/chart-view.js"></script>
+<script src="js/cards.js"></script>
+<script src="js/pages/natal.js"></script>
+</body>
+</html>

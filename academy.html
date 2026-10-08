@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Уроки астрологии с нуля — бесплатный мини-курс · Алина Малышко</title>
+<meta name="description" content="Бесплатный мини-курс астрологии: натальная карта, стихии, знаки, планеты, дома, аспекты, Луна, ретроградность и транзиты. Тесты, словарь астролога и инструкции.">
+<meta name="theme-color" content="#9b87d9">
+<meta property="og:title" content="Уроки астрологии с нуля — бесплатно">
+<meta property="og:image" content="https://sneznyj.github.io/alina-malyshko/assets/img/og-image.jpg">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&family=Caveat:wght@500;600;700&family=Noto+Sans+Symbols&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>try{var t=localStorage.getItem('am_theme');document.documentElement.setAttribute('data-theme',t?JSON.parse(t):(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}</script>
+</head>
+<body>
+<main id="main">
+  <section class="page-hero">
+    <div class="container hero-anim">
+      <span class="eyebrow">Академия</span>
+      <h1>Астрология <em class="accent">с нуля</em></h1>
+      <p class="lead">Десять коротких уроков с тестами — и вы сможете читать свою натальную карту. Прогресс сохраняется на этом устройстве.</p>
+      <div style="max-width:420px;margin-top:10px"><div class="row between small"><span id="progText"></span><span class="muted" id="progPct"></span></div><div class="progress" style="margin-top:6px"><i id="progBar" style="width:0"></i></div></div>
+    </div>
+  </section>
+
+  <section class="section tight" style="padding-top:0">
+    <div class="container">
+      <div class="tabs" role="tablist" style="margin-bottom:22px">
+        <button role="tab" id="t-course-btn" aria-controls="t-course" aria-selected="true">Мини-курс</button>
+        <button role="tab" id="t-guides-btn" aria-controls="t-guides" aria-selected="false" tabindex="-1">Инструкции</button>
+        <button role="tab" id="t-gloss-btn" aria-controls="t-gloss" aria-selected="false" tabindex="-1">Словарь астролога</button>
+      </div>
+      <div class="tab-panel" role="tabpanel" id="t-course">
+        <div class="academy-layout">
+          <aside class="card" style="padding:14px"><div class="lesson-list" id="lessonList"></div></aside>
+          <article class="card lesson-body" id="lesson"></article>
+        </div>
+      </div>
+      <div class="tab-panel" role="tabpanel" id="t-guides" hidden><div class="accordion" id="guides" style="max-width:none"></div></div>
+      <div class="tab-panel" role="tabpanel" id="t-gloss" hidden>
+        <div class="toolbar"><input class="input" id="glossQ" placeholder="Поиск термина…" aria-label="Поиск термина"></div>
+        <div class="glossary" id="gloss"></div>
+      </div>
+      <div class="card note-card" style="margin-top:24px" data-note="Хотите учиться глубже? Позанимаемся по вашей собственной карте — так запоминается в разы быстрее." data-note-cta='<button class="btn btn-primary btn-sm" type="button" data-book="lessons">Записаться на урок</button>'></div>
+    </div>
+  </section>
+</main>
+
+<script src="js/content.js"></script>
+<script src="js/vendor/astronomy.browser.min.js"></script>
+<script src="js/astro.js"></script>
+<script src="js/texts.js"></script>
+<script src="js/academy-data.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/pages/academy.js"></script>
+</body>
+</html>

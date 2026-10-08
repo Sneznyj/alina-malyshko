@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Алина Малышко — астролог: натальная карта, прогнозы, совместимость</title>
+<meta name="description" content="Астролог Алина Малышко: разбор натальной карты, прогноз на год, совместимость пары, выбор благоприятных дат и уроки астрологии. Бесплатная натальная карта и лунный календарь онлайн.">
+<meta name="theme-color" content="#5b3a9e">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Алина Малышко — астролог">
+<meta property="og:description" content="Астрология, которая помогает, а не пугает. Консультации онлайн, бесплатная натальная карта и лунный календарь.">
+<meta property="og:image" content="https://sneznyj.github.io/alina-malyshko/assets/img/og-image.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&family=Caveat:wght@500;600;700&family=Noto+Sans+Symbols&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="assets/img/alina-mystic.webp" type="image/webp">
+<link rel="stylesheet" href="css/style.css">
+<script>try{var t=localStorage.getItem('am_theme');document.documentElement.setAttribute('data-theme',t?JSON.parse(t):(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"ProfessionalService","name":"Алина Малышко — астролог","description":"Разбор натальной карты, прогнозы, совместимость, выбор благоприятных дат, уроки астрологии.","image":"assets/img/alina-mystic.webp","areaServed":"Онлайн","founder":{"@type":"Person","name":"Алина Малышко","jobTitle":"Астролог"}}</script>
+</head>
+<body>
+<main id="main">
+
+  <!-- ===== Герой ===== -->
+  <section class="hero hero-v2">
+    <div class="container hero-grid">
+      <div class="hero-anim">
+        <p class="hello">Привет! Я Алина <svg viewBox="0 0 80 50" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 34 C 18 10, 44 6, 70 22"/><path d="M57 13 L71 23 L56 29"/></svg></p>
+        <h1>Астрология, которая <span class="hl">помогает<svg viewBox="0 0 200 20" preserveAspectRatio="none" aria-hidden="true"><path d="M3 14 C 40 6, 90 3, 197 9" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg></span>, а&nbsp;не&nbsp;пугает</h1>
+        <p class="lead">Разберу вашу натальную карту, подскажу благоприятное время для важных решений и помогу понять, куда направить силы — бережно, честно и без фатализма.</p>
+        <div class="hero-cta">
+          <button class="btn btn-primary" type="button" data-book>Записаться на консультацию</button>
+          <a class="btn btn-ghost" href="natal.html"><span data-ic="planet"></span> Моя карта бесплатно</a>
+        </div>
+        <div class="price-hint" id="priceHint"></div>
+        <ul class="trust-row">
+          <li><span data-ic="world"></span>Онлайн из любой страны</li>
+          <li><span data-ic="message-heart"></span>Отвечаю сама, в течение дня</li>
+          <li><span data-ic="video"></span>Запись встречи остаётся у вас</li>
+        </ul>
+      </div>
+      <div class="hero-visual">
+        <div class="scene portrait-in">
+          <div class="scene-bg" aria-hidden="true"></div>
+          <div class="scene-ring" aria-hidden="true"><div id="zodiacRing"></div></div>
+          <div class="scene-frame" aria-hidden="true"></div>
+          <img class="scene-photo" src="assets/img/alina-mystic.webp" srcset="assets/img/alina-mystic-600.webp 600w, assets/img/alina-mystic.webp 896w" sizes="(max-width: 960px) 360px, 500px" alt="Астролог Алина Малышко за столом со свечами, хрустальным шаром и картой звёздного неба" width="896" height="1140" fetchpriority="high">
+          <span class="flame-glow l" aria-hidden="true"></span><span class="flame-glow r" aria-hidden="true"></span>
+          <a class="float-card fc-1" href="moon.html" id="fcMoon"><span class="moon-ico" id="fcMoonIco"></span><span><b id="fcMoonTitle">Луна сегодня</b><span class="muted" id="fcMoonSub">считаю…</span></span></a>
+          <a class="float-card fc-2" href="sky.html" id="fcEvent"><span class="np-ic" id="fcEventIco" style="width:36px;height:36px"></span><span><b id="fcEventTitle">Ближайшее событие</b><span class="muted" id="fcEventSub"></span></span></a>
+          <div class="sticker big wiggle" id="heroSticker" hidden></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Небо сегодня ===== -->
+  <section class="section tight" style="padding-top:0" aria-labelledby="skyTitle">
+    <div class="container">
+      <div class="row between" style="margin-bottom:14px">
+        <h2 id="skyTitle" style="font-size:1.6rem;margin:0">Небо сегодня <span class="muted" style="font-family:var(--ff-body);font-size:.9rem" id="skyDate"></span></h2>
+        <a class="link-arrow small" href="moon.html">Лунный календарь <span data-ic="arrow"></span></a>
+      </div>
+      <div class="card sky-strip reveal" id="skyStrip"></div>
+    </div>
+  </section>
+
+  <!-- ===== С чем помогаю ===== -->
+  <section class="section" id="needs">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">с чем ко мне приходят</span>
+        <h2>Астрология — не про «что будет», а про <em class="accent">«как лучше»</em></h2>
+        <p class="lead">Карта рождения — подробная инструкция к вам. Вот запросы, с которыми я работаю чаще всего.</p>
+      </div>
+      <div class="grid grid-3" id="needsGrid"></div>
+    </div>
+  </section>
+
+  <!-- ===== Услуги ===== -->
+  <section class="section" id="services" style="padding-top:0">
+    <div class="container">
+      <div class="section-head center reveal">
+        <span class="eyebrow both">консультации и цены</span>
+        <h2>Выберите свой формат</h2>
+        <p class="lead">Каждая консультация — живая встреча онлайн, запись разговора и понятные рекомендации после.</p>
+      </div>
+      <div class="grid grid-3" id="servicesGrid"></div>
+    </div>
+  </section>
+
+  <!-- ===== Пакеты и подарки ===== -->
+  <section class="section tight" id="offers">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">выгоднее вместе</span>
+        <h2>Пакеты и <em class="accent">подарки</em></h2>
+      </div>
+      <div class="grid grid-3" id="offersGrid"></div>
+    </div>
+  </section>
+
+  <!-- ===== Как проходит ===== -->
+  <section class="section tight">
+    <div class="container">
+      <div class="section-head center reveal">
+        <span class="eyebrow both">как это работает</span>
+        <h2>Четыре простых шага</h2>
+      </div>
+      <div class="steps">
+        <div class="step reveal" style="--d:.0s"><div class="dot"><span data-ic="message-heart"></span><span class="num">1</span></div><h4>Заявка</h4><p>Оставьте заявку на сайте или напишите мне в мессенджер.</p></div>
+        <div class="step reveal" style="--d:.1s"><div class="dot"><span data-ic="calendar-star"></span><span class="num">2</span></div><h4>Данные рождения</h4><p>Пришлите дату, время и место рождения — и ваш главный вопрос.</p></div>
+        <div class="step reveal" style="--d:.2s"><div class="dot"><span data-ic="video"></span><span class="num">3</span></div><h4>Встреча</h4><p>Онлайн по видеосвязи: разбираем вашу карту и всё, что волнует.</p></div>
+        <div class="step reveal" style="--d:.3s"><div class="dot"><span data-ic="notebook"></span><span class="num">4</span></div><h4>Рекомендации</h4><p>Запись встречи и конкретные шаги, с которыми можно идти дальше.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Инструменты ===== -->
+  <section class="section" id="tools">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">бесплатно на сайте</span>
+        <h2>Загляните в своё небо <em class="accent">прямо сейчас</em></h2>
+        <p class="lead">Постройте свою карту, проверьте совместимость или откройте лунный календарь. Считаю по точным эфемеридам — как в программах профессиональных астрологов.</p>
+      </div>
+      <div class="grid grid-3" id="toolsGrid"></div>
+    </div>
+  </section>
+
+  <!-- ===== Обо мне ===== -->
+  <section class="section" id="about">
+    <div class="container about-grid">
+      <div class="reveal">
+        <figure class="polaroid">
+          <span class="tape" aria-hidden="true"></span><span class="tape r" aria-hidden="true"></span>
+          <img src="assets/img/alina-portrait.webp" alt="Алина Малышко в повседневной жизни" width="800" height="1000" loading="lazy">
+          <figcaption id="aboutCaption"></figcaption>
+        </figure>
+      </div>
+      <div class="reveal" style="--d:.1s">
+        <span class="eyebrow">обо мне</span>
+        <h2 id="aboutTitle"></h2>
+        <div id="aboutText"></div>
+        <div id="aboutStory"></div>
+        <div class="values" id="aboutValues"></div>
+        <p class="hand-sign" id="aboutSign"></p>
+        <div class="hero-cta" style="margin-bottom:0">
+          <button class="btn btn-primary" type="button" data-book>Записаться</button>
+          <a class="btn btn-gold" href="academy.html"><span data-ic="school"></span> Уроки астрологии</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Обучение ===== -->
+  <section class="section night-band" id="academy">
+    <div class="container" style="position:relative">
+      <div class="section-head reveal">
+        <span class="eyebrow" style="color:var(--gold-2)">обучение</span>
+        <h2 id="acTitle"></h2>
+        <p class="lead" id="acText"></p>
+      </div>
+      <div class="grid grid-3" id="acFormats"></div>
+    </div>
+  </section>
+
+  <!-- ===== Отзывы ===== -->
+  <section class="section" id="reviews">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">отзывы</span>
+        <h2>Что пишут после консультаций</h2>
+      </div>
+      <div class="reviews" id="reviewsList"></div>
+    </div>
+  </section>
+
+  <!-- ===== Вопросы ===== -->
+  <section class="section" id="faq" style="padding-top:0">
+    <div class="container">
+      <div class="section-head center reveal">
+        <span class="eyebrow both">вопросы</span>
+        <h2>Частые вопросы</h2>
+      </div>
+      <div class="accordion" id="faqList"></div>
+    </div>
+  </section>
+
+  <!-- ===== Запись ===== -->
+  <section class="section" id="booking" style="padding-top:0">
+    <div class="container">
+      <div class="booking-grid" id="bookingGrid">
+        <div class="reveal">
+          <span class="eyebrow">запись</span>
+          <h2>Давайте поговорим <em class="accent">о вас</em></h2>
+          <div class="alina-say"><img src="assets/img/alina-avatar.webp" alt="Алина" width="72" height="72" loading="lazy"><div class="bubble">Напишите мне — отвечу сама, обычно в течение дня. И подберём удобное время.</div></div>
+          <div class="stack" style="margin-top:22px" id="bookingContacts"></div>
+          <div class="notice info" style="margin-top:22px"><span data-ic="clock"></span><span>Не знаете точное время рождения? Ничего страшного — отметьте это в заявке, подберём подходящий формат.</span></div>
+        </div>
+        <div class="card reveal" style="--d:.1s" id="bookingCard"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="js/content.js"></script>
+<script src="js/vendor/astronomy.browser.min.js"></script>
+<script src="js/chiron-data.js"></script>
+<script src="js/astro.js"></script>
+<script src="js/texts.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/cards.js"></script>
+<script src="js/pages/home.js"></script>
+</body>
+</html>

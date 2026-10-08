@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Астрособытия года — ретроградные планеты, затмения, новолуния · Алина Малышко</title>
+<meta name="description" content="Календарь астрологических событий года: ретроградный Меркурий и другие планеты с теневыми периодами, солнечные и лунные затмения, новолуния, полнолуния и смены знаков.">
+<meta name="theme-color" content="#9b87d9">
+<meta property="og:title" content="Астрособытия года">
+<meta property="og:image" content="https://sneznyj.github.io/alina-malyshko/assets/img/og-image.jpg">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&family=Caveat:wght@500;600;700&family=Noto+Sans+Symbols&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>try{var t=localStorage.getItem('am_theme');document.documentElement.setAttribute('data-theme',t?JSON.parse(t):(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}</script>
+</head>
+<body>
+<main id="main">
+  <section class="page-hero">
+    <div class="container hero-anim">
+      <span class="eyebrow">Календарь неба</span>
+      <h1>Астрособытия <em class="accent" id="yearTitle"></em></h1>
+      <p class="lead">Ретроградные планеты, затмения, новолуния и полнолуния, смены знаков — всё, что астрологи учитывают при планировании. Время указано по часовому поясу вашего устройства.</p>
+      <div class="row" style="margin-top:8px">
+        <button class="btn btn-ghost btn-sm" id="prevY" type="button">← Прошлый год</button>
+        <button class="btn btn-ghost btn-sm" id="nextY" type="button">Следующий год →</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section tight" style="padding-top:0">
+    <div class="container">
+      <div class="card"><h3>Планеты сейчас</h3><div id="nowTable"></div></div>
+    </div>
+  </section>
+
+  <section class="section tight">
+    <div class="container">
+      <div class="card">
+        <div class="row between"><h3 style="margin:0">Ретроградные планеты</h3><div class="legend"><span><i style="background:linear-gradient(90deg,#c96b8f,#b07ad8);height:8px"></i>ретроградность</span><span><i style="background:var(--rose);height:6px"></i>теневой период</span><span><i style="background:var(--gold);width:3px;height:12px"></i>сегодня</span></div></div>
+        <div id="gantt" style="margin-top:18px"></div>
+        <div id="retroList" class="interp" style="margin-top:22px"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section tight">
+    <div class="container grid grid-2" style="align-items:start">
+      <div class="card"><h3>Затмения</h3><div class="event-list" id="eclipses"></div></div>
+      <div class="card"><h3>Новолуния и полнолуния</h3><div class="event-list" id="lunations"></div></div>
+    </div>
+  </section>
+
+  <section class="section tight">
+    <div class="container">
+      <div class="card"><h3>Смены знаков (ингрессии)</h3><p class="muted small">Когда планета переходит в новый знак, меняется «тон» её проявления для всех. Особенно заметны ингрессии медленных планет.</p><div class="event-list" id="ingresses"></div></div>
+    </div>
+  </section>
+</main>
+
+<script src="js/content.js"></script>
+<script src="js/vendor/astronomy.browser.min.js"></script>
+<script src="js/chiron-data.js"></script>
+<script src="js/astro.js"></script>
+<script src="js/texts.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/pages/sky.js"></script>
+</body>
+</html>

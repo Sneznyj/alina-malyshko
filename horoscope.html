@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Гороскоп на сегодня и на месяц для всех знаков · Алина Малышко</title>
+<meta name="description" content="Гороскоп на сегодня, завтра и месяц для каждого знака зодиака — по реальному положению Луны, Солнца, Венеры и Марса. Энергия дня, любовь, дела.">
+<meta name="theme-color" content="#9b87d9">
+<meta property="og:title" content="Гороскоп на сегодня для всех знаков">
+<meta property="og:image" content="https://sneznyj.github.io/alina-malyshko/assets/img/og-image.jpg">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&family=Caveat:wght@500;600;700&family=Noto+Sans+Symbols&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>try{var t=localStorage.getItem('am_theme');document.documentElement.setAttribute('data-theme',t?JSON.parse(t):(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}</script>
+</head>
+<body>
+<main id="main">
+  <section class="page-hero">
+    <div class="container hero-anim">
+      <span class="eyebrow">Гороскоп</span>
+      <h1>Гороскоп <em class="accent">для вашего знака</em></h1>
+      <p class="lead">Не шаблонные фразы, а расчёт по реальному небу: где сейчас Луна, Солнце, Венера и Марс относительно вашего знака. Выберите знак — свой или по Асценденту.</p>
+    </div>
+  </section>
+  <section class="section tight" style="padding-top:0">
+    <div class="container">
+      <div class="sign-picker" id="picker" role="group" aria-label="Знак зодиака"></div>
+      <div class="card" style="margin-top:22px" id="horo"></div>
+      <div class="card note-card" style="margin-top:24px" data-note="Гороскоп по знаку — лишь 1/12 картины. Личный прогноз учитывает всю вашу карту: Луну, Асцендент, дома и аспекты." data-note-cta='<a class="btn btn-primary btn-sm" href="forecast.html">Мой личный прогноз</a>'></div>
+    </div>
+  </section>
+</main>
+
+<script src="js/content.js"></script>
+<script src="js/vendor/astronomy.browser.min.js"></script>
+<script src="js/chiron-data.js"></script>
+<script src="js/astro.js"></script>
+<script src="js/texts.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/pages/horoscope.js"></script>
+</body>
+</html>

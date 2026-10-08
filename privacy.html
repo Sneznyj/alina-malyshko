@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Политика конфиденциальности · Алина Малышко, астролог</title>
+<meta name="description" content="Как обрабатываются персональные данные на сайте астролога Алины Малышко.">
+<meta name="theme-color" content="#9b87d9">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>try{var t=localStorage.getItem('am_theme');document.documentElement.setAttribute('data-theme',t?JSON.parse(t):(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}</script>
+</head>
+<body>
+<main id="main">
+  <section class="page-hero">
+    <div class="container" style="max-width:820px">
+      <span class="eyebrow">Документы</span>
+      <h1>Политика конфиденциальности</h1>
+      <p class="muted small">Редакция от <span id="docDate">8 октября 2026</span></p>
+    </div>
+  </section>
+  <section class="section tight" style="padding-top:0">
+    <div class="container" style="max-width:820px">
+      <div class="card lesson-body">
+        <h3 style="margin-top:0">1. Кто обрабатывает данные</h3>
+        <p>Оператор персональных данных — <span class="js-name">Алина Малышко</span>, астролог (далее — «я»). Контакты для обращений указаны на сайте в разделе «Запись».</p>
+        <h3>2. Какие данные я получаю</h3>
+        <ul>
+          <li>Имя и контакт для связи (мессенджер, телефон или почта) — из формы записи.</li>
+          <li>Дата, время и место рождения, а также ваш вопрос — если вы их указали.</li>
+        </ul>
+        <p>Заявка отправляется мне только тогда, когда вы сами нажимаете «Отправить» в выбранном мессенджере или почте.</p>
+        <h3>3. Что происходит с данными в инструментах сайта</h3>
+        <p>Натальная карта, совместимость, прогноз, лунный календарь и гороскопы рассчитываются <b>прямо в вашем браузере</b>. Данные рождения, которые вы вводите в эти инструменты, не отправляются на сервер. Список «Недавние карты» и прогресс уроков хранятся только в памяти вашего браузера (localStorage) — их можно удалить, очистив данные сайта в настройках браузера.</p>
+        <p>При поиске города название, которое вы вводите, отправляется в сервис геокодирования Open-Meteo, чтобы получить координаты и часовой пояс. Даты рождения туда не передаются.</p>
+        <h3>4. Зачем мне ваши данные</h3>
+        <ul><li>чтобы связаться с вами и договориться о консультации;</li><li>чтобы подготовить и провести консультацию;</li><li>чтобы отправить материалы после встречи.</li></ul>
+        <h3>5. Хранение и защита</h3>
+        <p>Я храню данные столько, сколько нужно для консультаций, и не передаю их третьим лицам, кроме случаев, предусмотренных законом. По вашей просьбе удалю их.</p>
+        <h3>6. Ваши права</h3>
+        <p>Вы можете узнать, какие данные у меня есть, попросить исправить или удалить их и отозвать согласие на обработку — напишите мне любым удобным способом.</p>
+        <h3>7. Cookie и аналитика</h3>
+        <p>Сайт не использует рекламные cookie. Шрифты загружаются с Google Fonts.</p>
+        <div class="notice info" style="margin-top:18px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.6v.1"/></svg><span>Это шаблон политики. Перед запуском проверьте его под Закон Республики Беларусь № 99-З «О защите персональных данных» (а для клиентов из России — под 152-ФЗ) и добавьте реквизиты, если работаете как ИП или самозанятая.</span></div>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="js/content.js"></script>
+<script src="js/vendor/astronomy.browser.min.js"></script>
+<script src="js/astro.js"></script>
+<script src="js/texts.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/ui.js"></script>
+<script>document.querySelectorAll('.js-name').forEach(function (e) { e.textContent = SITE.name; });</script>
+</body>
+</html>

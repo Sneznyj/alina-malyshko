@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Личный астрологический прогноз — транзиты, соляр, прогрессии · Алина Малышко</title>
+<meta name="description" content="Персональный прогноз по натальной карте: транзиты планет по месяцам с толкованием, соляр (карта года), вторичные прогрессии и небо на любую дату.">
+<meta name="theme-color" content="#9b87d9">
+<meta property="og:title" content="Личный астрологический прогноз">
+<meta property="og:image" content="https://sneznyj.github.io/alina-malyshko/assets/img/og-image.jpg">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&family=Caveat:wght@500;600;700&family=Noto+Sans+Symbols&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>try{var t=localStorage.getItem('am_theme');document.documentElement.setAttribute('data-theme',t?JSON.parse(t):(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}</script>
+</head>
+<body>
+<main id="main">
+  <section class="page-hero">
+    <div class="container hero-anim">
+      <span class="eyebrow">Прогноз</span>
+      <h1>Ваш <em class="accent">личный</em> прогноз</h1>
+      <p class="lead">Транзиты — как текущие планеты «касаются» вашей карты. Здесь видно, когда наступают периоды роста, перемен и проверки, и сколько они продлятся. Плюс соляр — карта вашего года — и прогрессии.</p>
+    </div>
+  </section>
+
+  <section class="section tight" style="padding-top:0">
+    <div class="container tool-layout">
+      <aside>
+        <div class="card">
+          <div id="birthForm"></div>
+          <hr class="divider" style="margin:18px 0">
+          <div class="form">
+            <div class="form-row">
+              <div class="field"><label for="startMonth">Начало</label><input class="input" type="month" id="startMonth"></div>
+              <div class="field"><label for="period">Период</label><select class="select" id="period"><option value="1">1 месяц</option><option value="3">3 месяца</option><option value="6" selected>6 месяцев</option><option value="12">12 месяцев</option></select></div>
+            </div>
+            <label class="switch"><input type="checkbox" id="fastToggle"> Быстрые планеты (Солнце, Меркурий, Венера)</label>
+          </div>
+          <button class="btn btn-primary btn-block" id="calcBtn" type="button" style="margin-top:18px">Рассчитать прогноз</button>
+        </div>
+      </aside>
+      <div id="result">
+        <div class="card result-empty">
+          <div class="big">♃&#xFE0E;</div>
+          <h3>Что ждёт впереди?</h3>
+          <p class="muted" style="max-width:48ch;margin-inline:auto">Введите данные рождения и выберите период. Вы получите календарь важных транзитов с толкованием, карту года и прогрессии.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="js/content.js"></script>
+<script src="js/vendor/astronomy.browser.min.js"></script>
+<script src="js/chiron-data.js"></script>
+<script src="js/astro.js"></script>
+<script src="js/texts.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/wheel.js"></script>
+<script src="js/chart-view.js"></script>
+<script src="js/pages/forecast.js"></script>
+</body>
+</html>

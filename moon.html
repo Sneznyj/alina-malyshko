@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Лунный календарь на месяц — фазы, лунные сутки, Луна без курса · Алина Малышко</title>
+<meta name="description" content="Лунный календарь: фазы Луны, лунные сутки с временем начала для вашего города, Луна в знаках, Луна без курса, затмения и советы на каждый день.">
+<meta name="theme-color" content="#9b87d9">
+<meta property="og:title" content="Лунный календарь — фазы, лунные сутки, Луна без курса">
+<meta property="og:image" content="https://sneznyj.github.io/alina-malyshko/assets/img/og-image.jpg">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&family=Caveat:wght@500;600;700&family=Noto+Sans+Symbols&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>try{var t=localStorage.getItem('am_theme');document.documentElement.setAttribute('data-theme',t?JSON.parse(t):(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}</script>
+</head>
+<body>
+<main id="main">
+  <section class="page-hero">
+    <div class="container hero-anim">
+      <span class="eyebrow">Лунный календарь</span>
+      <h1>Ритм <em class="accent">Луны</em></h1>
+      <p class="lead">Фазы, лунные сутки, знаки и периоды Луны без курса — для планирования дел, отдыха и важных решений. Время рассчитывается для выбранного города.</p>
+    </div>
+  </section>
+
+  <section class="section tight" style="padding-top:0">
+    <div class="container">
+      <div class="row between" style="margin-bottom:16px">
+        <div class="field" style="min-width:240px"><label for="citySel">Город</label><select class="select" id="citySel"></select></div>
+        <span class="small muted" id="tzNote"></span>
+      </div>
+      <div class="card" id="today"></div>
+    </div>
+  </section>
+
+  <section class="section tight">
+    <div class="container">
+      <div class="card">
+        <div class="cal-head">
+          <button class="icon-btn" type="button" id="prevM" aria-label="Предыдущий месяц"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6l-6 6 6 6"/></svg></button>
+          <h3 id="monthTitle"></h3>
+          <button class="icon-btn" type="button" id="nextM" aria-label="Следующий месяц"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 6l6 6-6 6"/></svg></button>
+        </div>
+        <div class="cal" id="cal" aria-live="polite"></div>
+        <div class="legend" style="margin-top:14px"><span><b class="glyph" style="color:var(--lav-strong)">♈&#xFE0E;</b> знак Луны</span><span><b style="color:var(--gold)">●</b> фазы и затмения</span><span><b style="color:var(--rose-strong)">без курса</b> — Луна без курса</span><span>л. д. — лунные сутки</span></div>
+      </div>
+      <div class="card" id="dayDetail" style="margin-top:20px"></div>
+    </div>
+  </section>
+
+  <section class="section tight">
+    <div class="container">
+      <div class="grid grid-2">
+        <div class="card"><h3>Что такое Луна без курса?</h3><p class="muted">Период, когда Луна уже сделала последний важный аспект в знаке и ещё не перешла в следующий. Традиционно считается, что начатое в это время «не получает развития» — хорошо отдыхать, завершать, наводить порядок, но не начинать важное.</p></div>
+        <div class="card"><h3>Что такое лунные сутки?</h3><p class="muted">Лунный месяц делится на 29–30 лунных суток. Первые начинаются в новолуние, каждые следующие — с восходом Луны, поэтому их время зависит от города. У каждых суток свой символ и характер.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="js/content.js"></script>
+<script src="js/vendor/astronomy.browser.min.js"></script>
+<script src="js/chiron-data.js"></script>
+<script src="js/astro.js"></script>
+<script src="js/texts.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/wheel.js"></script>
+<script src="js/cards.js"></script>
+<script src="js/pages/moon.js"></script>
+</body>
+</html>
