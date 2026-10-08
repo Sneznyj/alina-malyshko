@@ -494,6 +494,25 @@
   }
   window.addEventListener('beforeprint', () => $$('.reveal:not(.in)').forEach((e) => e.classList.add('in')));
 
+  // ---------- переходы между страницами: запасной вариант ----------
+  // Где браузер умеет View Transitions между страницами, всё делает CSS (@view-transition).
+  // Иначе (класс pt-fallback ставит скрипт в <head>): по клику содержимое тает, потом открывается новая страница, там — проявляется.
+  if (document.documentElement.classList.contains('pt-fallback')) {
+    document.addEventListener('click', (e) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = e.target.closest && e.target.closest('a[href]');
+      if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download')) return;
+      let url; try { url = new URL(a.href, location.href); } catch (err) { return; }
+      if (url.origin !== location.origin || !/(\.html|\/)$/.test(url.pathname)) return;
+      if (url.pathname === location.pathname && url.search === location.search) return; // якорь на этой же странице — просто прокрутка
+      e.preventDefault();
+      document.documentElement.classList.add('pt-leave');
+      setTimeout(() => { location.href = url.href; }, 240);
+    });
+    // «Назад» из кэша браузера возвращает страницу как была — снимаем затухание
+    window.addEventListener('pageshow', (e) => { if (e.persisted) document.documentElement.classList.remove('pt-leave'); });
+  }
+
   // ---------- плавные аккордеоны (<details>) ----------
   // Браузер открывает <details> мгновенно; здесь высота плавно меняется, а содержимое проявляется.
   // Работает для всех details на сайте (вопросы, инструкции, «координаты вручную», настройки расчёта).
@@ -899,11 +918,19 @@
 
   window.UI = { currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, bookingFormHTML, bindBooking, reveal, fadeIn, reduceMotion, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
 
-  document.addEventListener('DOMContentLoaded', () => {
+  // Шапку, подвал и небо рисуем сразу (скрипт стоит в конце <body>, разметка страницы уже есть), а не по DOMContentLoaded:
+  // так первый кадр страницы — и плавный переход между страницами — уже с шапкой, без мигания.
+  let booted = false;
+  function boot() {
+    if (booted) return; booted = true;
     $$('[data-ic]').forEach((el) => { el.outerHTML = icon(el.dataset.ic); });
     $$('[data-note]').forEach((el) => { el.innerHTML = alinaNote(esc(el.dataset.note), el.dataset.noteCta || ''); });
     renderChrome();
     starfield();
+  }
+  if (document.body && document.querySelector('main')) boot();
+  document.addEventListener('DOMContentLoaded', () => {
+    boot();
     reveal();
     watchReveal();
     tabs();

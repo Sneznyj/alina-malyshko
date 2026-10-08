@@ -728,8 +728,37 @@ em.accent, .accent { font-style: italic; color: var(--lav-strong); }
   .reveal, .reveal-on .reveal:not(.in) { opacity: 1 !important; translate: none !important; }
 }
 
+/* ---------- переходы между страницами ----------
+   Браузер сам делает снимок старой страницы и плавно сменяет его новой (Chrome, Edge, Safari 18.2+).
+   Шапка, звёздное небо и сияние названы отдельно — они одинаковые на всех страницах и стоят на месте,
+   а содержимое растворяется со сдвигом. Где этого нет (Firefox, старые iPhone) — запасной вариант ниже, через ui.js. */
+@view-transition { navigation: auto; }
+.site-header { view-transition-name: site-header; }
+.promo-bar { view-transition-name: promo-bar; }
+.sky-bg { view-transition-name: sky; }
+.aurora { view-transition-name: aurora; }
+.mobile-cta { view-transition-name: mobile-cta; }
+.draft-pill { view-transition-name: draft-pill; }
+::view-transition { background: var(--bg); }
+::view-transition-group(site-header), ::view-transition-group(promo-bar), ::view-transition-group(sky), ::view-transition-group(aurora), ::view-transition-group(mobile-cta), ::view-transition-group(draft-pill) { animation-duration: .46s; }
+/* прозрачность у старой и новой одинаковой длительности и плавности — в сумме всегда 100%, без вспышек */
+::view-transition-old(root) { animation: ptFadeOut .46s ease both, ptLift .46s cubic-bezier(.4,0,.2,1) both; }
+::view-transition-new(root) { animation: ptFadeIn .46s ease both, ptRise .56s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes ptFadeOut { to { opacity: 0; } }
+@keyframes ptFadeIn { from { opacity: 0; } }
+@keyframes ptLift { to { transform: translateY(-12px); } }
+@keyframes ptRise { from { transform: translateY(18px); } }
+/* запасной вариант: уход — содержимое тает, приход — проявляется */
+html.pt-fallback main, html.pt-fallback .site-footer { animation: ptFadeIn .5s ease both, ptRise .6s cubic-bezier(.2,.8,.2,1) both; }
+html.pt-leave main, html.pt-leave .site-footer { opacity: 0; transform: translateY(-12px); transition: opacity .24s ease, transform .24s ease; }
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+}
+
 /* смена темы: круг из кнопки (View Transitions), а где их нет — мягкое перетекание цветов */
-::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+html.theme-vt::view-transition-old(root), html.theme-vt::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+/* при смене темы всё раскрывается одним кругом — отдельные снимки шапки и неба не нужны */
+html.theme-vt .site-header, html.theme-vt .promo-bar, html.theme-vt .sky-bg, html.theme-vt .aurora, html.theme-vt .mobile-cta, html.theme-vt .draft-pill { view-transition-name: none; }
 html.theme-vt *, html.theme-vt *::before, html.theme-vt *::after { transition: none !important; }
 html.theme-fade *, html.theme-fade *::before, html.theme-fade *::after { transition: background-color .5s ease, color .5s ease, border-color .5s ease, box-shadow .5s ease, fill .5s ease, stroke .5s ease !important; }
 

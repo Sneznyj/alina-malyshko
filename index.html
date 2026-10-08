@@ -18,7 +18,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&family=Caveat:wght@500;600;700&family=Noto+Sans+Symbols&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/img/alina-mystic.webp" type="image/webp">
 <link rel="stylesheet" href="css/style.css">
-<script>try{var t=localStorage.getItem('am_theme');document.documentElement.setAttribute('data-theme',t?JSON.parse(t):(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}</script>
+<script>try{var t=localStorage.getItem('am_theme');document.documentElement.setAttribute('data-theme',t?JSON.parse(t):(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}try{if(!window.CSSViewTransitionRule&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('pt-fallback')}catch(e){}</script>
+<link rel="expect" href="#pt-ready" blocking="render">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"ProfessionalService","name":"Алина Малышко — астролог","description":"Разбор натальной карты, прогнозы, совместимость, выбор благоприятных дат, уроки астрологии.","image":"assets/img/alina-mystic.webp","areaServed":"Worldwide","availableLanguage":"ru","founder":{"@type":"Person","name":"Алина Малышко","jobTitle":"Астролог"}}</script>
 </head>
 <body>
@@ -215,6 +216,7 @@
 <script src="js/texts.js"></script>
 <script src="js/icons.js"></script>
 <script src="js/ui.js"></script>
+<span id="pt-ready" hidden></span>
 <script src="js/cards.js"></script>
 <script src="js/pages/home.js"></script>
 </body>
