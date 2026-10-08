@@ -4,7 +4,7 @@
   const AC = window.AstroCore, T = window.ASTRO_TEXTS, UI = window.UI, SITE = window.SITE;
   const { esc, fmt, icon } = UI;
   const $ = (id) => document.getElementById(id);
-  const money = (n) => fmt.money(n);
+  const money = (n, code) => UI.money(n, code);
 
   function zodiacRing() {
     let s = '<svg viewBox="0 0 100 100" fill="none" stroke="currentColor">';
@@ -66,8 +66,8 @@
   function priceHTML(svc, big) {
     const p = UI.priceFor(svc);
     if (!svc.price) return '<div class="price">по запросу</div>';
-    if (p.old) return `<div class="price-row"><span class="price-old">${money(p.old)}</span><span class="price">${money(p.now)}</span><span class="sticker sm">−${p.percent}%</span></div><div class="price-note">на первую консультацию</div>`;
-    return `<div class="price">${money(p.now)}</div>`;
+    if (p.old) return `<div class="price-row"><span class="price-old">${money(p.old, p.code)}</span><span class="price">${money(p.now, p.code)}</span><span class="sticker sm">−${p.percent}%</span></div><div class="price-note">на первую консультацию</div>`;
+    return `<div class="price">${money(p.now, p.code)}</div>`;
   }
 
   function hero() {
@@ -80,6 +80,21 @@
   function needs() {
     $('needsGrid').innerHTML = SITE.needs.map((n, i) => `<div class="card hover need-card reveal" style="--d:${(i % 3) * 0.08}s"><span class="need-ic">${icon(n.icon || 'sparkle')}</span><div><h3 style="font-size:1.45rem">${esc(n.title)}</h3><p class="muted" style="margin:0">${esc(n.text)}</p></div></div>`).join('');
   }
+
+  // ---------- валюта ----------
+  function curSwitch() {
+    const box = $('curSwitch');
+    if (!box) return;
+    const cur = UI.currency();
+    const names = { RUB: 'рубли', USD: 'доллары', EUR: 'евро' };
+    box.innerHTML = '<span class="small muted">Цены в</span><div class="seg" role="group" aria-label="Валюта">' +
+      Object.entries(SITE.currencies || {}).map(([code, sign]) => `<button type="button" data-cur="${code}" aria-pressed="${code === cur}">${sign} ${names[code] || code}</button>`).join('') + '</div>';
+  }
+  document.addEventListener('click', (e) => { const b = e.target.closest('[data-cur]'); if (b) UI.setCurrency(b.dataset.cur); });
+  document.addEventListener('currencychange', () => {
+    curSwitch(); hero(); services(); offers(); academy();
+    document.querySelectorAll('#servicesGrid .reveal, #offersGrid .reveal, #acFormats .reveal').forEach((el) => el.classList.add('in'));
+  });
 
   function services() {
     const tones = ['', 'gold', 'rose'];
@@ -102,15 +117,16 @@
   function offers() {
     const byId = Object.fromEntries(SITE.services.map((s) => [s.id, s]));
     const cards = (SITE.bundles || []).map((b, i) => {
-      const old = b.items.reduce((a, id) => a + (byId[id] ? byId[id].price : 0), 0);
-      const pct = old ? Math.round((1 - b.price / old) * 100) : 0;
+      const bp = UI.priceOf(b);
+      const old = b.items.reduce((a, id) => a + (byId[id] ? UI.priceOf(byId[id]).n : 0), 0);
+      const pct = old ? Math.round((1 - bp.n / old) * 100) : 0;
       return `<article class="card hover offer-card reveal" style="--d:${i * 0.08}s">
         ${pct > 0 ? `<span class="sticker corner">−${pct}%</span>` : ''}
         ${b.tag ? `<span class="tag gold" style="align-self:flex-start;margin-bottom:12px">${icon('star-filled')}${esc(b.tag)}</span>` : ''}
         <h3>${esc(b.title)}</h3>
         <div class="plus">${b.items.map((id) => byId[id] ? `<span class="pi">${icon(byId[id].icon)}${esc(byId[id].title)}</span>` : '').join('<span class="muted">+</span>')}</div>
         <p class="muted">${esc(b.text)}</p>
-        <div class="foot"><div><div class="price-row"><span class="price-old">${money(old)}</span><span class="price">${money(b.price)}</span></div><span class="save">выгода ${money(old - b.price)}</span></div>
+        <div class="foot"><div><div class="price-row"><span class="price-old">${money(old, bp.code)}</span><span class="price">${money(bp.n, bp.code)}</span></div><span class="save">выгода ${money(old - bp.n, bp.code)}</span></div>
         <button class="btn btn-primary btn-sm" type="button" data-book="${b.items[0]}">Хочу пакет</button></div>
       </article>`;
     });
@@ -121,7 +137,7 @@
       <div class="gift-preview" id="giftPreview" aria-hidden="true"></div>
       <h3>${esc(g.title)}</h3>
       <p>${esc(g.text)}</p>
-      <div class="foot"><div><div class="price">от ${money(g.from)}</div><span class="small" style="color:#e7dcff">на любую консультацию</span></div>
+      <div class="foot"><div><div class="price">от ${money(UI.priceOf(g, 'from').n, UI.priceOf(g, 'from').code)}</div><span class="small" style="color:#e7dcff">на любую консультацию</span></div>
       <button class="btn btn-light btn-sm" type="button" data-book="other">${icon('gift')} Подарить</button></div>
     </article>`);
     $('offersGrid').innerHTML = cards.join('');
@@ -168,7 +184,7 @@
         <p>${esc(f.text)}</p>
         ${f.note ? `<p class="small" style="color:var(--gold-2)">${esc(f.note)}</p>` : ''}
         <div class="row between" style="margin-top:18px">
-          <span class="price">${f.price ? money(f.price) + (f.unit ? ` <small style="font:500 .8rem var(--ff-body);color:#cfc5ee">${esc(f.unit)}</small>` : '') : (f.href ? 'бесплатно' : '')}</span>
+          <span class="price">${f.price ? money(UI.priceOf(f).n, UI.priceOf(f).code) + (f.unit ? ` <small style="font:500 .8rem var(--ff-body);color:#cfc5ee">${esc(f.unit)}</small>` : '') : (f.href ? 'бесплатно' : '')}</span>
           ${f.href ? `<a class="btn btn-light btn-sm" href="${f.href}">${esc(f.cta)}</a>` : `<button class="btn btn-light btn-sm" type="button" data-book="${f.service}">${esc(f.cta)}</button>`}
         </div>
       </div>`).join('');
@@ -225,7 +241,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     $('zodiacRing').innerHTML = zodiacRing();
     media();
-    hero(); needs(); services(); offers(); tools(); about(); academy(); reviews(); faq(); booking();
+    hero(); needs(); curSwitch(); services(); offers(); tools(); about(); academy(); reviews(); faq(); booking();
     UI.reveal();
     setTimeout(() => { try { skyStrip(); } catch (e) { console.error(e); } }, 30);
   });

@@ -1016,3 +1016,7 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
 .bot-cta svg { width: 26px; height: 26px; flex-shrink: 0; color: #2aa3df; }
 .bot-cta span { flex: 1; font-weight: 600; }
 .bot-cta .arr { flex: 0; color: var(--gold); font-size: 1.2rem; }
+
+/* переключатель валюты над услугами */
+.cur-switch { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin: -6px 0 22px; }
+.cur-switch .seg button { padding: 6px 12px; }

@@ -81,13 +81,42 @@
     if (isNaN(end) || now > end) return null;
     return Object.assign({}, p, { end, days: Math.max(1, Math.ceil((end - now) / 86400000)) });
   }
-  /** Цена услуги с учётом акции. */
+  // ---------- валюта по стране посетителя (по часовому поясу браузера) ----------
+  const CUR = SITE.currencies || { RUB: SITE.currency || '₽' };
+  const browserTz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { return ''; } })();
+  function currencyForZone(tz) {
+    for (const [code, zones] of SITE.currencyRules || []) if (zones.some((z) => tz === z || (z.endsWith('/') && String(tz).startsWith(z)))) return code;
+    return SITE.currencyFallback || 'RUB';
+  }
+  function currency() { const c = store.get('currency', null); return c && CUR[c] ? c : (CUR[currencyForZone(browserTz)] ? currencyForZone(browserTz) : 'RUB'); }
+  function setCurrency(code) { if (!CUR[code]) return; store.set('currency', code); document.dispatchEvent(new CustomEvent('currencychange', { detail: code })); }
+  /** Цена объекта в текущей валюте: price — рубли, prices.USD / prices.EUR — другие валюты. Нет цены в валюте — рубли. */
+  function priceOf(o, field) {
+    const code = currency();
+    const rub = +(o && o[field || 'price']) || 0;
+    const other = o && o[field ? field + 'Prices' : 'prices'];
+    if (code !== 'RUB' && other && other[code] != null) return { n: +other[code], code };
+    return { n: rub, code: 'RUB' };
+  }
+  function money(n, code) { return n || n === 0 ? `${Math.round(n).toLocaleString('ru-RU')} ${CUR[code || currency()] || '₽'}` : ''; }
+
+  /** Цена услуги с учётом акции (в текущей валюте). */
   function priceFor(svc) {
     const pr = promoInfo();
-    if (pr && svc.price && (pr.services || []).includes(svc.id)) return { now: Math.round((svc.price * (1 - pr.percent / 100)) / 100) * 100, old: svc.price, percent: pr.percent };
-    return { now: svc.price };
+    const { n, code } = priceOf(svc);
+    if (pr && n && (pr.services || []).includes(svc.id)) {
+      const step = code === 'RUB' ? 100 : 1;
+      return { now: Math.round((n * (1 - pr.percent / 100)) / step) * step, old: n, percent: pr.percent, code };
+    }
+    return { now: n, code };
   }
   const minPrice = () => Math.min(...SITE.services.filter((x) => x.price).map((x) => priceFor(x).now));
+  /** Город по часовому поясу посетителя (для лунного календаря и «Неба сегодня»). */
+  function cityForZone() {
+    const def = CITIES.find((c) => c.name === SITE.defaultCity);
+    if (def && def.tz === browserTz) return def;
+    return CITIES.find((c) => c.tz === browserTz) || null;
+  }
 
   function contactLinks() {
     const c = SITE.contacts || {};
@@ -97,6 +126,7 @@
     if (c.telegramBot) out.push({ k: 'message-heart', label: 'Telegram-бот: гороскоп и Луна дня', href: botHref('src_site') });
     if (c.whatsapp) out.push({ k: 'whatsapp', label: 'WhatsApp', href: 'https://wa.me/' + c.whatsapp.replace(/\D/g, '') });
     if (c.instagram) out.push({ k: 'instagram', label: 'Instagram', href: 'https://instagram.com/' + c.instagram.replace(/^@/, '') });
+    if (c.tiktok) out.push({ k: 'tiktok', label: 'TikTok', href: 'https://www.tiktok.com/@' + c.tiktok.replace(/^@/, '') });
     if (c.vk) out.push({ k: 'vk', label: 'ВКонтакте', href: 'https://vk.com/' + c.vk });
     if (c.youtube) out.push({ k: 'youtube', label: 'YouTube', href: c.youtube });
     if (c.email) out.push({ k: 'mail', label: c.email, href: 'mailto:' + c.email });
@@ -232,7 +262,7 @@
     if (page !== 'cabinet.html') {
       const cta = document.createElement('div');
       cta.className = 'mobile-cta';
-      cta.innerHTML = `<img src="assets/img/alina-avatar.webp" alt="" width="40" height="40"><div class="mc-text"><b>Консультация с Алиной</b><small>${pr ? `<span class="sticker xs">−${pr.percent}%</span> ${esc(pr.short)}` : 'онлайн · время по Москве'}</small></div><button class="btn btn-primary btn-sm" type="button" data-book>Записаться</button>`;
+      cta.innerHTML = `<img src="assets/img/alina-avatar.webp" alt="" width="40" height="40"><div class="mc-text"><b>Консультация с Алиной</b><small>${pr ? `<span class="sticker xs">−${pr.percent}%</span> ${esc(pr.short)}` : 'онлайн из любой страны'}</small></div><button class="btn btn-primary btn-sm" type="button" data-book>Записаться</button>`;
       document.body.appendChild(cta);
       const toggleCta = () => {
         const bk = document.getElementById('booking');
@@ -253,7 +283,7 @@
           <div>
             <a class="brand" href="index.html"><span class="brand-mark"><img src="assets/img/alina-avatar.webp" alt="" width="40" height="40" loading="lazy"></span><span><span class="brand-name">${esc(SITE.name)}</span><span class="brand-role">${esc(SITE.role)}</span></span></a>
             <p class="hand-sign">${esc(SITE.about && SITE.about.signature ? SITE.about.signature : '')}</p>
-            <p class="muted small" style="max-width:34ch">${esc(SITE.tagline)}. Консультации онлайн для Москвы и всей России.</p>
+            <p class="muted small" style="max-width:34ch">${esc(SITE.tagline)}. Консультации онлайн из любой точки мира.</p>
             <div class="socials">${links.map((l) => `<a href="${esc(l.href)}" target="_blank" rel="noopener" aria-label="${esc(l.label)}" title="${esc(l.label)}">${icon(l.k)}</a>`).join('')}</div>
             ${(SITE.contacts || {}).instagram ? '<p class="tiny muted" style="max-width:34ch;margin-top:10px">*Instagram принадлежит компании Meta, деятельность которой запрещена в России как экстремистская.</p>' : ''}
           </div>
@@ -438,7 +468,7 @@
   ].map(([name, country, lat, lon, tz]) => ({ name, country, lat, lon, tz }));
   const normName = (s) => s.toLowerCase().replace(/ё/g, 'е').trim();
   /** Город по умолчанию: выбранный посетителем, иначе из content.js (Минск). */
-  function defaultCity() { return store.get('moonCity', null) || CITIES.find((c) => c.name === SITE.defaultCity) || CITIES[0]; }
+  function defaultCity() { return store.get('moonCity', null) || cityForZone() || CITIES.find((c) => c.name === SITE.defaultCity) || CITIES[0]; }
   const geoCache = {};
   async function searchCities(q) {
     const nq = normName(q);
@@ -600,7 +630,7 @@
         <div class="field"><label for="${u}q">Ваш вопрос или запрос</label><textarea class="textarea" id="${u}q" name="question" placeholder="Что сейчас важно? Можно коротко."></textarea></div>
         <label class="check"><input type="checkbox" name="consent" required> <span>Даю согласие на обработку персональных данных согласно <a href="privacy.html" target="_blank">политике конфиденциальности</a></span></label>
         <button class="btn btn-primary btn-block" type="submit">${icon('sparkle')} Отправить заявку</button>
-        <p class="tiny muted center" style="margin:0">Отвечаю в течение дня. Время встречи — по Москве (МСК). Данные рождения можно прислать и позже.</p>
+        <p class="tiny muted center" style="margin:0">Отвечаю в течение дня. Время встречи подберём по вашему часовому поясу${browserTz ? ' (' + esc(browserTz.replace(/_/g, ' ')) + ')' : ''}. Данные рождения можно прислать и позже.</p>
       </form>`;
   }
   function bindBooking(form, onDone) {
@@ -621,6 +651,7 @@
         `Услуга: ${svc ? svc.title : ''}`,
         bd ? `Дата рождения: ${bd.split('-').reverse().join('.')}${f.get('btime') ? ', ' + f.get('btime') : ''}${f.get('bplace') ? ', ' + f.get('bplace') : ''}` : '',
         f.get('question') ? `Запрос: ${f.get('question')}` : '',
+        browserTz ? `Мой часовой пояс: ${browserTz}` : '',
       ].filter(Boolean);
       const text = lines.join('\n');
       if (SITE.bookingEndpoint) {
@@ -693,7 +724,7 @@
     return { date, moon: ms, sunSign, retro, pts };
   }
 
-  window.UI = { botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, bookingFormHTML, bindBooking, reveal, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
+  window.UI = { currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, bookingFormHTML, bindBooking, reveal, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
 
   document.addEventListener('DOMContentLoaded', () => {
     $$('[data-ic]').forEach((el) => { el.outerHTML = icon(el.dataset.ic); });
