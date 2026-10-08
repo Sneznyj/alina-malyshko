@@ -391,7 +391,7 @@
     const au = document.createElement('div'); au.className = 'aurora'; au.setAttribute('aria-hidden', 'true'); au.innerHTML = '<i></i><i></i><i></i>';
     document.body.prepend(wrap); document.body.prepend(au);
     const ctx = cv.getContext('2d');
-    let W = 0, H = 0, dpr = 1, stars = [], shoot = null, last = 0, color = '#fff', gold = '#f3d9a0';
+    let W = 0, H = 0, dpr = 1, stars = [], shoot = null, last = 0, prevT = 0, color = '#fff', gold = '#f3d9a0';
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     // Звёзды — искорки ✦. Каждая форма рисуется один раз в маленький холст-спрайт, а в кадре только копируется:
     // так сотня мерцающих искорок не нагружает телефон.
@@ -440,6 +440,10 @@
       readColors();
     }
     function draw(t) {
+      // мерцание медленное — хватает ~30 кадров в секунду (под стеклянными карточками небо размывается, и каждый кадр стоит дороже);
+      // падающую звезду рисуем на полной частоте
+      if (!reduce && !shoot && t - prevT < 30) { requestAnimationFrame(draw); return; }
+      const dt = Math.min(64, t - prevT || 16.7); prevT = t;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, H);
       const dark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -456,7 +460,7 @@
       if (!reduce && dark) {
         if (!shoot && t - last > 7000 && Math.random() < 0.02) { shoot = { x: Math.random() * W * 0.7 + W * 0.2, y: Math.random() * H * 0.3, l: 0 }; last = t; }
         if (shoot) {
-          shoot.l += 14; const len = 120;
+          shoot.l += 0.84 * dt; const len = 120;
           const g = ctx.createLinearGradient(shoot.x - shoot.l, shoot.y + shoot.l * 0.45, shoot.x - shoot.l + len, shoot.y + shoot.l * 0.45 - len * 0.45);
           g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(255,245,225,0.9)');
           ctx.globalAlpha = Math.max(0, 1 - shoot.l / 600); ctx.strokeStyle = g; ctx.lineWidth = 1.4;
@@ -486,10 +490,54 @@
     if (!revealIO) { els.forEach((e) => e.classList.add('in')); return; }
     els.forEach((e) => revealIO.observe(e));
   }
-  function watchReveal() {
-    if (!revealIO || !('MutationObserver' in window)) return;
+  // ---------- скользящая подсветка у вкладок и переключателей (.tabs, .seg) ----------
+  // Под выбранной кнопкой — одна плашка, она переезжает к новой кнопке. Если переключатель перерисовали целиком
+  // (гороскоп, валюта, кабинет), плашка стартует с того места, где стояла у прежнего — и тоже едет.
+  const sliderMem = {}, sliderBoxes = [];
+  const isOn = (b) => b.getAttribute('aria-selected') === 'true' || b.getAttribute('aria-pressed') === 'true';
+  function setInd(ind, r, animate) {
+    if (!animate) ind.style.transition = 'none';
+    ind.style.transform = `translate(${r.x}px, ${r.y}px)`; ind.style.width = r.w + 'px'; ind.style.height = r.h + 'px'; ind.style.opacity = '1';
+    if (!animate) { void ind.offsetWidth; ind.style.transition = ''; }
+  }
+  function placeSlider(box, animate) {
+    const ind = box._ind; if (!ind || !box.isConnected) return;
+    const btn = Array.from(box.children).find((b) => b.tagName === 'BUTTON' && isOn(b));
+    if (!btn || !box.offsetWidth) { ind.style.opacity = '0'; return; }
+    const r = { x: btn.offsetLeft, y: btn.offsetTop, w: btn.offsetWidth, h: btn.offsetHeight };
+    setInd(ind, r, animate && !reduceMotion());
+    sliderMem[box._key] = r;
+    // в узкой прокручиваемой полосе вкладок выбранная плавно выезжает в центр
+    if (animate && box.scrollWidth > box.clientWidth + 2) box.scrollTo({ left: r.x - (box.clientWidth - r.w) / 2, behavior: reduceMotion() ? 'auto' : 'smooth' });
+  }
+  function initSlider(box) {
+    if (box._ind) return;
+    const btns = Array.from(box.children).filter((b) => b.tagName === 'BUTTON');
+    if (btns.length < 2) return;
+    const ind = document.createElement('span'); ind.className = 'tab-ind'; ind.setAttribute('aria-hidden', 'true');
+    box.prepend(ind); box._ind = ind; box.classList.add('has-ind'); sliderBoxes.push(box);
+    box._key = btns.map((b) => b.textContent.trim()).join('|');
+    const mem = sliderMem[box._key];
+    if (mem && box.offsetWidth && !reduceMotion()) { setInd(ind, mem, false); requestAnimationFrame(() => placeSlider(box, true)); }
+    else placeSlider(box, false);
+    new MutationObserver(() => placeSlider(box, true)).observe(box, { attributes: true, subtree: true, attributeFilter: ['aria-selected', 'aria-pressed'] });
+    if ('ResizeObserver' in window) {
+      box._w = box.offsetWidth;
+      new ResizeObserver(() => { const w = box.offsetWidth; if (w === box._w) return; box._w = w; placeSlider(box, false); }).observe(box);
+    }
+  }
+  function sliders(root) {
+    if (root && root.matches && root.matches('.tabs, .seg')) initSlider(root);
+    $$('.tabs, .seg', root).forEach(initSlider);
+  }
+  // шрифты догрузились — ширина кнопок могла измениться
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => sliderBoxes.forEach((b) => placeSlider(b, false)));
+
+  // новые блоки на странице (результаты, вкладки, кабинет): появление при прокрутке и подсветка переключателей
+  function watchDom() {
+    if (!('MutationObserver' in window)) return;
     new MutationObserver((muts) => {
-      for (const m of muts) for (const n of m.addedNodes) if (n.nodeType === 1) reveal(n);
+      for (const m of muts) for (const n of m.addedNodes) if (n.nodeType === 1 && !n.classList.contains('tab-ind')) { if (revealIO) reveal(n); sliders(n); }
     }).observe(document.body, { childList: true, subtree: true });
   }
   window.addEventListener('beforeprint', () => $$('.reveal:not(.in)').forEach((e) => e.classList.add('in')));
@@ -932,7 +980,8 @@
   document.addEventListener('DOMContentLoaded', () => {
     boot();
     reveal();
-    watchReveal();
+    watchDom();
     tabs();
+    sliders();
   });
 })();
