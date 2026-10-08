@@ -391,27 +391,68 @@
     const au = document.createElement('div'); au.className = 'aurora'; au.setAttribute('aria-hidden', 'true'); au.innerHTML = '<i></i><i></i><i></i>';
     document.body.prepend(wrap); document.body.prepend(au);
     const ctx = cv.getContext('2d');
-    let W = 0, H = 0, stars = [], shoot = null, last = 0, color = '#fff';
+    let W = 0, H = 0, dpr = 1, stars = [], shoot = null, last = 0, color = '#fff', gold = '#f3d9a0';
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Звёзды — искорки ✦. Каждая форма рисуется один раз в маленький холст-спрайт, а в кадре только копируется:
+    // так сотня мерцающих искорок не нагружает телефон.
+    const SPR = 64, sprites = {};
+    function sparklePath(g, cx, cy, R, pinch) {
+      const k = R * (pinch || 0.12); // насколько «втянуты» бока между лучами: меньше — тоньше лучи
+      g.beginPath(); g.moveTo(cx, cy - R);
+      g.quadraticCurveTo(cx + k, cy - k, cx + R, cy); g.quadraticCurveTo(cx + k, cy + k, cx, cy + R);
+      g.quadraticCurveTo(cx - k, cy + k, cx - R, cy); g.quadraticCurveTo(cx - k, cy - k, cx, cy - R);
+      g.closePath();
+    }
+    function sprite(col, big) {
+      const key = col + (big ? '*' : '');
+      if (sprites[key]) return sprites[key];
+      const c = document.createElement('canvas'); c.width = c.height = SPR;
+      const g = c.getContext('2d'), m = SPR / 2;
+      g.fillStyle = col;
+      if (big) {
+        // крупная: сияние, длинные лучи и тонкая искорка поперёк — как настоящая яркая звезда
+        g.shadowColor = col; g.shadowBlur = SPR * 0.09;
+        sparklePath(g, m, m, SPR * 0.4); g.fill();
+        g.shadowBlur = 0; g.globalAlpha = 0.45;
+        g.translate(m, m); g.rotate(Math.PI / 4); sparklePath(g, 0, 0, SPR * 0.2); g.fill();
+      } else {
+        sparklePath(g, m, m, SPR * 0.48, 0.19); g.fill(); // мелким — лучи потолще, чтобы форма читалась
+      }
+      return (sprites[key] = c);
+    }
+    function readColors() {
+      const cs = getComputedStyle(document.documentElement);
+      color = cs.getPropertyValue('--star').trim() || '#fff';
+      gold = cs.getPropertyValue('--star-gold').trim() || '#f3d9a0';
+    }
     function resize() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
       W = window.innerWidth; H = window.innerHeight;
       cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const n = Math.round((W * H) / 9000);
+      const n = Math.max(38, Math.round((W * H) / 13000));
       let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-      stars = Array.from({ length: n }, () => ({ x: rnd() * W, y: rnd() * H, r: rnd() < 0.08 ? 1.6 + rnd() * 0.8 : 0.4 + rnd() * 0.9, p: rnd() * Math.PI * 2, s: 0.4 + rnd() * 1.4, cross: rnd() < 0.05 }));
-      color = getComputedStyle(document.documentElement).getPropertyValue('--star').trim() || '#fff';
+      stars = Array.from({ length: n }, () => {
+        const r = rnd();
+        const big = r < 0.05;
+        const size = big ? 18 + rnd() * 9 : r < 0.26 ? 11 + rnd() * 4 : 7.5 + rnd() * 3; // ширина искорки, px (мельче — уже не видно формы)
+        return { x: rnd() * W, y: rnd() * H, size, big, gold: rnd() < 0.22, rot: (rnd() - 0.5) * 0.5, p: rnd() * Math.PI * 2, s: 0.4 + rnd() * 1.4 };
+      });
+      readColors();
     }
     function draw(t) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, H);
       const dark = document.documentElement.getAttribute('data-theme') === 'dark';
       for (const s of stars) {
-        const a = reduce ? 0.7 : 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t / 1000 * s.s + s.p));
-        ctx.globalAlpha = a * (dark ? 1 : 0.28);
-        ctx.fillStyle = color;
-        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
-        if (s.cross && s.r > 1.2) { ctx.globalAlpha *= 0.6; ctx.fillRect(s.x - s.r * 3, s.y - 0.3, s.r * 6, 0.6); ctx.fillRect(s.x - 0.3, s.y - s.r * 3, 0.6, s.r * 6); }
+        const tw = reduce ? 0.6 : 0.5 + 0.5 * Math.sin(t / 1000 * s.s + s.p); // мерцание 0…1
+        ctx.globalAlpha = (0.3 + 0.7 * tw) * (dark ? 1 : 0.34);
+        const size = s.size * (reduce ? 1 : 0.85 + 0.25 * tw);
+        const a = s.rot + (reduce ? 0 : Math.sin(t / 5000 + s.p) * 0.22); // лёгкое покачивание лучей
+        const cos = Math.cos(a) * dpr, sin = Math.sin(a) * dpr;
+        ctx.setTransform(cos, sin, -sin, cos, s.x * dpr, s.y * dpr);
+        ctx.drawImage(sprite(s.gold ? gold : color, s.big), -size / 2, -size / 2, size, size);
       }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       if (!reduce && dark) {
         if (!shoot && t - last > 7000 && Math.random() < 0.02) { shoot = { x: Math.random() * W * 0.7 + W * 0.2, y: Math.random() * H * 0.3, l: 0 }; last = t; }
         if (shoot) {
@@ -427,7 +468,7 @@
       if (!reduce && !document.hidden) requestAnimationFrame(draw);
     }
     resize(); window.addEventListener('resize', resize);
-    document.addEventListener('themechange', () => { color = getComputedStyle(document.documentElement).getPropertyValue('--star').trim(); if (reduce) draw(0); });
+    document.addEventListener('themechange', () => { readColors(); if (reduce) draw(0); });
     document.addEventListener('visibilitychange', () => { if (!document.hidden && !reduce) requestAnimationFrame(draw); });
     requestAnimationFrame(draw);
   }
