@@ -92,6 +92,7 @@
             ${ldt ? `<div><h4>${ld.day} лунные сутки — «${ldt.sym}»</h4><p class="small" style="margin-bottom:6px">${ldt.text}</p><p class="small muted" style="margin:0">Начались ${hm(ld.start)}${dayKey(ld.start) !== dayKey(now) ? ' ' + fmt.dateShort(ld.start) : ''}${ld.end ? ', продлятся до ' + hm(ld.end) + (dayKey(ld.end) !== dayKey(now) ? ' ' + fmt.dateShort(ld.end) : '') : ''}.</p></div>` : ''}
             <div><button class="btn btn-primary btn-sm" type="button" id="moonStory" style="margin-bottom:14px">${icon('sparkle')} Сторис «Луна сегодня»</button><h4>Луна ${T.signs[ms.sign].loc}</h4><p class="small" style="margin-bottom:4px"><b style="color:var(--ok)">Хорошо:</b> ${mis.good}${ldt ? ', ' + ldt.good : ''}.</p><p class="small" style="margin:0"><b style="color:var(--rose-strong)">Лучше отложить:</b> ${mis.avoid}${ldt ? ', ' + ldt.avoid : ''}.</p></div>
           </div>
+          ${UI.botCta('src_site__moon', 'Получать «Луну дня» каждое утро в Telegram')}
         </div>
       </div>`;
   }

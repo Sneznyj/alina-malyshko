@@ -1009,3 +1009,10 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
 .gift-preview img { width: 78%; max-width: 280px; height: auto; display: block; border-radius: 8px; transform: rotate(-4deg); box-shadow: 0 16px 30px -14px rgba(0,0,0,.6); }
 
 .field { align-content: start; }
+
+/* плашка «получать в Telegram» (бот Алины) */
+.bot-cta { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding: 14px 18px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; box-shadow: var(--shadow); transition: transform .2s, border-color .2s; }
+.bot-cta:hover { transform: translateY(-2px); border-color: var(--gold-2); }
+.bot-cta svg { width: 26px; height: 26px; flex-shrink: 0; color: #2aa3df; }
+.bot-cta span { flex: 1; font-weight: 600; }
+.bot-cta .arr { flex: 0; color: var(--gold); font-size: 1.2rem; }

@@ -26,7 +26,7 @@
         <div class="card" style="box-shadow:none;padding:16px"><div class="tiny muted">Любовь</div>${stars(love)}</div>
         <div class="card" style="box-shadow:none;padding:16px"><div class="tiny muted">Дела</div>${stars(work)}</div>
       </div>
-      <div class="horo-block"><h4><span class="gl">☽&#xFE0E;</span> Луна ${T.signs[AC.signOf(moon.lon)].loc} — ваш ${CVroman(mh)} солнечный дом</h4><p>${T.moonSolarHouse[mh]}</p>${ingr ? `<p class="small muted">В ${fmt.time(ingr.date)} Луна переходит ${T.signs[ingr.to].loc.replace(/^в /, 'в ')} — фокус сместится: ${T.moonSolarHouse[solarHouse(AC.SIGNS.indexOf(ingr.to) * 30 + 1, si)].split('.')[0].toLowerCase()}.</p>` : ''}</div>
+      <div class="horo-block"><h4><span class="gl">☽&#xFE0E;</span> Луна ${T.signs[AC.signOf(moon.lon)].loc} — ваш ${CVroman(mh)} солнечный дом</h4><p>${T.moonSolarHouse[mh]}</p>${ingr ? `<p class="small muted">В ${fmt.time(ingr.date)} Луна переходит в знак ${T.signs[ingr.to].gen} — фокус сместится: ${T.moonSolarHouse[solarHouse(AC.SIGNS.indexOf(ingr.to) * 30 + 1, si)].split('.')[0].toLowerCase()}.</p>` : ''}</div>
       <div class="horo-block"><h4><span class="gl">◐</span> ${p8.name}</h4><p>${p8.tip}</p></div>
       ${mercury.retro ? `<div class="horo-block"><h4><span class="gl">☿&#xFE0E;</span> Меркурий ретрограден</h4><p>${T.retroMeaning.mercury}</p></div>` : ''}
       ${venus.retro ? `<div class="horo-block"><h4><span class="gl">♀&#xFE0E;</span> Венера ретроградна</h4><p>${T.retroMeaning.venus}</p></div>` : ''}`;
@@ -69,7 +69,8 @@
       <div class="tab-panel" style="margin-top:12px">
         <h3 style="margin-top:8px">${mode === 'month' ? fmt.MONTHS[now.getMonth()] + ' ' + now.getFullYear() : mode === 'today' ? 'Сегодня, ' + fmt.dm(now) : 'Завтра, ' + fmt.dm(tomorrow)}</h3>
         ${mode === 'month' ? monthBlock(si) : dayBlock(mode === 'today' ? now : tomorrow, si)}
-      </div>`;
+      </div>
+      ${UI.botCta('src_site__horo_' + sign, 'Получать гороскоп для знака «' + s.name + '» каждое утро в Telegram')}`;
     document.querySelectorAll('#picker .sign-btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.sign === sign)));
   }
 

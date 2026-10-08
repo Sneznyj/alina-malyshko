@@ -127,6 +127,13 @@
     const q = new URLSearchParams(location.search);
     const cid = q.get('client');
     if (cid) { const c = UI.clients.get(cid); if (c && c.birth) { form.set(c.birth); calc(c.birth); } }
+    // карта по ссылке из Telegram-бота: ?y=1995&mo=3&d=14&h=8&mi=30&tk=1&lat=55.75&lon=37.62&tz=Europe/Moscow&place=Москва&name=Мария
+    if (q.get('y') && q.get('lat') && q.get('lon')) {
+      const p = { name: q.get('name') || '', y: +q.get('y'), mo: +q.get('mo'), d: +q.get('d'), h: +(q.get('h') || 12), mi: +(q.get('mi') || 0), timeKnown: q.get('tk') !== '0', lat: +q.get('lat'), lon: +q.get('lon'), zone: q.get('tz') || 'Europe/Moscow', place: q.get('place') || '' };
+      let tzOk = true;
+      try { new Intl.DateTimeFormat('en', { timeZone: p.zone }); } catch (e) { tzOk = false; }
+      if (tzOk && p.y >= 1900 && p.mo >= 1 && p.mo <= 12 && p.d >= 1 && p.d <= 31 && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180) { form.set(p); calc(p); }
+    }
     if (q.get('now')) {
       // карта момента: текущее время, город — из лунного календаря или Москва
       const city = UI.defaultCity();

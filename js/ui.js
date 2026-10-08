@@ -93,6 +93,8 @@
     const c = SITE.contacts || {};
     const out = [];
     if (c.telegram) out.push({ k: 'telegram', label: 'Telegram', href: 'https://t.me/' + c.telegram.replace(/^@/, '') });
+    if (c.telegramChannel) out.push({ k: 'telegram', label: 'Telegram-канал', href: 'https://t.me/' + c.telegramChannel.replace(/^@/, '') });
+    if (c.telegramBot) out.push({ k: 'message-heart', label: 'Telegram-бот: гороскоп и Луна дня', href: botHref('src_site') });
     if (c.whatsapp) out.push({ k: 'whatsapp', label: 'WhatsApp', href: 'https://wa.me/' + c.whatsapp.replace(/\D/g, '') });
     if (c.instagram) out.push({ k: 'instagram', label: 'Instagram', href: 'https://instagram.com/' + c.instagram.replace(/^@/, '') });
     if (c.vk) out.push({ k: 'vk', label: 'ВКонтакте', href: 'https://vk.com/' + c.vk });
@@ -101,6 +103,30 @@
     if (c.phone) out.push({ k: 'phone', label: c.phone, href: 'tel:' + c.phone.replace(/[^\d+]/g, '') });
     return out;
   }
+
+  /** Ссылка на Telegram-бота Алины с меткой (start=src_site__natal и т. п.). Пусто, если бот не указан. */
+  function botHref(payload) {
+    const b = (SITE.contacts || {}).telegramBot;
+    return b ? `https://t.me/${b.replace(/^@/, '')}${payload ? '?start=' + payload : ''}` : '';
+  }
+  /** Плашка «получать в Telegram» под инструментом. */
+  function botCta(payload, text) {
+    const href = botHref(payload);
+    return href ? `<a class="bot-cta" href="${esc(href)}" target="_blank" rel="noopener">${icon('telegram')}<span>${text}</span><span class="arr">→</span></a>` : '';
+  }
+
+  // ---------- Яндекс Метрика (только на опубликованном сайте) ----------
+  const metrikaId = SITE.analytics && String(SITE.analytics.metrikaId || '').trim();
+  if (metrikaId && !isPreview && !window.ARTIFACT_PREVIEW) {
+    window.ym = window.ym || function () { (window.ym.a = window.ym.a || []).push(arguments); };
+    window.ym.l = 1 * new Date();
+    const s = document.createElement('script');
+    s.async = true; s.src = 'https://mc.yandex.ru/metrika/tag.js';
+    document.head.appendChild(s);
+    window.ym(+metrikaId, 'init', { clickmap: true, trackLinks: true, accurateTrackBounce: true, webvisor: true });
+  }
+  function goal(name) { try { if (metrikaId && window.ym) window.ym(+metrikaId, 'reachGoal', name); } catch (e) { /* без аналитики */ } }
+  document.addEventListener('click', (e) => { const a = e.target.closest && e.target.closest('a[href^="https://t.me/"]'); if (a) goal('telegram'); });
 
   /** Записка от Алины с фото — для страниц-инструментов. */
   function alinaNote(text, cta) {
@@ -228,7 +254,8 @@
             <a class="brand" href="index.html"><span class="brand-mark"><img src="assets/img/alina-avatar.webp" alt="" width="40" height="40" loading="lazy"></span><span><span class="brand-name">${esc(SITE.name)}</span><span class="brand-role">${esc(SITE.role)}</span></span></a>
             <p class="hand-sign">${esc(SITE.about && SITE.about.signature ? SITE.about.signature : '')}</p>
             <p class="muted small" style="max-width:34ch">${esc(SITE.tagline)}. Консультации онлайн для Москвы и всей России.</p>
-            <div class="socials">${links.map((l) => `<a href="${esc(l.href)}" target="_blank" rel="noopener" aria-label="${esc(l.label)}">${icon(l.k)}</a>`).join('')}</div>
+            <div class="socials">${links.map((l) => `<a href="${esc(l.href)}" target="_blank" rel="noopener" aria-label="${esc(l.label)}" title="${esc(l.label)}">${icon(l.k)}</a>`).join('')}</div>
+            ${(SITE.contacts || {}).instagram ? '<p class="tiny muted" style="max-width:34ch;margin-top:10px">*Instagram принадлежит компании Meta, деятельность которой запрещена в России как экстремистская.</p>' : ''}
           </div>
           <div><h4>Бесплатно</h4>${TOOLS.map(([h, t]) => `<a href="${h}">${t}</a>`).join('')}</div>
           <div><h4>Консультации</h4>${SITE.services.slice(0, 6).map((s) => `<a href="index.html#services">${esc(s.title)}</a>`).join('')}</div>
@@ -522,7 +549,7 @@
         el('n').value = p.name || '';
         el('d').value = `${p.y}-${pad(p.mo)}-${pad(p.d)}`;
         unk.checked = p.timeKnown === false; time.disabled = unk.checked;
-        time.value = `${pad(p.h || 12)}:${pad(p.mi || 0)}`;
+        time.value = `${pad(p.h != null ? p.h : 12)}:${pad(p.mi || 0)}`;
         setPlace({ name: p.place || '', country: '', lat: p.lat, lon: p.lon, tz: p.zone });
       },
       focus() { el('n').focus(); },
@@ -584,6 +611,7 @@
       if (!name) { form.querySelector('[name=name]').classList.add('invalid'); form.querySelector('[name=name]').focus(); return; }
       if (!contact) { form.querySelector('[name=contact]').classList.add('invalid'); form.querySelector('[name=contact]').focus(); return; }
       if (!f.get('consent')) { toast('Отметьте согласие на обработку данных', 'info'); return; }
+      goal('booking');
       const svc = serviceOptions().find((s) => s.id === f.get('service'));
       const bd = f.get('bdate');
       const lines = [
@@ -665,7 +693,7 @@
     return { date, moon: ms, sunSign, retro, pts };
   }
 
-  window.UI = { defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, bookingFormHTML, bindBooking, reveal, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
+  window.UI = { botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, bookingFormHTML, bindBooking, reveal, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
 
   document.addEventListener('DOMContentLoaded', () => {
     $$('[data-ic]').forEach((el) => { el.outerHTML = icon(el.dataset.ic); });
