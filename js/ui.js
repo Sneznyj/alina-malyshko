@@ -206,7 +206,7 @@
     if (page !== 'cabinet.html') {
       const cta = document.createElement('div');
       cta.className = 'mobile-cta';
-      cta.innerHTML = `<img src="assets/img/alina-avatar.webp" alt="" width="40" height="40"><div class="mc-text"><b>Консультация с Алиной</b><small>${pr ? `<span class="sticker xs">−${pr.percent}%</span> ${esc(pr.short)}` : 'онлайн · отвечаю в течение дня'}</small></div><button class="btn btn-primary btn-sm" type="button" data-book>Записаться</button>`;
+      cta.innerHTML = `<img src="assets/img/alina-avatar.webp" alt="" width="40" height="40"><div class="mc-text"><b>Консультация с Алиной</b><small>${pr ? `<span class="sticker xs">−${pr.percent}%</span> ${esc(pr.short)}` : 'онлайн · время по Москве'}</small></div><button class="btn btn-primary btn-sm" type="button" data-book>Записаться</button>`;
       document.body.appendChild(cta);
       const toggleCta = () => {
         const bk = document.getElementById('booking');
@@ -227,7 +227,7 @@
           <div>
             <a class="brand" href="index.html"><span class="brand-mark"><img src="assets/img/alina-avatar.webp" alt="" width="40" height="40" loading="lazy"></span><span><span class="brand-name">${esc(SITE.name)}</span><span class="brand-role">${esc(SITE.role)}</span></span></a>
             <p class="hand-sign">${esc(SITE.about && SITE.about.signature ? SITE.about.signature : '')}</p>
-            <p class="muted small" style="max-width:34ch">${esc(SITE.tagline)}. Консультации онлайн из любой точки мира.</p>
+            <p class="muted small" style="max-width:34ch">${esc(SITE.tagline)}. Консультации онлайн для Москвы и всей России.</p>
             <div class="socials">${links.map((l) => `<a href="${esc(l.href)}" target="_blank" rel="noopener" aria-label="${esc(l.label)}">${icon(l.k)}</a>`).join('')}</div>
           </div>
           <div><h4>Бесплатно</h4>${TOOLS.map(([h, t]) => `<a href="${h}">${t}</a>`).join('')}</div>
@@ -573,7 +573,7 @@
         <div class="field"><label for="${u}q">Ваш вопрос или запрос</label><textarea class="textarea" id="${u}q" name="question" placeholder="Что сейчас важно? Можно коротко."></textarea></div>
         <label class="check"><input type="checkbox" name="consent" required> <span>Даю согласие на обработку персональных данных согласно <a href="privacy.html" target="_blank">политике конфиденциальности</a></span></label>
         <button class="btn btn-primary btn-block" type="submit">${icon('sparkle')} Отправить заявку</button>
-        <p class="tiny muted center" style="margin:0">Отвечаю в течение дня. Данные рождения можно прислать и позже.</p>
+        <p class="tiny muted center" style="margin:0">Отвечаю в течение дня. Время встречи — по Москве (МСК). Данные рождения можно прислать и позже.</p>
       </form>`;
   }
   function bindBooking(form, onDone) {
