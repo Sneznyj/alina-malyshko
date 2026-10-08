@@ -408,15 +408,15 @@
       if (sprites[key]) return sprites[key];
       const c = document.createElement('canvas'); c.width = c.height = SPR;
       const g = c.getContext('2d'), m = SPR / 2;
-      g.fillStyle = col;
+      // Мягкий блюр: искорка рисуется за краем холста, а в спрайт попадает только её размытая «тень».
+      // Звёзды остаются фоном и не спорят с текстом; размытие считается один раз, а не каждый кадр.
+      const OFF = SPR * 4;
+      g.fillStyle = col; g.shadowColor = col; g.shadowOffsetX = OFF;
       if (big) {
-        // крупная: сияние, длинные лучи и тонкая искорка поперёк — как настоящая яркая звезда
-        g.shadowColor = col; g.shadowBlur = SPR * 0.09;
-        sparklePath(g, m, m, SPR * 0.4); g.fill();
-        g.shadowBlur = 0; g.globalAlpha = 0.45;
-        g.translate(m, m); g.rotate(Math.PI / 4); sparklePath(g, 0, 0, SPR * 0.2); g.fill();
+        g.shadowBlur = SPR * 0.3; g.globalAlpha = 0.55; sparklePath(g, m - OFF, m, SPR * 0.3, 0.16); g.fill(); // ореол
+        g.shadowBlur = SPR * 0.12; g.globalAlpha = 0.9; sparklePath(g, m - OFF, m, SPR * 0.26, 0.12); g.fill();
       } else {
-        sparklePath(g, m, m, SPR * 0.48, 0.19); g.fill(); // мелким — лучи потолще, чтобы форма читалась
+        g.shadowBlur = SPR * 0.13; sparklePath(g, m - OFF, m, SPR * 0.24, 0.2); g.fill();
       }
       return (sprites[key] = c);
     }
@@ -449,8 +449,8 @@
       const dark = document.documentElement.getAttribute('data-theme') === 'dark';
       for (const s of stars) {
         const tw = reduce ? 0.6 : 0.5 + 0.5 * Math.sin(t / 1000 * s.s + s.p); // мерцание 0…1
-        ctx.globalAlpha = (0.3 + 0.7 * tw) * (dark ? 1 : 0.34);
-        const size = s.size * (reduce ? 1 : 0.85 + 0.25 * tw);
+        ctx.globalAlpha = (0.3 + 0.7 * tw) * (dark ? 0.42 : 0.3); // едва заметные: фон не мешает чтению
+        const size = s.size * 1.7 * (reduce ? 1 : 0.85 + 0.25 * tw); // размытый спрайт крупнее — видимый размер тот же
         const a = s.rot + (reduce ? 0 : Math.sin(t / 5000 + s.p) * 0.22); // лёгкое покачивание лучей
         const cos = Math.cos(a) * dpr, sin = Math.sin(a) * dpr;
         ctx.setTransform(cos, sin, -sin, cos, s.x * dpr, s.y * dpr);
@@ -463,8 +463,9 @@
           shoot.l += 0.84 * dt; const len = 120;
           const g = ctx.createLinearGradient(shoot.x - shoot.l, shoot.y + shoot.l * 0.45, shoot.x - shoot.l + len, shoot.y + shoot.l * 0.45 - len * 0.45);
           g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(255,245,225,0.9)');
-          ctx.globalAlpha = Math.max(0, 1 - shoot.l / 600); ctx.strokeStyle = g; ctx.lineWidth = 1.4;
+          ctx.globalAlpha = Math.max(0, 1 - shoot.l / 600) * 0.45; ctx.strokeStyle = g; ctx.lineWidth = 2; ctx.shadowColor = 'rgba(255,245,225,.8)'; ctx.shadowBlur = 8;
           ctx.beginPath(); ctx.moveTo(shoot.x - shoot.l, shoot.y + shoot.l * 0.45); ctx.lineTo(shoot.x - shoot.l + len, shoot.y + shoot.l * 0.45 - len * 0.45); ctx.stroke();
+          ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
           if (shoot.l > 600) shoot = null;
         }
       }
@@ -606,6 +607,12 @@
     const t = document.createElement('div'); t.className = 'toast'; t.innerHTML = icon(ic || 'sparkle') + `<span>${esc(msg)}</span>`;
     box.appendChild(t); setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 380); }, 3200);
   }
+  // открыто окно — страница под ним не прокручивается (счётчик: окна могут открываться одно за другим)
+  let scrollLocks = 0;
+  function lockScroll(on) {
+    scrollLocks = Math.max(0, scrollLocks + (on ? 1 : -1));
+    document.body.classList.toggle('scroll-lock', scrollLocks > 0);
+  }
   function modal(html, opts) {
     opts = opts || {};
     const back = document.createElement('div'); back.className = 'modal-back';
@@ -613,7 +620,9 @@
     document.body.appendChild(back);
     const prevFocus = document.activeElement;
     requestAnimationFrame(() => back.classList.add('open'));
-    const close = () => { back.classList.remove('open'); document.removeEventListener('keydown', onKey); setTimeout(() => back.remove(), 300); if (prevFocus && prevFocus.focus) prevFocus.focus(); if (opts.onClose) opts.onClose(); };
+    lockScroll(true);
+    let closed = false;
+    const close = () => { if (closed) return; closed = true; lockScroll(false); back.classList.remove('open'); document.removeEventListener('keydown', onKey); setTimeout(() => back.remove(), 300); if (prevFocus && prevFocus.focus) prevFocus.focus(); if (opts.onClose) opts.onClose(); };
     const onKey = (e) => { if (e.key === 'Escape') close(); };
     document.addEventListener('keydown', onKey);
     back.addEventListener('click', (e) => { if (e.target === back) close(); });

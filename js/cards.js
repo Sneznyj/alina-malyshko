@@ -57,17 +57,19 @@
       ctx.quadraticCurveTo(-k, k, -R, 0); ctx.quadraticCurveTo(-k, -k, 0, -R);
       ctx.fill(); ctx.restore();
     };
-    const r = rng(seed || 11);
-    for (let i = 0; i < Math.round((w * h) / 9000); i++) {
+    // Звёзды не должны спорить с текстом: мягко размытые и едва заметные.
+    // Фигура рисуется за краем холста, а в кадр попадает только её размытая «тень» (работает во всех браузерах).
+    const r = rng(seed || 11), OFF = w + 400;
+    ctx.shadowOffsetX = OFF; ctx.shadowOffsetY = 0;
+    for (let i = 0; i < Math.round((w * h) / 12000); i++) {
       const x = r() * w, y = r() * h, q = r();
-      const R = q < 0.06 ? 9 + r() * 5 : q < 0.26 ? 4.5 + r() * 2.5 : 2.4 + r() * 1.6; // половина ширины искорки
+      const R = q < 0.06 ? 12 + r() * 6 : q < 0.26 ? 7 + r() * 3 : 4.5 + r() * 2; // половина ширины искорки
       const col = r() < 0.18 ? '#f6dfae' : '#ffffff', tilt = (r() - 0.5) * 0.5;
-      ctx.globalAlpha = 0.4 + r() * 0.6; ctx.fillStyle = col;
-      if (R > 8) { ctx.shadowColor = col; ctx.shadowBlur = R * 0.9; }
-      sparkle(x, y, R, tilt);
-      ctx.shadowBlur = 0;
-      if (R > 8) { ctx.globalAlpha *= 0.45; sparkle(x, y, R * 0.5, tilt + Math.PI / 4); }
+      ctx.globalAlpha = 0.12 + r() * 0.26; ctx.fillStyle = col; ctx.shadowColor = col;
+      ctx.shadowBlur = R * 1.4;
+      sparkle(x - OFF, y, R, tilt);
     }
+    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetX = 0;
     ctx.globalAlpha = 1;
   }
 
