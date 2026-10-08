@@ -48,6 +48,15 @@
   const glyph = (id) => (T.planets[id] ? T.planets[id].glyph : T.signs[id] ? T.signs[id].glyph : '');
   const pname = (id) => (T.planets[id] ? T.planets[id].name : id);
 
+  // ---------- движение ----------
+  const reduceMotion = () => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+  const EASE_OUT = 'cubic-bezier(.2,.8,.2,1)', EASE_IN_OUT = 'cubic-bezier(.4,0,.2,1)';
+  /** Мягкое появление блока после смены содержимого (урок, знак, день календаря, раздел кабинета). */
+  function fadeIn(el, dy) {
+    if (!el || !el.animate || reduceMotion()) return;
+    el.animate({ opacity: [0, 1], translate: ['0 ' + (dy == null ? 10 : dy) + 'px', '0 0'] }, { duration: 460, easing: EASE_OUT });
+  }
+
   // ---------- тема ----------
   function applyTheme(t) {
     document.documentElement.setAttribute('data-theme', t);
@@ -59,6 +68,26 @@
   let sysDark = false;
   try { sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) { /* нет */ }
   document.documentElement.setAttribute('data-theme', savedTheme || (sysDark ? 'dark' : 'light'));
+  /** Переключение темы: новая тема раскрывается кругом от кнопки; без View Transitions — плавно перетекает. */
+  function switchTheme(btn) {
+    const root = document.documentElement;
+    const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    if (reduceMotion()) { applyTheme(next); return; }
+    if (document.startViewTransition && root.animate) {
+      const r = btn.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+      const rad = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+      root.classList.add('theme-vt');
+      try {
+        const vt = document.startViewTransition(() => applyTheme(next));
+        vt.ready.then(() => root.animate({ clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${rad}px at ${x}px ${y}px)`] }, { duration: 720, easing: EASE_IN_OUT, pseudoElement: '::view-transition-new(root)' })).catch(() => {});
+        vt.finished.catch(() => {}).then(() => root.classList.remove('theme-vt'));
+        return;
+      } catch (e) { root.classList.remove('theme-vt'); }
+    }
+    root.classList.add('theme-fade');
+    applyTheme(next);
+    setTimeout(() => root.classList.remove('theme-fade'), 560);
+  }
 
   // ---------- шапка и подвал ----------
   const TOOLS = [
@@ -90,6 +119,14 @@
   }
   function currency() { const c = store.get('currency', null); return c && CUR[c] ? c : (CUR[currencyForZone(browserTz)] ? currencyForZone(browserTz) : 'RUB'); }
   function setCurrency(code) { if (!CUR[code]) return; store.set('currency', code); document.dispatchEvent(new CustomEvent('currencychange', { detail: code })); }
+  const CUR_NAMES = { RUB: ['Рубли', 'рублях'], USD: ['Доллары', 'долларах'], EUR: ['Евро', 'евро'] };
+  // любой элемент с data-cur (шапка, переключатель над ценами) меняет валюту
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest && e.target.closest('[data-cur]');
+    if (!b || b.dataset.cur === currency()) return;
+    setCurrency(b.dataset.cur);
+    if (b.closest('.cur-panel') && !document.getElementById('servicesGrid')) toast(`Цены на сайте — в ${(CUR_NAMES[b.dataset.cur] || ['', b.dataset.cur])[1]}`, 'money');
+  });
   /** Цена объекта в текущей валюте: price — рубли, prices.USD / prices.EUR — другие валюты. Нет цены в валюте — рубли. */
   function priceOf(o, field) {
     const code = currency();
@@ -166,6 +203,7 @@
   function renderChrome() {
     const page = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
     const onTool = TOOLS.some(([h]) => h === page);
+    const showCur = page !== 'cabinet.html' && Object.keys(CUR).length > 1;
     const pr = promoInfo();
     let closedPromo = false; try { closedPromo = sessionStorage.getItem('am_promo_closed') === '1'; } catch (e) { /* нет */ }
     if (pr && !closedPromo && page !== 'cabinet.html') {
@@ -177,7 +215,13 @@
           <button class="promo-btn" type="button" data-book>Записаться</button>
           <button class="promo-x" type="button" aria-label="Скрыть">${icon('close')}</button></div>`;
       document.body.prepend(bar);
-      bar.querySelector('.promo-x').addEventListener('click', () => { bar.remove(); try { sessionStorage.setItem('am_promo_closed', '1'); } catch (e) { /* нет */ } });
+      bar.querySelector('.promo-x').addEventListener('click', () => {
+        try { sessionStorage.setItem('am_promo_closed', '1'); } catch (e) { /* нет */ }
+        if (reduceMotion() || !bar.animate) { bar.remove(); return; }
+        // полоса плавно складывается, страница не дёргается
+        bar.style.overflow = 'hidden';
+        bar.animate({ height: [bar.offsetHeight + 'px', '0px'], opacity: [1, 0] }, { duration: 420, easing: EASE_IN_OUT }).onfinish = () => bar.remove();
+      });
     }
     const header = document.createElement('header');
     header.className = 'site-header';
@@ -201,6 +245,13 @@
         </nav>
         <div class="header-actions">
           ${SITE.media && SITE.media.ambientSound ? `<button class="icon-btn sound-toggle" type="button" aria-pressed="false" aria-label="Включить фоновый звук" title="Фоновый звук">${icon('volume-off')}</button>` : ''}
+          ${showCur ? `<div class="cur-drop">
+            <button type="button" class="cur-btn" aria-haspopup="menu" aria-expanded="false" title="Валюта цен"><span class="cur-sign"></span><span class="cur-code"></span>${icon('chevron-down', 'chev')}</button>
+            <div class="cur-panel" role="menu" aria-label="Валюта цен">
+              <div class="cur-title">Показывать цены в</div>
+              ${Object.keys(CUR).map((code) => `<button type="button" role="menuitemradio" aria-checked="false" data-cur="${code}" tabindex="-1"><span class="cs">${CUR[code]}</span><span>${(CUR_NAMES[code] || [code])[0]}</span>${icon('check', 'ck')}</button>`).join('')}
+            </div>
+          </div>` : ''}
           <button class="icon-btn theme-toggle" type="button"></button>
           <button class="btn btn-primary btn-sm" type="button" data-book>Записаться</button>
           <button class="icon-btn burger" type="button" aria-label="Меню" aria-expanded="false">${icon('menu')}</button>
@@ -232,6 +283,36 @@
     dropBtn.addEventListener('click', (e) => { e.stopPropagation(); setDrop(!drop.classList.contains('open')); });
     document.addEventListener('click', (e) => { if (!drop.contains(e.target)) setDrop(false); });
     drop.addEventListener('keydown', (e) => { if (e.key === 'Escape') { setDrop(false); dropBtn.focus(); } });
+
+    // валюта справа сверху
+    const cur = header.querySelector('.cur-drop');
+    if (cur) {
+      const cBtn = cur.querySelector('.cur-btn'), opts = $$('[data-cur]', cur);
+      const sync = () => {
+        const c = currency();
+        cur.querySelector('.cur-sign').textContent = CUR[c];
+        cur.querySelector('.cur-code').textContent = c;
+        cBtn.setAttribute('aria-label', `Валюта цен: ${(CUR_NAMES[c] || [c])[0].toLowerCase()}`);
+        opts.forEach((o) => o.setAttribute('aria-checked', String(o.dataset.cur === c)));
+      };
+      const setCur = (o, focus) => {
+        cur.classList.toggle('open', o); cBtn.setAttribute('aria-expanded', String(o));
+        if (o && focus) (opts.find((x) => x.getAttribute('aria-checked') === 'true') || opts[0]).focus();
+      };
+      sync();
+      document.addEventListener('currencychange', sync);
+      cBtn.addEventListener('click', (e) => setCur(!cur.classList.contains('open'), e.detail === 0));
+      document.addEventListener('click', (e) => { if (!cur.contains(e.target)) setCur(false); }, true);
+      cur.querySelector('.cur-panel').addEventListener('click', (e) => { if (e.target.closest('[data-cur]')) { setCur(false); cBtn.focus(); } });
+      cur.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { setCur(false); cBtn.focus(); return; }
+        if (e.target === cBtn) { if (e.key === 'ArrowDown') { e.preventDefault(); setCur(true, true); } return; }
+        const i = opts.indexOf(document.activeElement);
+        if (i < 0) return;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); opts[(i + (e.key === 'ArrowDown' ? 1 : opts.length - 1)) % opts.length].focus(); }
+        if (e.key === 'Tab') setCur(false);
+      });
+    }
 
     const mm = document.createElement('div');
     mm.className = 'mobile-menu'; mm.setAttribute('role', 'dialog'); mm.setAttribute('aria-label', 'Меню');
@@ -299,7 +380,7 @@
     if (SITE.draft) { const pill = document.createElement('div'); pill.className = 'draft-pill'; pill.innerHTML = icon('writing') + 'Черновик сайта'; pill.title = 'Демо-версия: контакты, цены и отзывы ещё уточняются'; document.body.appendChild(pill); }
     if (window.ARTIFACT_PREVIEW) document.documentElement.classList.add('in-artifact');
 
-    $$('.theme-toggle').forEach((b) => b.addEventListener('click', () => applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark')));
+    $$('.theme-toggle').forEach((b) => b.addEventListener('click', () => switchTheme(b)));
     applyTheme(document.documentElement.getAttribute('data-theme'));
   }
 
@@ -351,20 +432,71 @@
     requestAnimationFrame(draw);
   }
 
-  // ---------- появление ----------
+  // ---------- появление при прокрутке ----------
+  // Один наблюдатель на всю страницу; блоки, добавленные позже (результаты, вкладки, кабинет), подхватываются сами.
+  // threshold 0: даже очень высокий блок не останется невидимым.
+  const revealIO = ('IntersectionObserver' in window) && !reduceMotion()
+    ? new IntersectionObserver((ents) => ents.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('in'); revealIO.unobserve(en.target); } }), { threshold: 0, rootMargin: '0px 0px -40px 0px' })
+    : null;
+  if (revealIO) document.documentElement.classList.add('reveal-on');
   function reveal(root) {
     const els = $$('.reveal:not(.in)', root);
-    if (!('IntersectionObserver' in window)) { els.forEach((e) => e.classList.add('in')); return; }
-    const io = new IntersectionObserver((ents) => ents.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } }), { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-    els.forEach((e) => io.observe(e));
+    if (root && root.matches && root.matches('.reveal:not(.in)')) els.push(root);
+    if (!revealIO) { els.forEach((e) => e.classList.add('in')); return; }
+    els.forEach((e) => revealIO.observe(e));
   }
+  function watchReveal() {
+    if (!revealIO || !('MutationObserver' in window)) return;
+    new MutationObserver((muts) => {
+      for (const m of muts) for (const n of m.addedNodes) if (n.nodeType === 1) reveal(n);
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  window.addEventListener('beforeprint', () => $$('.reveal:not(.in)').forEach((e) => e.classList.add('in')));
+
+  // ---------- плавные аккордеоны (<details>) ----------
+  // Браузер открывает <details> мгновенно; здесь высота плавно меняется, а содержимое проявляется.
+  // Работает для всех details на сайте (вопросы, инструкции, «координаты вручную», настройки расчёта).
+  function detailsHeight(d, open) { const was = d.open; d.open = open; const h = d.getBoundingClientRect().height; d.open = was; return h; }
+  function toggleDetails(d) {
+    const st = d._acc;
+    const target = !(st ? st.target : d.open);
+    const from = d.getBoundingClientRect().height;
+    const kids = Array.from(d.children).filter((k) => k.tagName !== 'SUMMARY');
+    const kidOp = kids.map((k) => +getComputedStyle(k).opacity);
+    if (st) { st.anim.onfinish = null; st.anim.cancel(); st.fades.forEach((a) => a.cancel()); }
+    d.open = true;
+    const to = target ? d.getBoundingClientRect().height : detailsHeight(d, false);
+    d.classList.toggle('is-closing', !target);
+    d.style.overflow = 'hidden';
+    const dur = Math.round(Math.min(620, Math.max(300, 240 + Math.abs(to - from) * 0.55)));
+    const anim = d.animate({ height: [from + 'px', to + 'px'] }, { duration: dur, easing: target ? EASE_OUT : EASE_IN_OUT });
+    const fades = kids.map((k, i) => k.animate(
+      target ? { opacity: [st ? kidOp[i] : 0, 1], translate: [st ? '0 0' : '0 -6px', '0 0'] } : { opacity: [kidOp[i], 0] },
+      { duration: target ? dur : Math.round(dur * 0.55), easing: 'ease', fill: 'forwards' }));
+    d._acc = { target, anim, fades };
+    anim.onfinish = () => {
+      d._acc = null;
+      if (!target) d.open = false;
+      fades.forEach((a) => a.cancel());
+      d.classList.remove('is-closing');
+      d.style.overflow = '';
+    };
+  }
+  document.addEventListener('click', (e) => {
+    const s = e.target.closest && e.target.closest('summary');
+    if (!s || e.defaultPrevented) return;
+    const d = s.parentElement;
+    if (!d || d.tagName !== 'DETAILS' || d.querySelector(':scope > summary') !== s || !d.animate || reduceMotion()) return;
+    e.preventDefault();
+    toggleDetails(d);
+  });
 
   // ---------- тосты и модалки ----------
   function toast(msg, ic) {
     let box = $('.toasts');
     if (!box) { box = document.createElement('div'); box.className = 'toasts'; box.setAttribute('role', 'status'); box.setAttribute('aria-live', 'polite'); document.body.appendChild(box); }
     const t = document.createElement('div'); t.className = 'toast'; t.innerHTML = icon(ic || 'sparkle') + `<span>${esc(msg)}</span>`;
-    box.appendChild(t); setTimeout(() => { t.style.transition = 'opacity .4s'; t.style.opacity = '0'; setTimeout(() => t.remove(), 400); }, 3200);
+    box.appendChild(t); setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 380); }, 3200);
   }
   function modal(html, opts) {
     opts = opts || {};
@@ -724,7 +856,7 @@
     return { date, moon: ms, sunSign, retro, pts };
   }
 
-  window.UI = { currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, bookingFormHTML, bindBooking, reveal, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
+  window.UI = { currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, bookingFormHTML, bindBooking, reveal, fadeIn, reduceMotion, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
 
   document.addEventListener('DOMContentLoaded', () => {
     $$('[data-ic]').forEach((el) => { el.outerHTML = icon(el.dataset.ic); });
@@ -732,6 +864,7 @@
     renderChrome();
     starfield();
     reveal();
+    watchReveal();
     tabs();
   });
 })();

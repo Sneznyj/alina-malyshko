@@ -108,7 +108,9 @@
     const { y, m } = view;
     document.getElementById('monthTitle').textContent = `${fmt.MONTHS[m - 1]} ${y}`;
     const cal = document.getElementById('cal');
-    cal.innerHTML = '<div class="small muted" style="grid-column:1/-1;text-align:center;padding:40px">Считаю месяц…</div>';
+    const had = !!cal.querySelector('.day');
+    if (had) cal.classList.add('busy');
+    else cal.innerHTML = '<div class="small muted" style="grid-column:1/-1;text-align:center;padding:40px">Считаю месяц…</div>';
     setTimeout(() => {
       data = monthData(y, m);
       const first = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
@@ -129,6 +131,8 @@
         </button>`;
       });
       cal.innerHTML = h;
+      cal.classList.remove('busy');
+      if (!had) UI.fadeIn(cal, 6);
       const todayIdx = data.days.findIndex((d) => `${d.y}-${d.m}-${d.d}` === todayK);
       showDay(selected != null && data.days[selected] ? selected : todayIdx >= 0 ? todayIdx : 0);
     }, 20);
@@ -146,7 +150,8 @@
     const signs = [d.signStart].concat(d.ingress.map((x) => x.to));
     const ingTxt = d.ingress.length ? ` → ${T.signs[d.ingress[0].to].loc} с ${hm(d.ingress[0].date)}` : '';
     const mis = T.moonInSign[signs[signs.length - 1]];
-    document.getElementById('dayDetail').innerHTML = `
+    const dd = document.getElementById('dayDetail');
+    dd.innerHTML = `
       <div class="row between"><h3 style="margin:0">${d.d} ${fmt.MONTHS_GEN[d.m - 1]} ${d.y}, ${fmt.DOW_LONG[new Date(Date.UTC(d.y, d.m - 1, d.d)).getUTCDay()]}</h3><span class="small muted">${esc(city.name)} · ${esc(city.tz)}</span></div>
       <div class="row" style="gap:10px;margin:14px 0">
         <span class="chip"><span class="glyph" style="color:var(--lav-strong);font-size:1.1rem">${T.signs[d.signStart].glyph}</span>Луна ${T.signs[d.signStart].loc}${ingTxt}</span>
@@ -163,6 +168,7 @@
           ${d.voc.length ? `<div class="notice info" style="margin-top:12px">${icon('info')}<span>В период Луны без курса лучше не начинать важное: отдыхайте, завершайте дела, планируйте.</span></div>` : ''}
         </div>
       </div>`;
+    UI.fadeIn(dd, 6);
   }
 
   function setCity(c) {

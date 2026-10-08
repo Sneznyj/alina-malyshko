@@ -65,6 +65,7 @@
     });
     requestAnimationFrame(() => setTimeout(() => box.querySelectorAll('[data-off]').forEach((c) => { c.style.strokeDashoffset = c.dataset.off; }), 80));
     UI.reveal(box);
+    UI.fadeIn(box);
   }
 
   function aspectsBlock(nA, nB) {

@@ -60,6 +60,7 @@
     box.querySelector('[role=tablist]').addEventListener('tabchange', (e) => { if (e.detail === 'tab-balance') CV.animateBars(box); UI.reveal(box); });
     box.querySelector('.result-head').addEventListener('click', onAction);
     UI.reveal(box);
+    UI.fadeIn(box);
   }
 
   function keySummary(c) {

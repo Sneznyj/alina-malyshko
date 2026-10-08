@@ -79,7 +79,7 @@
     const hash = location.hash.slice(1);
     const r = UI.recent.list()[0];
     sign = AC.SIGNS.includes(hash) ? hash : UI.store.get('horoSign', null) || (r ? AC.signOf(AC.chart(r).byId.sun.lon) : 'aries');
-    document.getElementById('picker').addEventListener('click', (e) => { const b = e.target.closest('[data-sign]'); if (!b) return; sign = b.dataset.sign; UI.store.set('horoSign', sign); history.replaceState(null, '', '#' + sign); render(); document.getElementById('horo').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    document.getElementById('picker').addEventListener('click', (e) => { const b = e.target.closest('[data-sign]'); if (!b) return; sign = b.dataset.sign; UI.store.set('horoSign', sign); history.replaceState(null, '', '#' + sign); render(); UI.fadeIn(document.getElementById('horo')); document.getElementById('horo').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
     document.getElementById('horo').addEventListener('click', (e) => { const b = e.target.closest('[data-mode]'); if (!b) return; mode = b.dataset.mode; render(); });
     render();
   });

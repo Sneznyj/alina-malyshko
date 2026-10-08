@@ -67,7 +67,7 @@
     if (done.length === D.lessons.length) UI.toast('Мини-курс пройден! Вы умеете читать карту ✨', 'star');
   }
 
-  function go(id) { cur = id; history.replaceState(null, '', '#lesson-' + id); list(); lesson(); if (window.innerWidth < 960) document.getElementById('lesson').scrollIntoView({ behavior: 'smooth' }); else window.scrollTo({ top: document.getElementById('lesson').getBoundingClientRect().top + window.scrollY - 100, behavior: 'smooth' }); }
+  function go(id) { cur = id; history.replaceState(null, '', '#lesson-' + id); list(); lesson(); UI.fadeIn(document.getElementById('lesson')); if (window.innerWidth < 960) document.getElementById('lesson').scrollIntoView({ behavior: 'smooth' }); else window.scrollTo({ top: document.getElementById('lesson').getBoundingClientRect().top + window.scrollY - 100, behavior: 'smooth' }); }
 
   function guides() {
     document.getElementById('guides').innerHTML = D.guides.map((g, i) => `<details class="acc-item"${i === 0 ? ' open' : ''}><summary><span class="row" style="gap:12px;flex-wrap:nowrap"><span class="glyph" style="color:var(--gold);font-size:1.3rem;width:24px;text-align:center">${g.icon}</span>${esc(g.title)}</span><span class="pm">${icon('plus')}</span></summary><div class="acc-body">${g.body}</div></details>`).join('');

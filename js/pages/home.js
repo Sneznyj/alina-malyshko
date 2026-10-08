@@ -90,7 +90,6 @@
     box.innerHTML = '<span class="small muted">Цены в</span><div class="seg" role="group" aria-label="Валюта">' +
       Object.entries(SITE.currencies || {}).map(([code, sign]) => `<button type="button" data-cur="${code}" aria-pressed="${code === cur}">${sign} ${names[code] || code}</button>`).join('') + '</div>';
   }
-  document.addEventListener('click', (e) => { const b = e.target.closest('[data-cur]'); if (b) UI.setCurrency(b.dataset.cur); });
   document.addEventListener('currencychange', () => {
     curSwitch(); hero(); services(); offers(); academy();
     document.querySelectorAll('#servicesGrid .reveal, #offersGrid .reveal, #acFormats .reveal').forEach((el) => el.classList.add('in'));
@@ -183,7 +182,7 @@
         <h3 style="margin-top:10px">${esc(f.title)}</h3>
         <p>${esc(f.text)}</p>
         ${f.note ? `<p class="small" style="color:var(--gold-2)">${esc(f.note)}</p>` : ''}
-        <div class="row between" style="margin-top:18px">
+        <div class="row between ac-foot">
           <span class="price">${f.price ? money(UI.priceOf(f).n, UI.priceOf(f).code) + (f.unit ? ` <small style="font:500 .8rem var(--ff-body);color:#cfc5ee">${esc(f.unit)}</small>` : '') : (f.href ? 'бесплатно' : '')}</span>
           ${f.href ? `<a class="btn btn-light btn-sm" href="${f.href}">${esc(f.cta)}</a>` : `<button class="btn btn-light btn-sm" type="button" data-book="${f.service}">${esc(f.cta)}</button>`}
         </div>

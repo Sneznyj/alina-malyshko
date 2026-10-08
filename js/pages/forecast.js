@@ -137,14 +137,18 @@
   }
   function drawSolar(year, city) {
     const panel = document.getElementById('tab-solar');
+    const again = !!panel.childElementCount;
     panel.innerHTML = solarTab(year, city);
+    if (again) UI.fadeIn(panel);
     W.attach(document.getElementById('srWheel'));
     panel.querySelector('#srYear').addEventListener('change', (e) => drawSolar(+e.target.value, panel.querySelector('#srCity').value));
     panel.querySelector('#srCity').addEventListener('change', (e) => drawSolar(+panel.querySelector('#srYear').value, e.target.value));
   }
   function drawSky(date) {
     const panel = document.getElementById('tab-sky');
+    const again = !!panel.childElementCount;
     panel.innerHTML = skyTab(date);
+    if (again) UI.fadeIn(panel);
     W.attach(document.getElementById('skyWheel'));
     panel.querySelector('#skyDate').addEventListener('change', (e) => { const v = e.target.value; if (v) { const [y, m, d] = v.split('-').map(Number); drawSky(new Date(y, m - 1, d, 12)); } });
   }

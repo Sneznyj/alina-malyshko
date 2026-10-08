@@ -40,7 +40,7 @@
     const counts = { clients: DB.clients().length, sessions: DB.sessions().filter((s) => s.status === 'planned' && sessDate(s) >= new Date(Date.now() - 86400000)).length };
     document.getElementById('cabNav').innerHTML = NAV.map(([k, t, i]) => `<button type="button" data-view="${k}" aria-current="${viewName === k}">${icon(i)}${t}${counts[k] ? `<span class="count">${counts[k]}</span>` : ''}</button>`).join('');
   }
-  function show(v) { viewName = v; nav(); VIEWS[v](); UI.reveal(document.getElementById('view')); }
+  function show(v) { viewName = v; nav(); VIEWS[v](); UI.reveal(document.getElementById('view')); UI.fadeIn(document.getElementById('view')); }
 
   // ---------- обзор ----------
   function dashboard() {
