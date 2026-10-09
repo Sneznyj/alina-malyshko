@@ -99,7 +99,9 @@
     ['sky.html', 'Астрособытия', 'telescope', 'ретро, затмения'],
   ];
   const NAV = TOOLS.concat([['academy.html', 'Уроки', 'school', 'мини-курс']]);
-  const isPreview = !!SITE.draft || location.protocol === 'file:' || /^(localhost|127\.|192\.168\.|\[::1\])/.test(location.hostname);
+  // пункт «Отзывы» в меню — только когда в content.js есть отзывы (иначе блок на главной скрыт)
+  const hasReviews = !!(SITE.reviews && SITE.reviews.length);
+  const isPreview = location.protocol === 'file:' || /^(localhost|127\.|192\.168\.|\[::1\])/.test(location.hostname);
 
   /** Действующая акция или null (после даты окончания — исчезает сама). */
   function promoInfo() {
@@ -241,7 +243,7 @@
           </div>
           <a href="academy.html"${page === 'academy.html' ? ' aria-current="page"' : ''}>Уроки</a>
           <a href="index.html#about">Обо мне</a>
-          <a href="index.html#reviews">Отзывы</a>
+          ${hasReviews ? '<a href="index.html#reviews">Отзывы</a>' : ''}
         </nav>
         <div class="header-actions">
           ${SITE.media && SITE.media.ambientSound ? `<button class="icon-btn sound-toggle" type="button" aria-pressed="false" aria-label="Включить фоновый звук" title="Фоновый звук">${icon('volume-off')}</button>` : ''}
@@ -321,7 +323,7 @@
         <a class="brand" href="index.html"><span class="brand-mark"><img src="assets/img/alina-avatar.webp" alt="" width="40" height="40"></span><span class="brand-name">${esc(SITE.name)}</span></a>
         <button class="icon-btn" type="button" data-close-menu aria-label="Закрыть меню">${icon('close')}</button>
       </div>
-      <nav class="mm-main">${[['index.html', 'Главная'], ['index.html#services', 'Консультации и цены'], ['index.html#about', 'Обо мне'], ['index.html#reviews', 'Отзывы'], ['academy.html', 'Уроки астрологии']].map(([h, t], i) => `<a href="${h}" style="transition-delay:${0.04 * i}s">${t}</a>`).join('')}</nav>
+      <nav class="mm-main">${[['index.html', 'Главная'], ['index.html#services', 'Консультации и цены'], ['index.html#about', 'Обо мне'], ...(hasReviews ? [['index.html#reviews', 'Отзывы']] : []), ['academy.html', 'Уроки астрологии']].map(([h, t], i) => `<a href="${h}" style="transition-delay:${0.04 * i}s">${t}</a>`).join('')}</nav>
       <p class="mm-label">Бесплатно на сайте</p>
       <div class="mm-tools">${TOOLS.map(([h, t, ic]) => `<a href="${h}">${icon(ic)}<span>${t}</span></a>`).join('')}</div>
       <div style="margin-top:22px;display:grid;gap:10px">
@@ -377,7 +379,6 @@
       </div>`;
     document.body.appendChild(footer);
 
-    if (SITE.draft) { const pill = document.createElement('div'); pill.className = 'draft-pill'; pill.innerHTML = icon('writing') + 'Черновик сайта'; pill.title = 'Демо-версия: контакты, цены и отзывы ещё уточняются'; document.body.appendChild(pill); }
     if (window.ARTIFACT_PREVIEW) document.documentElement.classList.add('in-artifact');
 
     $$('.theme-toggle').forEach((b) => b.addEventListener('click', () => switchTheme(b)));
@@ -928,7 +929,7 @@
       <p class="muted">Выберите, куда отправить заявку — текст уже составлен.</p>
       <pre style="white-space:pre-wrap;background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:14px;font:inherit;font-size:.9rem;max-height:220px;overflow:auto">${esc(text)}</pre>
       <div style="display:grid;gap:10px;margin-top:14px">${btns.join('')}<button class="btn btn-gold btn-block" data-ch="copy">${icon('copy')} Скопировать текст</button></div>
-      ${btns.length ? '' : '<p class="notice info" style="margin-top:14px">' + icon('info') + '<span>Контакты для связи ещё не указаны на сайте (файл js/content.js). Скопируйте текст заявки.</span></p>'}`);
+      ${btns.length ? '' : '<p class="notice info" style="margin-top:14px">' + icon('info') + '<span>Скопируйте текст заявки и отправьте его Алине удобным способом.</span></p>'}`);
     m.el.addEventListener('click', async (e) => {
       const b = e.target.closest('[data-ch]'); if (!b) return;
       if (b.dataset.ch === 'copy') { if (await copyText(text)) toast('Текст заявки скопирован', 'check'); }

@@ -190,13 +190,11 @@
   }
 
   function reviews() {
-    // примеры (demo) показываем только при просмотре с компьютера, на настоящем сайте они скрыты
-    const list = (SITE.reviews || []).filter((r) => !r.demo || UI.isPreview);
+    const list = SITE.reviews || [];
     if (!list.length) { $('reviews').hidden = true; return; }
     $('reviewsList').innerHTML = list.map((r) => `
       <figure class="review" style="margin:0">
         <div class="bubble">
-          ${r.demo ? '<span class="badge warn demo-tag" title="Пример: замените на настоящий отзыв в js/content.js — на опубликованном сайте примеры не показываются">пример</span>' : ''}
           <div style="color:var(--gold);margin-bottom:8px;display:flex;gap:2px">${icon('star-filled').repeat(5)}</div>
           <blockquote class="quote" style="margin:0">«${esc(r.text)}»</blockquote>
         </div>

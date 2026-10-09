@@ -399,7 +399,6 @@ em.accent, .accent { font-style: italic; color: var(--lav-strong); }
 .review .quote { font: italic 500 1.2rem/1.5 var(--ff-display); color: var(--ink); margin-bottom: 18px; }
 .review .who { margin-top: auto; display: flex; align-items: center; gap: 12px; }
 .review .ava { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, var(--lav-soft), var(--rose)); font-weight: 700; color: var(--lav-strong); }
-.review .demo-tag { position: absolute; top: 14px; right: 14px; }
 
 /* ---------- FAQ / аккордеон ---------- */
 .accordion { display: grid; gap: 12px; max-width: 860px; margin-inline: auto; }
@@ -755,9 +754,8 @@ body.scroll-lock { overflow: hidden; }
 .sky-bg { view-transition-name: sky; }
 .aurora { view-transition-name: aurora; }
 .mobile-cta { view-transition-name: mobile-cta; }
-.draft-pill { view-transition-name: draft-pill; }
 ::view-transition { background: var(--bg); }
-::view-transition-group(site-header), ::view-transition-group(promo-bar), ::view-transition-group(sky), ::view-transition-group(aurora), ::view-transition-group(mobile-cta), ::view-transition-group(draft-pill) { animation-duration: .46s; }
+::view-transition-group(site-header), ::view-transition-group(promo-bar), ::view-transition-group(sky), ::view-transition-group(aurora), ::view-transition-group(mobile-cta) { animation-duration: .46s; }
 /* прозрачность у старой и новой одинаковой длительности и плавности — в сумме всегда 100%, без вспышек */
 ::view-transition-old(root) { animation: ptFadeOut .46s ease both, ptLift .46s cubic-bezier(.4,0,.2,1) both; }
 ::view-transition-new(root) { animation: ptFadeIn .46s ease both, ptRise .56s cubic-bezier(.2,.8,.2,1) both; }
@@ -775,7 +773,7 @@ html.pt-leave main, html.pt-leave .site-footer { opacity: 0; transform: translat
 /* смена темы: круг из кнопки (View Transitions), а где их нет — мягкое перетекание цветов */
 html.theme-vt::view-transition-old(root), html.theme-vt::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 /* при смене темы всё раскрывается одним кругом — отдельные снимки шапки и неба не нужны */
-html.theme-vt .site-header, html.theme-vt .promo-bar, html.theme-vt .sky-bg, html.theme-vt .aurora, html.theme-vt .mobile-cta, html.theme-vt .draft-pill { view-transition-name: none; }
+html.theme-vt .site-header, html.theme-vt .promo-bar, html.theme-vt .sky-bg, html.theme-vt .aurora, html.theme-vt .mobile-cta { view-transition-name: none; }
 html.theme-vt *, html.theme-vt *::before, html.theme-vt *::after { transition: none !important; }
 html.theme-fade *, html.theme-fade *::before, html.theme-fade *::after { transition: background-color .5s ease, color .5s ease, border-color .5s ease, box-shadow .5s ease, fill .5s ease, stroke .5s ease !important; }
 
@@ -1077,9 +1075,6 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
 .greet-label { position: absolute; left: 50%; bottom: -34px; transform: translateX(-50%) rotate(-4deg); white-space: nowrap; font: 600 1.25rem var(--ff-hand); color: var(--lav-strong); }
 .greet-full { width: 100%; max-height: 80vh; border-radius: 14px; background: #000; display: block; }
 .sound-toggle[aria-pressed="true"] { color: var(--lav-strong); background: var(--lav-soft); }
-.draft-pill { position: fixed; left: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 80; display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: var(--surface-solid); border: 1px dashed var(--gold-2); color: var(--gold); font: 700 .74rem var(--ff-body); box-shadow: var(--shadow); }
-.draft-pill .ic { width: 15px; height: 15px; }
-@media (max-width: 768px) { .draft-pill { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); left: 10px; } }
 .mobile-cta { bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
 .in-artifact [data-act="png"], .in-artifact [data-act="print"], .in-artifact .no-artifact { display: none !important; }
 

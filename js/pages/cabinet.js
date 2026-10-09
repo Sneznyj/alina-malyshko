@@ -110,7 +110,7 @@
         const b3 = ch ? ['sun', 'moon', 'asc'].map((id) => ch.byId[id] ? T.signs[ch.byId[id].sign].glyph : '·').join(' ') : '';
         const last = DB.sessions().filter((s) => s.clientId === c.id).sort((a, b) => sessDate(b) - sessDate(a))[0];
         return `<div class="list-item" data-client="${c.id}"><span class="ava">${esc((c.name || '?').replace(/^Демо — /, '')[0])}</span><div class="main"><b>${esc(c.name)}</b><small>${c.birth ? fmt.birth(c.birth) : 'нет данных рождения'}${c.contact ? ' · ' + esc(c.contact) : ''}</small></div><div class="side"><span class="glyph" style="color:var(--lav-strong);font-size:1.05rem" title="Солнце · Луна · Асцендент">${b3}</span><br><small class="muted">${last ? 'посл.: ' + fmt.dateShort(sessDate(last)) : ''}</small>${(c.tags || []).map((t) => ` <span class="badge" style="font-size:.66rem">${esc(t)}</span>`).join('')}</div></div>`;
-      }).join('') || `<div class="empty card">${all.length ? 'Никого не нашлось.' : 'Пока нет клиентов. Добавьте первого — или сохраните карту со страницы «Натальная карта» кнопкой «В кабинет».'}<br><br><button class="btn btn-ghost btn-sm" type="button" data-act="demo">Загрузить демо-данные</button></div>`}</div>`;
+      }).join('') || `<div class="empty card">${all.length ? 'Никого не нашлось.' : 'Пока нет клиентов. Добавьте первого — или сохраните карту со страницы «Натальная карта» кнопкой «В кабинет».'}</div>`}</div>`;
     const cq = document.getElementById('cq');
     cq.addEventListener('input', () => { clientQuery = cq.value; const pos = cq.selectionStart; clientsView(); const n = document.getElementById('cq'); n.focus(); n.setSelectionRange(pos, pos); });
     const ct = document.getElementById('ctag'); if (ct) ct.addEventListener('change', () => { clientTag = ct.value; clientsView(); });
@@ -425,14 +425,16 @@
   // ---------- настройки ----------
   function settingsView() {
     const c = DB.clients().length, s = DB.sessions().length;
+    // демо-записи могли остаться в этом браузере от прежней версии кабинета — тогда даём их убрать
+    const hasDemo = DB.clients().some((x) => x.demo) || DB.sessions().some((x) => x.demo);
     document.getElementById('view').innerHTML = `
       <h2>Настройки</h2>
       <div class="grid grid-2" style="align-items:start">
         <div class="card"><h3>Расчёт карт</h3><div id="setBox"></div><p class="small muted" style="margin-top:12px">Применяется ко всем инструментам сайта на этом устройстве.</p></div>
         <div class="card"><h3>Резервная копия</h3><p class="small">В базе: ${c} ${fmt.plural(c, 'клиент', 'клиента', 'клиентов')}, ${s} ${fmt.plural(s, 'консультация', 'консультации', 'консультаций')}.</p>
           <div class="row"><button class="btn btn-primary btn-sm no-artifact" type="button" data-act="export">${icon('download')} Скачать копию</button><label class="btn btn-ghost btn-sm" style="cursor:pointer">${icon('upload')} Загрузить копию<input type="file" accept=".json,application/json" id="importFile" hidden></label></div>
-          <hr class="divider" style="margin:18px 0"><h4>Демо и очистка</h4>
-          <div class="row"><button class="btn btn-ghost btn-sm" type="button" data-act="demo">Загрузить демо-данные</button><button class="btn btn-ghost btn-sm" type="button" data-act="clearDemo">Убрать демо</button><button class="btn btn-ghost btn-sm" type="button" data-act="wipe" style="color:var(--bad)">${icon('trash')} Удалить всё</button></div></div>
+          <hr class="divider" style="margin:18px 0"><h4>Очистка</h4>
+          <div class="row">${hasDemo ? '<button class="btn btn-ghost btn-sm" type="button" data-act="clearDemo">Убрать демо-данные</button>' : ''}<button class="btn btn-ghost btn-sm" type="button" data-act="wipe" style="color:var(--bad)">${icon('trash')} Удалить всё</button></div></div>
       </div>`;
     document.getElementById('setBox').appendChild(CV.settingsForm(() => UI.toast('Настройки сохранены', 'check')));
     document.getElementById('setBox').querySelector('details').open = true;
@@ -462,28 +464,6 @@
     r.readAsText(f);
   }
 
-  function loadDemo() {
-    const mk = (name, y, mo, d, h, mi, ci, tags, notes, contact) => { const c = UI.CITIES.find((x) => x.name === ci) || UI.CITIES[0]; return { id: uid('c'), demo: true, name, contact, tags, notes, created: new Date().toISOString(), birth: { name, y, mo, d, h, mi, timeKnown: true, lat: c.lat, lon: c.lon, zone: c.tz, place: c.name } }; };
-    const now = new Date();
-    const soon = (days) => { const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + days); return fmt.ymd(d); };
-    const cl = [
-      mk('Демо — Мария', 1994, 3, 22, 7, 40, 'Москва', ['постоянный'], 'Запрос: смена профессии. Интересует дизайн.', '@maria_demo'),
-      mk('Демо — Екатерина', 1989, now.getMonth() + 1, Math.min(28, now.getDate() + 9), 14, 15, 'Санкт-Петербург', ['прогноз'], 'Переезд весной, просит прогноз на год.', '+7 900 000-00-00'),
-      mk('Демо — Анна', 2001, 9, 5, 23, 5, 'Екатеринбург', ['синастрия'], 'Отношения: совместимость с партнёром.', '@anna_demo'),
-      mk('Демо — Ольга', 1985, 12, 1, 10, 30, 'Тбилиси', ['курс'], 'Хочет учиться, индивидуальные уроки.', 'olga@example.com'),
-    ];
-    DB.saveClients(cl.concat(DB.clients()));
-    const ss = [
-      { id: uid('s'), demo: true, clientId: cl[0].id, service: 'natal', date: soon(-20), time: '11:00', duration: 120, price: 6000, status: 'done', paid: true, notes: 'Разобрали карьеру, Солнце в X доме.' },
-      { id: uid('s'), demo: true, clientId: cl[2].id, service: 'synastry', date: soon(-6), time: '19:00', duration: 90, price: 6500, status: 'done', paid: false, notes: '' },
-      { id: uid('s'), demo: true, clientId: cl[1].id, service: 'forecast', date: soon(1), time: '12:00', duration: 90, price: 7000, status: 'planned', paid: false, notes: 'Подготовить соляр.' },
-      { id: uid('s'), demo: true, clientId: cl[3].id, service: 'lessons', date: soon(3), time: '18:30', duration: 60, price: 3000, status: 'planned', paid: true, notes: 'Урок 2: стихии и кресты.' },
-      { id: uid('s'), demo: true, clientId: cl[0].id, service: 'express', date: soon(8), time: '10:00', duration: 30, price: 2000, status: 'planned', paid: false, notes: '' },
-    ];
-    DB.saveSessions(ss.concat(DB.sessions()));
-    UI.toast('Демо-данные загружены — их можно убрать в настройках', 'sparkle');
-    show('dashboard');
-  }
 
   const VIEWS = { dashboard, clients: clientsView, sessions: sessionsView, elect: electView, certs: certsView, templates: templatesView, tools: toolsView, settings: settingsView };
 
@@ -508,7 +488,6 @@
         const k = a.dataset.act;
         if (k === 'newClient') clientForm();
         if (k === 'newSession') sessionForm();
-        if (k === 'demo') loadDemo();
         if (k === 'export') exportData();
         if (k === 'clearDemo') { DB.saveClients(DB.clients().filter((c) => !c.demo)); DB.saveSessions(DB.sessions().filter((s) => !s.demo)); UI.toast('Демо-данные убраны', 'check'); show(viewName); }
         if (k === 'wipe') { if (confirm('Удалить ВСЕХ клиентов и консультации с этого устройства? Сначала лучше скачать копию.')) { DB.saveClients([]); DB.saveSessions([]); UI.toast('Данные удалены', 'trash'); show(viewName); } }
