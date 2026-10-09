@@ -495,6 +495,16 @@
     ? new IntersectionObserver((ents) => ents.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('in'); revealIO.unobserve(en.target); } }), { threshold: 0, rootMargin: '0px 0px -40px 0px' })
     : null;
   if (revealIO) document.documentElement.classList.add('reveal-on');
+  // запасной путь: при очень быстрой прокрутке или прыжке по ссылке («Запись») наблюдатель может проскочить блок
+  // целиком — такие блоки (уже выше экрана) показываем сразу, чтобы при возврате наверх не было пустых мест
+  let revealLate = null;
+  if (revealIO) addEventListener('scroll', () => {
+    if (revealLate) return;
+    revealLate = setTimeout(() => {
+      revealLate = null;
+      document.querySelectorAll('.reveal:not(.in)').forEach((e) => { if (e.offsetParent && e.getBoundingClientRect().bottom < 0) { e.classList.add('in'); revealIO.unobserve(e); } });
+    }, 250);
+  }, { passive: true });
   function reveal(root) {
     const els = $$('.reveal:not(.in)', root);
     if (root && root.matches && root.matches('.reveal:not(.in)')) els.push(root);
