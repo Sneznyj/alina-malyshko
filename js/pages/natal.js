@@ -20,6 +20,7 @@
         </div>
         <div class="row no-print">
           <button class="btn btn-primary btn-sm" type="button" data-act="story">${icon('sparkle')} Сторис</button>
+          <button class="btn btn-ghost btn-sm" type="button" data-act="link" title="Скопировать ссылку: по ней эта карта откроется на любом устройстве">${icon('link')} Ссылка</button>
           <button class="btn btn-ghost btn-sm" type="button" data-act="png">${icon('download')} PNG</button>
           <button class="btn btn-ghost btn-sm" type="button" data-act="print">${icon('print')} Печать / PDF</button>
           ${UI.isAlina() ? `<button class="btn btn-ghost btn-sm" type="button" data-act="save">${icon('user')} В кабинет</button>` : ''}
@@ -31,16 +32,19 @@
 
   function render() {
     const c = current, p = params;
+    const moment = !!p.moment;
     const box = document.getElementById('result');
-    const tabs = [['tab-wheel', 'Карта'], ['tab-interp', 'Толкование'], ['tab-aspects', 'Аспекты'], ['tab-balance', 'Баланс'], ['tab-data', 'Положения']];
+    const tabs = [['tab-wheel', 'Карта'], ['tab-interp', 'Толкование'], ['tab-aspects', 'Аспекты'], ['tab-balance', 'Баланс'], ['tab-data', 'Положения'], ['tab-pro', 'Профи']];
     box.innerHTML = `
       <div class="card">
         ${header(c, p)}
         <div class="tabs no-print" role="tablist" aria-label="Разделы карты">${tabs.map(([id, t], i) => `<button role="tab" id="${id}-btn" aria-controls="${id}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}">${t}</button>`).join('')}</div>
         <div style="margin-top:22px">
           <div class="tab-panel" role="tabpanel" id="tab-wheel" aria-labelledby="tab-wheel-btn">
+            ${moment ? '<div id="horaryBox" style="margin-bottom:18px"></div>' : ''}
             <div class="wheel-box" id="wheelBox">${W.svg(c, { minor: UI.settings.minor })}</div>
             ${CV.legend()}
+            <p class="tiny muted center no-print" style="margin:6px 0 0">Наведите на линию аспекта, планету или номер дома — появится подсказка; нажмите — откроется толкование.</p>
             <div style="margin-top:26px">${CV.big3(c)}</div>
             ${keySummary(c)}
           </div>
@@ -56,12 +60,19 @@
             <h4>Планеты и точки</h4>${CV.planetTable(c)}
             <h4 style="margin-top:22px">Куспиды домов</h4>${CV.housesTable(c)}
           </div>
+          <div class="tab-panel" role="tabpanel" id="tab-pro" aria-labelledby="tab-pro-btn" hidden><div id="proBox"></div></div>
         </div>
       </div>
       <div class="card note-card reveal" style="margin-top:20px">${UI.alinaNote('Это автоматический разбор — он описывает каждую часть карты по отдельности. На консультации я соберу их в цельную картину именно про вас и отвечу на ваши вопросы.', '<button class="btn btn-primary btn-sm" type="button" data-book="natal">Записаться на разбор</button>' + (UI.promoInfo() ? ' <span class="sticker sm">−' + UI.promoInfo().percent + '%</span>' : ''))}</div>`;
     UI.tabs(box);
     W.attach(document.getElementById('wheelBox'));
-    box.querySelector('[role=tablist]').addEventListener('tabchange', (e) => { if (e.detail === 'tab-balance') CV.animateBars(box); UI.reveal(box); });
+    box.querySelector('[role=tablist]').addEventListener('tabchange', (e) => {
+      if (e.detail === 'tab-balance') CV.animateBars(box);
+      // профи-инструменты считаются, только когда их открыли
+      if (e.detail === 'tab-pro' && window.ProView && !document.getElementById('proBox').childElementCount) window.ProView.natal(document.getElementById('proBox'), c, p);
+      UI.reveal(box);
+    });
+    if (moment && window.ProView) { const hb = document.getElementById('horaryBox'); hb.innerHTML = window.ProView.horaryCard(c, { name: p.place, lat: p.lat, lon: p.lon, tz: typeof p.zone === 'string' ? p.zone : UI.browserTz }); window.ProView.loadTexts().then((ok) => { if (ok && hb.isConnected) hb.innerHTML = window.ProView.horaryCard(c, { name: p.place, lat: p.lat, lon: p.lon, tz: typeof p.zone === 'string' ? p.zone : UI.browserTz }); }); }
     box.querySelector('.result-head').addEventListener('click', onAction);
     UI.reveal(box);
     UI.fadeIn(box);
@@ -118,6 +129,13 @@
       b.disabled = true;
       try { const cv = await window.Cards.storyNatal(current, params, { showName: !!params.name }); await window.Cards.show(cv, 'moya-natalnaya-karta.png', 'Карточка для сторис', 'Только знаки и колесо карты — без даты, времени и места рождения.'); } catch (e) { console.error(e); UI.toast('Не получилось нарисовать карточку', 'info'); }
       b.disabled = false; return;
+    }
+    if (act === 'link') {
+      // ссылка на карту (как «Поделиться» в Sotis): те же параметры, что принимает страница (?y=…&lat=…&tz=…)
+      const p = params, q = new URLSearchParams({ y: p.y, mo: p.mo, d: p.d, h: p.timeKnown === false ? 12 : p.h, mi: p.timeKnown === false ? 0 : p.mi, tk: p.timeKnown === false ? 0 : 1, lat: (+p.lat).toFixed(4), lon: (+p.lon).toFixed(4), tz: typeof p.zone === 'string' ? p.zone : '', place: p.place || '', name: p.name || '' });
+      const url = location.href.split(/[?#]/)[0] + '?' + q.toString();
+      if (await UI.copyText(url)) UI.toast('Ссылка на карту скопирована — по ней карта откроется сразу', 'link');
+      return;
     }
     if (act === 'png') W.exportPNG(current, { minor: UI.settings.minor, caption: `${params.name || 'Натальная карта'} · ${fmt.birth(params)} · ${params.place}` }, `natal-${(params.name || 'chart').replace(/\s+/g, '_')}.png`);
     if (act === 'print') { document.querySelectorAll('.tab-panel').forEach((p) => { p.dataset.wasHidden = p.hidden; }); window.print(); }
@@ -178,7 +196,7 @@
       // карта момента: текущее время, город — из лунного календаря или Москва
       const city = UI.defaultCity();
       const d = new Date();
-      const p = { name: 'Карта момента', y: d.getFullYear(), mo: d.getMonth() + 1, d: d.getDate(), h: d.getHours(), mi: d.getMinutes(), timeKnown: true, lat: city.lat, lon: city.lon, zone: Intl.DateTimeFormat().resolvedOptions().timeZone || city.tz, place: city.name };
+      const p = { name: 'Карта момента', y: d.getFullYear(), mo: d.getMonth() + 1, d: d.getDate(), h: d.getHours(), mi: d.getMinutes(), timeKnown: true, lat: city.lat, lon: city.lon, zone: Intl.DateTimeFormat().resolvedOptions().timeZone || city.tz, place: city.name, moment: true };
       form.set(p); calc(p);
     }
   });

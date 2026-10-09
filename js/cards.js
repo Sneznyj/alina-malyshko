@@ -95,20 +95,22 @@
     ctx.restore(); ctx.textBaseline = 'alphabetic';
   }
 
-  async function brand(ctx, cx, y, dark) {
+  /** Подпись Алины: аватар и имя, выровнены по левому краю (x — левый край аватара, y — его центр). */
+  async function brand(ctx, x0, y, dark) {
     const av = await loadImg('assets/img/alina-avatar.webp');
-    const r = 46;
+    const r = 44;
     ctx.save();
-    ctx.font = font(600, 46, F.display); const nameW = ctx.measureText(SITE.name).width;
-    const total = r * 2 + 22 + nameW, x0 = cx - total / 2;
     if (av) { ctx.save(); ctx.beginPath(); ctx.arc(x0 + r, y, r, 0, Math.PI * 2); ctx.closePath(); ctx.clip(); ctx.drawImage(av, x0, y - r, r * 2, r * 2); ctx.restore(); }
     ctx.strokeStyle = dark ? C.gold : C.goldInk; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x0 + r, y, r + 4, 0, Math.PI * 2); ctx.stroke();
-    ctx.fillStyle = dark ? C.ink : C.plum; ctx.textAlign = 'left'; ctx.fillText(SITE.name, x0 + r * 2 + 22, y + 4);
-    ctx.font = font(700, 20, F.body); spaced(ctx, 6); ctx.fillStyle = dark ? C.gold : C.goldInk; ctx.fillText(SITE.role.toUpperCase(), x0 + r * 2 + 24, y + 36); spaced(ctx, 0);
+    ctx.font = font(600, 44, F.display); ctx.fillStyle = dark ? C.ink : C.plum; ctx.textAlign = 'left'; ctx.fillText(SITE.name, x0 + r * 2 + 22, y + 2);
+    const nameW = ctx.measureText(SITE.name).width;
+    ctx.font = font(700, 19, F.body); spaced(ctx, 6); ctx.fillStyle = dark ? C.gold : C.goldInk; ctx.fillText(SITE.role.toUpperCase(), x0 + r * 2 + 24, y + 34); spaced(ctx, 0);
     ctx.restore();
+    return x0 + r * 2 + 22 + nameW; // правый край подписи
   }
 
-  function footer(ctx, w, y, text, dark) {
+  /** Низ сторис: кнопка-призыв по центру, под ней — подпись Алины слева и адрес сайта справа. */
+  async function footer(ctx, w, y, text, dark) {
     ctx.save();
     ctx.font = font(700, 34, F.body);
     const tw = ctx.measureText(text).width + 90;
@@ -116,9 +118,18 @@
     g.addColorStop(0, C.hot); g.addColorStop(1, C.hot2);
     rr(ctx, w / 2 - tw / 2, y - 52, tw, 84, 42); ctx.fillStyle = g; ctx.fill();
     ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText(text, w / 2, y + 2);
-    ctx.font = font(600, 30, F.body); ctx.fillStyle = dark ? C.ink2 : C.plum3;
-    ctx.fillText(SITE.siteUrl || `${SITE.name} · ${SITE.role}`, w / 2, y + 100);
     ctx.restore();
+    const by = y + 140, left = 84;
+    const nameEnd = await brand(ctx, left, by, dark);
+    // адрес сайта справа, по нижней строке подписи; если не помещается — шрифт мельче
+    const url = SITE.siteUrl || '';
+    if (url) {
+      ctx.save();
+      let fs = 26; ctx.font = font(600, fs, F.body);
+      while (ctx.measureText(url).width > w - left - nameEnd - 40 && fs > 16) { fs -= 2; ctx.font = font(600, fs, F.body); }
+      ctx.fillStyle = dark ? C.ink3 : C.plum3; ctx.textAlign = 'right'; ctx.fillText(url, w - left, by + 34);
+      ctx.restore();
+    }
   }
 
   function handTitle(ctx, text, x, y, size, col, angle) {
@@ -132,13 +143,12 @@
     await fontsReady();
     const W = 1080, H = 1920, cv = canvas(W, H), ctx = cv.getContext('2d');
     nightBg(ctx, W, H, Math.round(chart.byId.sun.lon * 100));
-    await brand(ctx, W / 2, 268, true);
-    handTitle(ctx, 'моё небо в день рождения', W / 2, 420, 74, C.gold, -3);
-    if (opts.showName && p.name) { ctx.font = font(600, 84, F.display); ctx.fillStyle = C.ink; ctx.textAlign = 'center'; ctx.fillText(p.name, W / 2, 520); }
+    handTitle(ctx, 'моё небо в день рождения', W / 2, 330, 74, C.gold, -3);
+    if (opts.showName && p.name) { ctx.font = font(600, 84, F.display); ctx.fillStyle = C.ink; ctx.textAlign = 'center'; ctx.fillText(p.name, W / 2, 430); }
     // колесо
     const svg = window.Wheel.svg(chart, { animate: false, theme: 'dark' });
     const img = await svgImg(svg);
-    const ws = 620, wy = opts.showName ? 550 : 500;
+    const ws = 640, wy = opts.showName && p.name ? 470 : 420;
     const halo = ctx.createRadialGradient(W / 2, wy + ws / 2, ws * 0.2, W / 2, wy + ws / 2, ws * 0.62);
     halo.addColorStop(0, 'rgba(232, 198, 127, 0.18)'); halo.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = halo; ctx.fillRect(0, wy - 80, W, ws + 160);
@@ -156,7 +166,7 @@
     const s = chart.summary;
     ctx.font = font(500, 32, F.body); ctx.fillStyle = C.ink2; ctx.textAlign = 'center';
     ctx.fillText(`стихия — ${T.elements[s.topElement].name.toLowerCase()} · сильнейшая планета — ${T.planets[s.dominant[0]].name}`, W / 2, y0 + 232);
-    footer(ctx, W, 1640, 'Построй свою карту бесплатно', true);
+    await footer(ctx, W, 1600, 'Построй свою карту бесплатно', true);
     return cv;
   }
 
@@ -165,16 +175,15 @@
     await fontsReady();
     const W = 1080, H = 1920, cv = canvas(W, H), ctx = cv.getContext('2d');
     nightBg(ctx, W, H, S.total * 97 + 5);
-    zodiacRing(ctx, W / 2, 900, 470, C.gold, 0.16, 0.2);
-    await brand(ctx, W / 2, 268, true);
-    handTitle(ctx, 'наша совместимость', W / 2, 420, 78, C.gold, -3);
+    zodiacRing(ctx, W / 2, 820, 470, C.gold, 0.16, 0.2);
+    handTitle(ctx, 'наша совместимость', W / 2, 330, 78, C.gold, -3);
     ctx.font = font(600, 78, F.display, true); ctx.fillStyle = C.ink; ctx.textAlign = 'center';
     const names = `${nA}  &  ${nB}`;
     let ns = 78;
     while (ctx.measureText(names).width > 940 && ns > 34) { ns -= 4; ctx.font = font(600, ns, F.display, true); }
-    ctx.fillText(names, W / 2, 530);
+    ctx.fillText(names, W / 2, 450);
     // кольцо
-    const cx = W / 2, cy = 850, R = 230;
+    const cx = W / 2, cy = 770, R = 230;
     ctx.lineWidth = 34; ctx.lineCap = 'round';
     ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
     const g = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R); g.addColorStop(0, C.gold); g.addColorStop(1, C.hot);
@@ -182,7 +191,7 @@
     ctx.font = font(600, 190, F.display); ctx.fillStyle = C.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(S.total), cx, cy - 6);
     ctx.textBaseline = 'alphabetic'; ctx.font = font(700, 24, F.body); spaced(ctx, 6); ctx.fillStyle = C.ink3; ctx.fillText('ИЗ 100', cx, cy + 110); spaced(ctx, 0);
     // сферы
-    let y = 1180;
+    let y = 1110;
     for (const [k, v] of Object.entries(S.spheres)) {
       ctx.textAlign = 'left'; ctx.font = font(600, 32, F.body); ctx.fillStyle = C.ink; ctx.fillText(T.synSpheres[k].name, 150, y);
       ctx.textAlign = 'right'; ctx.fillStyle = C.gold; ctx.fillText(String(v), 930, y);
@@ -191,7 +200,7 @@
       rr(ctx, 150, y + 18, Math.max(14, 780 * v / 100), 14, 7); ctx.fillStyle = gg; ctx.fill();
       y += 82;
     }
-    footer(ctx, W, 1640, 'Проверь вашу пару', true);
+    await footer(ctx, W, 1600, 'Проверь вашу пару', true);
     return cv;
   }
 
@@ -202,14 +211,13 @@
     const NT = window.NUMEROLOGY_TEXTS;
     const W = 1080, H = 1920, cv = canvas(W, H), ctx = cv.getContext('2d');
     nightBg(ctx, W, H, r.lp.value * 131 + r.bd.value * 7 + 3);
-    await brand(ctx, W / 2, 268, true);
-    handTitle(ctx, 'мои числа', W / 2, 420, 84, C.gold, -3);
+    handTitle(ctx, 'мои числа', W / 2, 330, 84, C.gold, -3);
     const first = (r.name || '').split(/\s+/).filter(Boolean);
     // «Фамилия Имя Отчество» → имя; одно-два слова → первое
     const shown = first.length >= 3 ? first[1] : first[0] || '';
-    if (shown) { ctx.font = font(600, 72, F.display, true); ctx.fillStyle = C.ink; ctx.textAlign = 'center'; ctx.fillText(shown, W / 2, 510); }
+    if (shown) { ctx.font = font(600, 72, F.display, true); ctx.fillStyle = C.ink; ctx.textAlign = 'center'; ctx.fillText(shown, W / 2, 430); }
     // главное число — в золотом кольце
-    const cx = W / 2, cy = 800, R = 205;
+    const cx = W / 2, cy = 720, R = 205;
     const halo = ctx.createRadialGradient(cx, cy, R * 0.4, cx, cy, R * 1.6);
     halo.addColorStop(0, 'rgba(232, 198, 127, 0.22)'); halo.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = halo; ctx.fillRect(0, cy - R * 1.7, W, R * 3.4);
@@ -226,7 +234,7 @@
     const tiles = [['день рождения', r.bd.value]];
     if (r.nm) { tiles.push(['имя', r.nm.expression.value]); if (r.nm.soul) tiles.push(['душа', r.nm.soul.value]); if (r.nm.personality) tiles.push(['личность', r.nm.personality.value]); }
     tiles.push([`${new Date().getFullYear()} год`, r.py.value]);
-    const show = tiles.slice(0, 4), gap = 220, x0 = cx - ((show.length - 1) * gap) / 2, ty = 1380;
+    const show = tiles.slice(0, 4), gap = 220, x0 = cx - ((show.length - 1) * gap) / 2, ty = 1310;
     show.forEach(([label, v], i) => {
       const x = x0 + i * gap;
       ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.beginPath(); ctx.arc(x, ty, 72, 0, Math.PI * 2); ctx.fill();
@@ -234,7 +242,7 @@
       ctx.font = font(500, 64, F.body); ctx.fillStyle = C.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(v), x, ty + 4); ctx.textBaseline = 'alphabetic';
       ctx.font = font(700, 22, F.body); spaced(ctx, 3); ctx.fillStyle = C.ink3; ctx.fillText(label.toUpperCase(), x, ty + 112); spaced(ctx, 0);
     });
-    footer(ctx, W, 1660, 'Узнай свои числа', true);
+    await footer(ctx, W, 1600, 'Узнай свои числа', true);
     return cv;
   }
 
@@ -245,32 +253,31 @@
     city = city || UI.defaultCity();
     const W = 1080, H = 1920, cv = canvas(W, H), ctx = cv.getContext('2d');
     nightBg(ctx, W, H, date.getDate() * 131 + date.getMonth());
-    await brand(ctx, W / 2, 268, true);
-    handTitle(ctx, 'Луна сегодня', W / 2, 410, 92, C.gold, -3);
+    handTitle(ctx, 'Луна сегодня', W / 2, 330, 92, C.gold, -3);
     ctx.font = font(600, 50, F.display); ctx.fillStyle = C.ink2; ctx.textAlign = 'center';
-    ctx.fillText(`${date.getDate()} ${fmt.MONTHS_GEN[date.getMonth()]}, ${fmt.DOW_LONG[date.getDay()]}`, W / 2, 490);
+    ctx.fillText(`${date.getDate()} ${fmt.MONTHS_GEN[date.getMonth()]}, ${fmt.DOW_LONG[date.getDay()]}`, W / 2, 410);
     const ms = AC.moonState(date);
     const mimg = await svgImg(UI.moonSVG(ms.angle, { darkColor: 'rgba(8, 6, 22, 0.6)' }));
-    const halo = ctx.createRadialGradient(W / 2, 760, 60, W / 2, 760, 330);
+    const halo = ctx.createRadialGradient(W / 2, 680, 60, W / 2, 680, 330);
     halo.addColorStop(0, 'rgba(255, 236, 200, 0.35)'); halo.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = halo; ctx.fillRect(0, 420, W, 700);
-    if (mimg) ctx.drawImage(mimg, W / 2 - 230, 530, 460, 460);
+    ctx.fillStyle = halo; ctx.fillRect(0, 340, W, 700);
+    if (mimg) ctx.drawImage(mimg, W / 2 - 230, 450, 460, 460);
     let ld = null; try { ld = AC.lunarDay(date, city.lat, city.lon); } catch (e) { ld = null; }
     const ph = T.moonPhaseNow[ms.phase8];
-    ctx.font = font(400, 64, F.glyph); ctx.fillStyle = C.gold; ctx.fillText(T.signs[ms.sign].glyph, W / 2, 1090);
-    ctx.font = font(600, 78, F.display); ctx.fillStyle = C.ink; ctx.fillText(`Луна ${T.signs[ms.sign].loc}`, W / 2, 1180);
+    ctx.font = font(400, 64, F.glyph); ctx.fillStyle = C.gold; ctx.fillText(T.signs[ms.sign].glyph, W / 2, 1010);
+    ctx.font = font(600, 78, F.display); ctx.fillStyle = C.ink; ctx.fillText(`Луна ${T.signs[ms.sign].loc}`, W / 2, 1100);
     ctx.font = font(600, 36, F.body); ctx.fillStyle = C.gold;
-    ctx.fillText(`${ph.name.toLowerCase()} · освещено ${Math.round(ms.illum * 100)}%${ld ? ` · ${ld.day} лунный день` : ''}`, W / 2, 1245);
-    let y = 1320;
+    ctx.fillText(`${ph.name.toLowerCase()} · освещено ${Math.round(ms.illum * 100)}%${ld ? ` · ${ld.day} лунный день` : ''}`, W / 2, 1165);
+    let y = 1240;
     ctx.font = font(500, 34, F.body); ctx.fillStyle = C.ink2;
     y = wrap(ctx, ld ? `«${T.lunarDays[ld.day].sym}». ${T.lunarDays[ld.day].text}` : ph.tip, W / 2, y, 860, 48);
     const mis = T.moonInSign[ms.sign];
     y += 18;
     ctx.font = font(700, 32, F.body); ctx.fillStyle = '#9fe0c6'; y = wrap(ctx, `Хорошо: ${mis.good}`, W / 2, y, 880, 44);
     ctx.fillStyle = '#ffb3bd'; y = wrap(ctx, `Лучше отложить: ${mis.avoid}`, W / 2, y, 880, 44);
-    footer(ctx, W, 1660, 'Лунный календарь на сайте', true);
     ctx.font = font(500, 24, F.body); ctx.fillStyle = C.ink3; ctx.textAlign = 'center';
-    ctx.fillText(`время и лунные сутки для города: ${city.name}`, W / 2, 1810);
+    ctx.fillText(`время и лунные сутки для города: ${city.name}`, W / 2, Math.min(y + 14, 1500));
+    await footer(ctx, W, 1600, 'Лунный календарь на сайте', true);
     return cv;
   }
 

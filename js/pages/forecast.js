@@ -104,6 +104,9 @@
         ctx = { natal, params, events, range: { start, end } };
         UI.recent.add(params);
         await show();
+        // методы для астрологов (дирекции, лунар, фирдарии, динамика): расчёты всем, толкования — в премиуме
+        const pf = $('proForecast');
+        if (pf && window.ProView) { pf.hidden = false; pf.innerHTML = '<div class="card"><h3 style="margin:0 0 4px">Другие методы прогноза</h3><p class="small muted" style="margin:0 0 14px">Для тех, кто разбирается в астрологии: дирекции солнечной дуги, лунар, фирдарии и динамика транзитов на год.</p><div id="proForecastBox"></div></div>'; window.ProView.forecast($('proForecastBox'), natal, params); }
         if (window.innerWidth < 1000) $('result').scrollIntoView({ behavior: 'smooth' });
       } catch (err) { console.error(err); UI.toast('Не получилось рассчитать прогноз', 'info'); }
       btn.disabled = false; btn.textContent = 'Рассчитать прогноз';

@@ -768,6 +768,18 @@
       <span class="dob-hint" id="${id}-h" aria-live="polite"></span>
     </div>`;
   }
+  /** Поле любой даты (не рождения) — так же удобно: цифрами с точками или календарём. Значение ГГГГ-ММ-ДД — в скрытом
+      поле с id = id (его читает код страницы: document.getElementById(id).value), видимое поле — id + 'Txt' (для label for).
+      opts: value (ГГГГ-ММ-ДД), min (ГГГГ-ММ-ДД, раньше нельзя), name. После вставки в страницу — UI.enhanceDob(блок). */
+  function dateHTML(id, opts) {
+    opts = opts || {};
+    return `<div class="dob" data-dob data-mode="any"${opts.min ? ` data-min="${opts.min}"` : ''}>
+      <input class="input dob-text" id="${id}Txt" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" spellcheck="false" aria-describedby="${id}-h">
+      <button class="dob-btn" type="button" aria-label="Выбрать дату в календаре" aria-haspopup="dialog" aria-expanded="false">${icon('calendar')}</button>
+      <input class="dob-iso" id="${id}" type="date" ${opts.name ? `name="${opts.name}" ` : ''}value="${opts.value || ''}" hidden tabindex="-1" aria-hidden="true">
+      <span class="dob-hint" id="${id}-h" aria-live="polite"></span>
+    </div>`;
+  }
   /** Разбор того, что вставили целиком: «1997-06-14», «14 июня 1997», «14/6/97». → [д, м, г] или null. */
   function parseLooseDate(s) {
     s = String(s || '').trim().toLowerCase().replace(/ё/g, 'е');
@@ -778,28 +790,37 @@
     return null;
   }
   const fullYear = (yy) => (yy >= 100 ? yy : yy + (2000 + yy <= new Date().getFullYear() ? 2000 : 1900));
-  /** Проверка даты: { iso, text } или { err }. */
-  function checkDate(d, m, y) {
+  /** Проверка даты: { iso, text } или { err }. mode 'any' — любая дата (вместо возраста «через 3 дня»), min — не раньше ГГГГ-ММ-ДД. */
+  function checkDate(d, m, y, mode, min) {
     if (!(m >= 1 && m <= 12)) return { err: 'Месяц — от 01 до 12' };
     if (!(y >= 1900 && y <= 2099)) return { err: 'Год — от 1900 до 2099' };
     if (!(d >= 1 && d <= daysIn(y, m))) return { err: `Такого дня нет: в ${MONTHS_LOC[m - 1]} ${y} года ${daysIn(y, m)} ${fmt.plural(daysIn(y, m), 'день', 'дня', 'дней')}` };
     const dt = new Date(y, m - 1, d), now = new Date();
+    const iso = `${y}-${pad(m)}-${pad(d)}`;
+    if (min && iso < min) { const mn = min.split('-').map(Number); return { err: `Не раньше ${mn[2]} ${MONTHS_GEN[mn[1] - 1]} ${mn[0]}` }; }
+    if (mode === 'any') {
+      const days = Math.round((dt - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000);
+      const rel = days === 0 ? 'сегодня' : days === 1 ? 'завтра' : days === -1 ? 'вчера' : days > 0 ? `через ${days} ${fmt.plural(days, 'день', 'дня', 'дней')}` : `${-days} ${fmt.plural(-days, 'день', 'дня', 'дней')} назад`;
+      return { iso, text: `${d} ${MONTHS_GEN[m - 1]} ${y}, ${DOW_LONG[dt.getDay()]} · ${rel}` };
+    }
     let age = now.getFullYear() - y - (now.getMonth() < m - 1 || (now.getMonth() === m - 1 && now.getDate() < d) ? 1 : 0);
     const text = `${d} ${MONTHS_GEN[m - 1]} ${y}, ${DOW_LONG[dt.getDay()]}${dt <= now && age >= 0 ? ` · ${age} ${fmt.plural(age, 'год', 'года', 'лет')}` : ''}`;
-    return { iso: `${y}-${pad(m)}-${pad(d)}`, text };
+    return { iso, text };
   }
   /** Оживить поля даты внутри root (повторный вызов безопасен). */
   function enhanceDob(root) {
     $$('[data-dob]:not([data-ready])', root).forEach((box) => {
       box.dataset.ready = '1';
       const txt = $('.dob-text', box), iso = $('.dob-iso', box), hint = $('.dob-hint', box), btn = $('.dob-btn', box);
+      const mode = box.dataset.mode || 'birth', min = box.dataset.min || '';
+      const check = (d, m, y) => checkDate(d, m, y, mode, min);
       let syncing = false, pop = null;
       const setHint = (t, kind) => { hint.textContent = t || ''; hint.className = 'dob-hint' + (kind ? ' ' + kind : ''); };
       function commit(final) {
         const dg = txt.value.replace(/\D/g, '');
         let res = null;
-        if (dg.length === 8) res = checkDate(+dg.slice(0, 2), +dg.slice(2, 4), +dg.slice(4));
-        else if (final && dg.length === 6) { const y = fullYear(+dg.slice(4)); txt.value = `${dg.slice(0, 2)}.${dg.slice(2, 4)}.${y}`; res = checkDate(+dg.slice(0, 2), +dg.slice(2, 4), y); }
+        if (dg.length === 8) res = check(+dg.slice(0, 2), +dg.slice(2, 4), +dg.slice(4));
+        else if (final && dg.length === 6) { const y = fullYear(+dg.slice(4)); txt.value = `${dg.slice(0, 2)}.${dg.slice(2, 4)}.${y}`; res = check(+dg.slice(0, 2), +dg.slice(2, 4), y); }
         else if (final && dg.length) res = { err: 'Введите дату полностью: день, месяц, год — ДД.ММ.ГГГГ' };
         const value = res && res.iso ? res.iso : '';
         if (res && res.iso) setHint(res.text, 'ok');
@@ -856,9 +877,10 @@
         for (let d = 1; d <= daysIn(y, m); d++) {
           const sel = cur && cur[0] === y && cur[1] === m && cur[2] === d;
           const today = now.getFullYear() === y && now.getMonth() === m - 1 && now.getDate() === d;
-          cells += `<button type="button" data-d="${d}" class="${sel ? 'sel' : ''}${today ? ' today' : ''}" aria-label="${d} ${MONTHS_GEN[m - 1]} ${y}"${sel ? ' aria-pressed="true"' : ''}>${d}</button>`;
+          const off = min && `${y}-${pad(m)}-${pad(d)}` < min;
+          cells += `<button type="button" data-d="${d}" class="${sel ? 'sel' : ''}${today ? ' today' : ''}" aria-label="${d} ${MONTHS_GEN[m - 1]} ${y}"${sel ? ' aria-pressed="true"' : ''}${off ? ' disabled' : ''}>${d}</button>`;
         }
-        const years = []; for (let yy = now.getFullYear() + 1; yy >= 1900; yy--) years.push(yy);
+        const years = []; for (let yy = now.getFullYear() + (mode === 'any' ? 10 : 1); yy >= 1900; yy--) years.push(yy);
         pop.innerHTML = `<div class="dob-pop-head">
             <button type="button" class="dob-nav" data-step="-1" aria-label="Предыдущий месяц">${icon('chevron-left')}</button>
             <select class="select" data-pm aria-label="Месяц">${MONTHS.map((t, i) => `<option value="${i + 1}"${i + 1 === m ? ' selected' : ''}>${t}</option>`).join('')}</select>
@@ -874,7 +896,7 @@
         pop = document.createElement('div');
         pop.className = 'dob-pop'; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', 'Выбор даты');
         box.appendChild(pop);
-        renderPop(cur ? cur[0] : now.getFullYear() - 30, cur ? cur[1] : now.getMonth() + 1);
+        renderPop(cur ? cur[0] : now.getFullYear() - (mode === 'any' ? 0 : 30), cur ? cur[1] : now.getMonth() + 1);
         // не вылезать за правый край экрана
         const r = box.getBoundingClientRect();
         if (r.left + pop.offsetWidth > window.innerWidth - 8) pop.classList.add('right');
@@ -885,7 +907,7 @@
         pop.addEventListener('change', (e) => { if (e.target.matches('[data-pm],[data-py]')) { renderPop(+$('[data-py]', pop).value, +$('[data-pm]', pop).value); const s = $(e.target.matches('[data-pm]') ? '[data-pm]' : '[data-py]', pop); if (s) s.focus(); } });
         pop.addEventListener('click', (e) => {
           const nav = e.target.closest('[data-step]');
-          if (nav) { let y = +pop.dataset.y, m = +pop.dataset.m + +nav.dataset.step; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; } if (y >= 1900 && y <= new Date().getFullYear() + 1) renderPop(y, m); const n = $(`[data-step="${nav.dataset.step}"]`, pop); if (n) n.focus(); return; }
+          if (nav) { let y = +pop.dataset.y, m = +pop.dataset.m + +nav.dataset.step; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; } if (y >= 1900 && y <= new Date().getFullYear() + (mode === 'any' ? 10 : 1)) renderPop(y, m); const n = $(`[data-step="${nav.dataset.step}"]`, pop); if (n) n.focus(); return; }
           const day = e.target.closest('[data-d]');
           if (day) { show(`${pop.dataset.y}-${pad(+pop.dataset.m)}-${pad(+day.dataset.d)}`); closePop(); txt.focus(); }
         });
@@ -893,6 +915,60 @@
       btn.addEventListener('click', openPop);
       if (iso.value) show(iso.value);
     });
+  }
+
+  // ---------- поиск города: набираете название — список (встроенные города + геокодер Open-Meteo) ----------
+  /** Оживить поле города. input — текстовое поле, list — .ac-list рядом, onPick(place) — выбран город.
+      Если набрали название целиком и не выбрали из списка — при уходе с поля подставится совпадение. */
+  function cityAutocomplete(input, list, onPick) {
+    let items = [], active = -1, timer = null, picked = false;
+    input.setAttribute('role', 'combobox'); input.setAttribute('aria-expanded', 'false'); input.setAttribute('aria-autocomplete', 'list');
+    if (list.id) input.setAttribute('aria-controls', list.id);
+    function pick(p) { picked = true; input.value = p.name; list.classList.remove('open'); input.setAttribute('aria-expanded', 'false'); input.classList.remove('invalid'); onPick(p); }
+    function renderList() {
+      list.innerHTML = items.length ? items.map((c, i) => `<div class="ac-item${i === active ? ' active' : ''}" role="option" data-i="${i}"><span>${esc(c.name)}</span><small>${esc(c.country)}</small></div>`).join('') : '<div class="ac-item"><small>Ничего не нашлось — проверьте название или выберите ближайший крупный город</small></div>';
+      list.classList.add('open'); input.setAttribute('aria-expanded', 'true');
+    }
+    input.addEventListener('input', () => {
+      picked = false;
+      clearTimeout(timer);
+      const q = input.value;
+      if (q.trim().length < 1) { list.classList.remove('open'); return; }
+      timer = setTimeout(async () => { items = await searchCities(q); active = -1; if (input.value === q && document.activeElement === input) renderList(); }, 220);
+    });
+    input.addEventListener('keydown', (e) => {
+      if (!list.classList.contains('open')) return;
+      if (e.key === 'ArrowDown') { active = Math.min(items.length - 1, active + 1); renderList(); e.preventDefault(); }
+      if (e.key === 'ArrowUp') { active = Math.max(0, active - 1); renderList(); e.preventDefault(); }
+      if (e.key === 'Enter' && items[active >= 0 ? active : 0]) { pick(items[active >= 0 ? active : 0]); e.preventDefault(); }
+      if (e.key === 'Escape') list.classList.remove('open');
+    });
+    list.addEventListener('mousedown', (e) => { const it = e.target.closest('[data-i]'); if (it) { e.preventDefault(); pick(items[+it.dataset.i]); } });
+    input.addEventListener('blur', () => setTimeout(() => {
+      list.classList.remove('open'); input.setAttribute('aria-expanded', 'false');
+      // набрали «Минск» и ушли с поля — берём первое совпадение с тем же названием
+      if (!picked && items.length && normName(items[0].name) === normName(input.value)) pick(items[0]);
+    }, 150));
+    return { pick, isPicked: () => picked };
+  }
+  let cityUid = 0;
+  /** Поле «Город» с поиском (подбор дат, соляр, лунный календарь). opts: label, value (город), onPick(город), hint. */
+  function cityField(container, opts) {
+    opts = opts || {};
+    const u = 'cf' + (++cityUid);
+    container.innerHTML = `<div class="field city-field"><label for="${u}">${esc(opts.label || 'Город')}</label>
+      <input class="input" id="${u}" autocomplete="off" placeholder="${esc(opts.placeholder || 'Начните вводить город')}" value="${esc(opts.value ? opts.value.name : '')}">
+      <div class="ac-list" id="${u}l" role="listbox"></div>
+      <div class="place-meta" id="${u}m"></div></div>`;
+    const input = container.querySelector('#' + u), meta = container.querySelector('#' + u + 'm');
+    let place = opts.value || null;
+    const showMeta = (p) => { meta.textContent = p ? `${p.country ? p.country + ' · ' : ''}${tzLabel(p.tz)}` : (opts.hint || ''); };
+    showMeta(place);
+    const ac = cityAutocomplete(input, container.querySelector('#' + u + 'l'), (p) => { place = p; showMeta(p); if (opts.onPick) opts.onPick(p); });
+    input.addEventListener('focus', () => input.select());
+    // набрали и бросили, не выбрав, — возвращаем прежний город, чтобы поле не врало
+    input.addEventListener('blur', () => setTimeout(() => { if (!ac.isPicked() && place && input.value.trim() !== place.name) { input.value = place.name; showMeta(place); } }, 220));
+    return { get: () => place, set(p) { place = p; input.value = p ? p.name : ''; showMeta(p); }, input };
   }
 
   // ---------- форма данных рождения ----------
@@ -929,7 +1005,7 @@
     enhanceDob(container);
     const dobIso = () => $('.dob-iso', el('d').parentNode);
     const city = el('c'), list = el('l'), meta = el('m'), unk = el('u'), time = el('t');
-    let place = null, items = [], active = -1, timer = null;
+    let place = null;
     el('z').value = defaultCity().tz;
     unk.addEventListener('change', () => { time.disabled = unk.checked; });
     function setPlace(p) {
@@ -940,26 +1016,8 @@
       meta.textContent = `${p.country ? p.country + ' · ' : ''}${fmtCoord(+p.lat, +p.lon)} · ${p.tz}`;
       list.classList.remove('open'); city.setAttribute('aria-expanded', 'false'); city.classList.remove('invalid');
     }
-    function renderList() {
-      list.innerHTML = items.length ? items.map((c, i) => `<div class="ac-item${i === active ? ' active' : ''}" role="option" data-i="${i}"><span>${esc(c.name)}</span><small>${esc(c.country)}</small></div>`).join('') : '<div class="ac-item"><small>Не нашли город? Укажите координаты вручную ниже</small></div>';
-      list.classList.add('open'); city.setAttribute('aria-expanded', 'true');
-    }
-    city.addEventListener('input', () => {
-      place = null; meta.textContent = '';
-      clearTimeout(timer);
-      const q = city.value;
-      if (q.trim().length < 1) { list.classList.remove('open'); return; }
-      timer = setTimeout(async () => { items = await searchCities(q); active = -1; if (city.value === q) renderList(); }, 220);
-    });
-    city.addEventListener('keydown', (e) => {
-      if (!list.classList.contains('open')) return;
-      if (e.key === 'ArrowDown') { active = Math.min(items.length - 1, active + 1); renderList(); e.preventDefault(); }
-      if (e.key === 'ArrowUp') { active = Math.max(0, active - 1); renderList(); e.preventDefault(); }
-      if (e.key === 'Enter' && items[active >= 0 ? active : 0]) { setPlace(items[active >= 0 ? active : 0]); e.preventDefault(); }
-      if (e.key === 'Escape') list.classList.remove('open');
-    });
-    list.addEventListener('mousedown', (e) => { const it = e.target.closest('[data-i]'); if (it) { e.preventDefault(); setPlace(items[+it.dataset.i]); } });
-    city.addEventListener('blur', () => setTimeout(() => list.classList.remove('open'), 150));
+    city.addEventListener('input', () => { place = null; meta.textContent = ''; });
+    cityAutocomplete(city, list, setPlace);
 
     const api = {
       get() {
@@ -1011,9 +1069,16 @@
   };
 
   // ---------- анкета на консультацию ----------
-  // Календаря для клиентов нет: клиент заполняет анкету, она уходит Алине в Telegram готовым сообщением
+  // Календаря для клиентов нет: клиент заполняет анкету, она шифруется и сразу попадает в кабинет Алины (ящик заявок,
+  // content.js → api.url); если сервер недоступен — уходит Алине в Telegram готовым сообщением
   // (или в WhatsApp, на почту). Алина отвечает сама, уточняет детали и предлагает время из кабинета («Заявки»).
   const INTAKE = SITE.intake || {};
+  // ящик заявок (content.js → api.url): анкета шифруется в браузере и сразу попадает в кабинет Алины.
+  // Копия сайта на компьютере разработки и превью не пишут в боевой ящик (только в локальный сервер для проверок).
+  const localApi = (u) => /^https?:\/\/(localhost|127\.|\[::1\])/.test(String(u || ''));
+  const inboxOn = !!(SITE.api && SITE.api.url && window.crypto && crypto.subtle && window.fetch && ((!isPreview && !window.ARTIFACT_PREVIEW) || localApi(SITE.api.url)));
+  let inboxP = null;
+  const loadInbox = () => (window.Inbox ? Promise.resolve() : inboxP || (inboxP = new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'js/inbox.js'; s.onload = res; s.onerror = () => { inboxP = null; rej(new Error('inbox.js')); }; document.body.appendChild(s); })));
   function serviceOptions() {
     return SITE.services.map((s) => ({ id: s.id, title: s.title })).concat(academyOn ? [{ id: 'lessons', title: 'Индивидуальные уроки астрологии' }, { id: 'course', title: 'Курс «Астрология с нуля»' }] : [], [{ id: 'numerology', title: 'Нумерология: разбор чисел' }, { id: 'gift', title: 'Подарочный сертификат' }, { id: 'other', title: 'Другое / пока не знаю' }]);
   }
@@ -1059,9 +1124,10 @@
           <div class="field"><label for="${u}name">Ваше имя *</label><input class="input" id="${u}name" name="name" required autocomplete="given-name"></div>
           <div class="field"><label for="${u}contact">Telegram или телефон *</label><input class="input" id="${u}contact" name="contact" required placeholder="@ник или +7…" autocomplete="tel"></div>
         </div>
+        <input class="ix-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
         <label class="check ix-consent"><input type="checkbox" name="consent" required> <span>Согласен(на) на <a href="privacy.html" target="_blank">обработку данных</a></span></label>
-        <button class="btn btn-primary btn-block" type="submit">${icon('telegram')} Отправить Алине в Telegram</button>
-        <p class="tiny muted center" style="margin:0">${opts.note ? esc(opts.note) : `Обязательны только имя и контакт. Отвечу ${esc(INTAKE.replyTime || 'в течение дня')} и сама предложу время.`}</p>
+        <button class="btn btn-primary btn-block" type="submit">${inboxOn ? `${icon('send')} Отправить анкету Алине` : `${icon('telegram')} Отправить Алине в Telegram`}</button>
+        <p class="tiny muted center" style="margin:0">${opts.note ? esc(opts.note) : `Обязательны только имя и контакт. ${inboxOn ? 'Анкета сразу придёт мне — ' : ''}отвечу ${esc(INTAKE.replyTime || 'в течение дня')} и сама предложу время.`}</p>
       </form>`;
   }
   /** Показать поля под выбранную услугу: подсказка вопроса, чьи данные рождения, формат — только для встреч. */
@@ -1099,8 +1165,8 @@
       format ? `Формат: ${format}` : '',
       tz ? `Мой часовой пояс: ${tz} (${tzLabel(tz)})` : '',
     ].filter(Boolean);
-    const data = { name: g('name'), contact: g('contact'), service: svc && svc.title, question: g('question'), birth, partner: g('partner'), fullname: g('fullname'), format, timezone: tz };
-    return { text: lines.join('\n'), data };
+    const data = { name: g('name'), contact: g('contact'), service: svc && svc.title, serviceId: id, question: g('question'), birth, partner: cfg.partner ? g('partner') : '', fullname: cfg.fullName ? g('fullname') : '', format, timezone: tz };
+    return { text: lines.join('\n'), data, hp: g('website') };
   }
   /** Анкета: формат одним нажатием, проверка и отправка. */
   function bindBooking(form, onDone) {
@@ -1120,7 +1186,24 @@
       }
       if (!form.querySelector('[name=consent]').checked) { toast('Отметьте согласие на обработку данных', 'info'); return; }
       goal('booking');
-      const { text, data } = intakeText(form);
+      const { text, data, hp } = intakeText(form);
+      const btn = form.querySelector('[type=submit]');
+      if (inboxOn) {
+        const label = btn.innerHTML;
+        btn.disabled = true; btn.innerHTML = `${icon('refresh')} Отправляю…`;
+        try {
+          await loadInbox();
+          const code = window.Inbox.code();
+          await window.Inbox.send({ v: 1, code, at: new Date().toISOString(), data, text, page: location.pathname.split('/').pop() || 'index.html', lang: navigator.language || '' }, { hp });
+          btn.disabled = false; btn.innerHTML = label;
+          form.reset(); intakeApply(form);
+          form.querySelectorAll('[data-format]').forEach((b) => b.setAttribute('aria-pressed', 'false'));
+          if (onDone) onDone();
+          goal('booking_inbox');
+          sentToInbox(code, data);
+          return;
+        } catch (err) { btn.disabled = false; btn.innerHTML = label; /* сервер недоступен — анкета уйдёт через мессенджер */ }
+      }
       if (SITE.bookingEndpoint) {
         try {
           const r = await fetch(SITE.bookingEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(Object.assign({ message: text }, data)) });
@@ -1136,6 +1219,26 @@
       <li>Я прочитаю анкету и отвечу ${esc(INTAKE.replyTime || 'в течение дня')}.</li>
       <li>Если нужно, уточню пару деталей — так консультация будет точнее.</li>
       <li>Предложу время по вашему часовому поясу и пришлю детали оплаты.</li></ol>`;
+  /** Анкета уже в кабинете Алины: спокойно рассказываем, что дальше; написать в Telegram — по желанию. */
+  function sentToInbox(code, data) {
+    const c = SITE.contacts || {};
+    const tg = /(?:t\.me\/|@)([A-Za-z0-9_]{4,})/.exec(data.contact || '');
+    const how = tg ? `напишу вам в Telegram — @${esc(tg[1])}` : `свяжусь с вами: ${esc(data.contact || '')}`;
+    const note = `Здравствуйте, Алина! Я отправил(а) анкету с сайта, № ${code} ✨`;
+    const m = modal(`<div class="center"><div style="font-size:3rem;color:var(--gold);line-height:1">✦</div>
+        <h3 style="margin:8px 0 4px">Спасибо${data.name ? ', ' + esc(data.name.split(' ')[0]) : ''}! Анкета у меня</h3>
+        <p class="muted" style="margin:0">Номер анкеты: <b class="ix-code">${esc(code)}</b></p></div>
+      <ol class="ix-next">
+        <li>Я спокойно прочитаю анкету и ${how} ${esc(INTAKE.replyTime || 'в течение дня')}.</li>
+        <li>Если нужно, уточню пару деталей — так консультация будет точнее.</li>
+        <li>Предложу время по вашему часовому поясу и пришлю детали оплаты.</li></ol>
+      <div style="display:grid;gap:10px;margin-top:6px">
+        <a class="btn btn-primary btn-block" href="natal.html">Пока — моя натальная карта</a>
+        ${c.telegram ? `<a class="btn btn-ghost btn-block" target="_blank" rel="noopener" href="https://t.me/${esc(c.telegram.replace(/^@/, ''))}?text=${encodeURIComponent(note)}">${icon('telegram')} Написать мне в Telegram — по желанию</a>` : ''}
+      </div>
+      <p class="tiny muted center" style="margin:12px 0 0">Писать отдельно не обязательно — анкета уже у меня. Данные зашифрованы и видны только мне.</p>`);
+    return m;
+  }
   function thanks() {
     modal(`<div class="center"><div style="font-size:3rem;color:var(--gold)">✦</div><h3>Спасибо! Анкета у меня</h3><p class="muted">Что будет дальше:</p></div>${nextSteps()}<div class="center"><a class="btn btn-primary" href="natal.html">Пока — моя натальная карта</a></div>`);
   }
@@ -1162,7 +1265,7 @@
   function openBooking(preset) {
     const pr = promoInfo();
     const m = modal(`<div class="booking-head"><img src="assets/img/alina-avatar.webp" alt="" width="64" height="64"><div><span class="eyebrow" style="margin:0">анкета</span><h3 style="margin:2px 0 0">Консультация с Алиной</h3></div></div>
-      <p class="muted small" style="margin:0 0 14px">Пара строк о вашем вопросе — и анкета придёт мне в Telegram. Отвечу сама, обычно ${esc(INTAKE.replyTime || 'в течение дня')}.</p>
+      <p class="muted small" style="margin:0 0 14px">Пара строк о вашем вопросе — и анкета ${inboxOn ? 'сразу придёт мне' : 'придёт мне в Telegram'}. Отвечу сама, обычно ${esc(INTAKE.replyTime || 'в течение дня')}.</p>
       ${pr ? `<div class="promo-inline"><span class="sticker">−${pr.percent}%</span><span><b>${esc(pr.title)}</b><br><small>действует до ${pr.end.getDate()} ${fmt.MONTHS_GEN[pr.end.getMonth()]}</small></span></div>` : ''}
       ${bookingFormHTML('bm', preset)}`, { cls: 'booking-modal' });
     bindBooking(m.el.querySelector('form'), () => m.close());
@@ -1198,7 +1301,7 @@
     return { date, moon: ms, sunSign, retro, pts };
   }
 
-  window.UI = { premOn, currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, serviceOptions, academyOn, isAlina, bookingFormHTML, bindBooking, tzLabel, dobHTML, enhanceDob, reveal, fadeIn, reduceMotion, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
+  window.UI = { localApi, dateHTML, cityField, cityAutocomplete, searchCities, checkDate, premOn, currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, serviceOptions, academyOn, isAlina, bookingFormHTML, bindBooking, tzLabel, dobHTML, enhanceDob, reveal, fadeIn, reduceMotion, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
 
   // Шапку, подвал и небо рисуем сразу (скрипт стоит в конце <body>, разметка страницы уже есть), а не по DOMContentLoaded:
   // так первый кадр страницы — и плавный переход между страницами — уже с шапкой, без мигания.

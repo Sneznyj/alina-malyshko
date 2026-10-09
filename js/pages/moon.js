@@ -242,11 +242,8 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    const sel = document.getElementById('citySel');
-    sel.innerHTML = UI.CITIES.map((c, i) => `<option value="${i}">${esc(c.name)}</option>`).join('');
-    const idx = UI.CITIES.findIndex((c) => c.name === city.name);
-    sel.value = idx >= 0 ? idx : 0;
-    sel.addEventListener('change', () => { selected = null; setCity(UI.CITIES[+sel.value]); });
+    // город — поиском по названию (любой город мира), а не длинным списком
+    UI.cityField(document.getElementById('cityBox'), { label: 'Город', value: city, onPick: (c) => { selected = null; setCity(c); } });
     const now = tzParts(new Date(), city.tz);
     view = { y: now.y, m: now.m };
     document.getElementById('prevM').addEventListener('click', () => { selected = null; view.m--; if (view.m < 1) { view.m = 12; view.y--; } renderMonth(); });
@@ -259,5 +256,7 @@
       if (dd.scrollIntoView) dd.scrollIntoView({ behavior: UI.reduceMotion() ? 'auto' : 'smooth', block: 'start' });
     });
     setCity(city);
+    // управители дня и часа (планетные часы) — для того же города
+    if (window.ProView && document.getElementById('hoursBox')) window.ProView.hours(document.getElementById('hoursBox'), city);
   });
 })();

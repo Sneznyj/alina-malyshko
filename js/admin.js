@@ -10,12 +10,12 @@
   const UI = window.UI;
   const b64d = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
   const b64e = (u8) => { let s = ''; for (const x of u8) s += String.fromCharCode(x); return btoa(s); };
-  let cached = null, cachedP = null, cachedS = null;
+  let cached = null, cachedP = null, cachedS = null, cachedA = null;
   const ran = {};
 
   const stored = () => { try { return localStorage.getItem(STORE) || sessionStorage.getItem(STORE); } catch (e) { return null; } };
   function save(raw, remember) { try { (remember ? localStorage : sessionStorage).setItem(STORE, raw); } catch (e) { /* приватный режим */ } }
-  function clear() { cached = null; cachedP = null; cachedS = null; try { localStorage.removeItem(STORE); sessionStorage.removeItem(STORE); } catch (e) { /* нет */ } }
+  function clear() { cached = null; cachedP = null; cachedS = null; cachedA = null; try { localStorage.removeItem(STORE); sessionStorage.removeItem(STORE); } catch (e) { /* нет */ } }
   const canCrypto = () => !!(window.crypto && crypto.subtle);
 
   function loadScript(src) {
@@ -78,6 +78,21 @@
     const jwk = JSON.parse(await decrypt(k, m.premium.wrapS));
     cachedS = await crypto.subtle.importKey('jwk', jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
     return cachedS;
+  }
+  /** Ящик заявок и облако — только у Алины: адрес сервера, токен, закрытый ключ анкет, ключ облака (или null). */
+  async function api() {
+    if (cachedA) return cachedA;
+    const k = await key();
+    if (!k) return null;
+    const m = await meta();
+    if (!m.api || !(window.SITE && window.SITE.api && window.SITE.api.url)) return null;
+    try {
+      const jwk = JSON.parse(await decrypt(k, m.api.wrapD));
+      const priv = await crypto.subtle.importKey('jwk', { kty: 'EC', crv: 'P-256', x: jwk.x, y: jwk.y, d: jwk.d, ext: true }, { name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveBits']);
+      const vault = await crypto.subtle.importKey('raw', b64d(await decrypt(k, m.api.wrapV)), 'AES-GCM', false, ['encrypt', 'decrypt']);
+      cachedA = { url: String(window.SITE.api.url).replace(/\/+$/, ''), token: await decrypt(k, m.api.wrapT), priv, vault, kid: m.api.kid };
+    } catch (e) { console.error(e); return null; }
+    return cachedA;
   }
   /** Ключ для раздела: премиум — у Алины или по коду доступа (js/premium.js), остальное — только у Алины. */
   async function keyFor(m, n) {
@@ -148,5 +163,24 @@
     });
   }
 
-  window.Admin = { has: () => !!stored(), key, login, logout, run, page, meta, decrypt, premiumKey, signKey, canCrypto };
+  window.Admin = { has: () => !!stored(), key, login, logout, run, page, meta, decrypt, premiumKey, signKey, canCrypto, api };
+
+  // Алине на страницах сайта (не в кабинете): в ящике есть новые анкеты — тихая плашка «в кабинет»
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      if (!stored() || /cabinet\.html$/.test(location.pathname) || window.ARTIFACT_PREVIEW) return;
+      const url = ((window.SITE || {}).api || {}).url;
+      if (!url || (UI.isPreview && !(UI.localApi && UI.localApi(url)))) return;
+      const a = await api(); if (!a) return;
+      const r = await fetch(a.url + '/v1/count', { headers: { Authorization: 'Bearer ' + a.token }, cache: 'no-store' });
+      if (!r.ok) return;
+      const n = (await r.json()).inbox;
+      if (!n) return;
+      const el = document.createElement('a');
+      el.className = 'inbox-chip'; el.href = 'cabinet.html#requests';
+      el.innerHTML = `${UI.icon('inbox')}<span>${n === 1 ? 'Новая анкета' : 'Новых анкет: ' + n} — в кабинет</span>`;
+      document.body.appendChild(el);
+      if (UI.fadeIn) UI.fadeIn(el, 6);
+    } catch (e) { /* без сети — ничего не показываем */ }
+  });
 })();

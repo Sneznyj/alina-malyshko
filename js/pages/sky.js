@@ -66,6 +66,8 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    // эфемериды: положения планет на каждый день месяца
+    if (window.ProView && document.getElementById('ephBox')) window.ProView.ephemeris(document.getElementById('ephBox'));
     nowTable();
     document.getElementById('prevY').addEventListener('click', () => { year--; render(); });
     document.getElementById('nextY').addEventListener('click', () => { year++; render(); });

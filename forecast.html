@@ -44,12 +44,15 @@
           <button class="btn btn-primary btn-block" id="calcBtn" type="button" style="margin-top:18px">Рассчитать прогноз</button>
         </div>
       </aside>
+      <div class="tool-main">
       <div id="result">
         <div class="card result-empty">
           <div class="big">♃&#xFE0E;</div>
           <h3>Что ждёт впереди?</h3>
           <p class="muted" style="max-width:48ch;margin-inline:auto">Введите данные рождения и выберите период. Вы получите календарь важных транзитов с толкованием, карту года и прогрессии.</p>
         </div>
+      </div>
+        <div id="proForecast" style="margin-top:20px" hidden></div>
       </div>
     </div>
   </section>
@@ -68,6 +71,8 @@
 <script src="js/wheel.js"></script>
 <script src="js/chart-view.js"></script>
 <!-- подробный прогноз зашифрован (js/locked/forecast.js): открывается кодом премиум-доступа или входом Алины -->
+<script src="js/pro.js"></script>
+<script src="js/pro-view.js"></script>
 <script src="js/pages/forecast.js"></script>
 </body>
 </html>
