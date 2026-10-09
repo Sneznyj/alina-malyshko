@@ -101,7 +101,9 @@
       PV.invalidate();
       m.close();
       UI.toast(p ? 'Карта сохранена' : 'Карта добавлена в «Мои карты» ✦', 'check');
-      if (done) done(saved); else open(saved.id);
+      if (done) done(saved);
+      else if (!p) { list(); UI.conjure($('apMain'), { kind: 'natal' }).then((ok) => { if (ok) open(saved.id); }); } // новая карта — с «волшебством»
+      else open(saved.id);
     });
   }
 

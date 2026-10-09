@@ -273,10 +273,11 @@
       W.attach($('nhWheel'));
       if (!sample) UI.fadeIn(box, 6);
     }
-    function build(p) {
+    async function build(p) {
       let c;
       try { c = AC.chart(p, CV ? CV.chartOpts() : {}); } catch (e) { UI.toast('Не получилось рассчитать карту — проверьте данные', 'info'); return; }
       UI.recent.add(p);
+      if (!(await UI.conjure(box, { kind: 'natal' }))) return;
       show(c, p, false);
       if (window.innerWidth < 900) box.scrollIntoView({ behavior: UI.reduceMotion() ? 'auto' : 'smooth', block: 'start' });
     }

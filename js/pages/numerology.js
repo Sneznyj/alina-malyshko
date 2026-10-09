@@ -248,10 +248,12 @@
     const di = document.querySelector('#nmDateBox .dob-iso');
     if (iso) { di.value = iso; di.dispatchEvent(new Event('change')); }
   }
-  function run(input, focus) {
+  async function run(input, focus) {
     res = calc(input.name, input.iso);
     if (window.NumerologyPro) window.NumerologyPro.reset();
     UI.store.set('numerology', input);
+    // по нажатию — короткое «волшебство», при открытии страницы (прошлые числа) — сразу
+    if (focus && !(await UI.conjure($('numResult'), { kind: 'numbers' }))) return;
     render(focus);
   }
 

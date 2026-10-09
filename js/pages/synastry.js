@@ -101,13 +101,14 @@
     UI.reveal(box);
   }
 
-  function calc() {
+  async function calc() {
     pa = fa.get(); if (!pa) return;
     pb = fb.get(); if (!pb) return;
     const o = CV.chartOpts();
     A = AC.chart(pa, o); B = AC.chart(pb, o);
     S = AC.synastry(A, B);
     UI.recent.add(pa); UI.recent.add(pb);
+    if (!(await UI.conjure(document.getElementById('result'), { kind: 'synastry' }))) return;
     render();
     document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }

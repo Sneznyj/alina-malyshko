@@ -101,6 +101,8 @@
         const events = AC.transits(natal, start, end, { transiting: tIds, natal: natal.timeKnown ? nIds : nIds.filter((x) => !['asc', 'mc', 'moon'].includes(x)) })
           .filter((e) => !(e.transiting === e.natal && ['node', 'chiron'].includes(e.transiting)))
           .filter((e) => !(['node', 'chiron'].includes(e.transiting) && !['conj', 'opp', 'square'].includes(e.type)));
+        // транзиты посчитаны — короткое «волшебство», потом прогноз (SVG-анимация не должна замирать на расчёте)
+        if (!(await UI.conjure($('result'), { kind: 'forecast' }))) return; // начали новый расчёт — кнопку вернёт он
         ctx = { natal, params, events, range: { start, end } };
         UI.recent.add(params);
         await show();

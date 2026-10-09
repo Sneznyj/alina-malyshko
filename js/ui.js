@@ -57,6 +57,55 @@
     el.animate({ opacity: [0, 1], translate: ['0 ' + (dy == null ? 10 : dy) + 'px', '0 0'] }, { duration: 460, easing: EASE_OUT });
   }
 
+  // ---------- «волшебство» перед результатом расчёта ----------
+  // Пока «звёзды складываются»: круг зодиака оживает, планеты собираются по орбитам и соединяются линиями, под кругом —
+  // 2–3 фразы о том, что сейчас считается. Недолго: первый расчёт за визит ~1,3 с, следующие ~0,7 с; без анимаций
+  // (prefers-reduced-motion) — сразу. conjure(box, { kind }) кладёт сцену в box и через это время отвечает true —
+  // тогда страница рисует результат на её месте; false — пока шла анимация, начали новый расчёт (этот не рисовать).
+  const CONJ_LINES = {
+    natal: ['Сверяю положение планет', 'Строю дома и углы карты', 'Соединяю аспекты'],
+    synastry: ['Сверяю две карты', 'Ищу точки притяжения', 'Считаю совместимость'],
+    forecast: ['Смотрю, куда идут планеты', 'Строю карту года', 'Отмечаю важные даты'],
+    numbers: ['Складываю числа даты', 'Считаю путь и имя', 'Собираю квадрат'],
+  };
+  const ZOD = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'].map((g) => g + '︎');
+  let conjCount = 0, conjSeq = 0;
+  function conjure(box, opts) {
+    opts = opts || {};
+    if (!box || reduceMotion()) return Promise.resolve(true);
+    const id = ++conjSeq;
+    box.dataset.conj = id;
+    const ms = opts.ms || (conjCount++ ? 720 : 1300);
+    const lines = (opts.lines || CONJ_LINES[opts.kind] || CONJ_LINES.natal).slice(0, ms < 1000 ? 2 : 3);
+    const ring = opts.kind === 'numbers' ? ['1', '2', '3', '4', '5', '6', '7', '8', '9', '11', '22', '33'] : ZOD;
+    const R = 76, rnd = (a, b) => a + Math.random() * (b - a), f1 = (x) => x.toFixed(1);
+    // планеты: каждая прилетает по своей орбите с поворотом, в конце — «созвездие» из линий между ними
+    const pts = Array.from({ length: 7 }, (_, i) => ({ r: [30, 40, 50, 58, 34, 46, 54][i], a: rnd(0, 360), spin: rnd(140, 260) * (i % 2 ? -1 : 1), c: ['gold', 'lav', 'rose'][i % 3] }));
+    const xy = (p) => [p.r * Math.sin(p.a * Math.PI / 180), -p.r * Math.cos(p.a * Math.PI / 180)];
+    const pairs = [[0, 3], [1, 4], [2, 6], [3, 5], [0, 5], [1, 6]];
+    box.innerHTML = `<div class="conj" role="status" style="--ms:${ms}ms">
+        <svg class="conj-orb" viewBox="-100 -100 200 200" aria-hidden="true">
+          <circle class="conj-glow" r="62"/>
+          <g class="conj-ring"><circle class="conj-c1" r="${R + 12}"/><circle class="conj-c2" r="${R - 12}"/>
+            ${ring.map((g, i) => { const a = (i * 30 + 15) * Math.PI / 180; return `<text class="conj-g${opts.kind === 'numbers' ? ' num' : ''}" style="--i:${i}" x="${f1(R * Math.sin(a))}" y="${f1(-R * Math.cos(a))}">${g}</text>`; }).join('')}</g>
+          <g class="conj-lines">${pairs.map(([a, b], i) => { const [x1, y1] = xy(pts[a]), [x2, y2] = xy(pts[b]); return `<line pathLength="1" style="--i:${i}" x1="${f1(x1)}" y1="${f1(y1)}" x2="${f1(x2)}" y2="${f1(y2)}"/>`; }).join('')}</g>
+          ${pts.map((p, i) => `<g class="conj-pl" style="--a:${f1(p.a)}deg;--s:${f1(p.spin)}deg;--i:${i}"><circle class="${p.c}" cx="0" cy="${-p.r}" r="${i === 0 ? 4.2 : 3.2}"/></g>`).join('')}
+          <path class="conj-star" d="M0,-15 C2,-3 3,-2 15,0 C3,2 2,3 0,15 C-2,3 -3,2 -15,0 C-3,-2 -2,-3 0,-15Z"/>
+        </svg>
+        <p class="conj-text">${lines.map((t, i) => `<span style="--i:${i};--n:${lines.length}">${esc(t)}…</span>`).join('')}</p>
+        <span class="conj-bar" aria-hidden="true"><i></i></span>
+      </div>`;
+    box.setAttribute('aria-busy', 'true');
+    // на телефоне результат ниже формы — показываем волшебство там, куда человек смотрит
+    const r = box.getBoundingClientRect();
+    if (r.top > innerHeight - 160 || r.bottom < 80) box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return new Promise((res) => setTimeout(() => {
+      const live = String(box.dataset.conj) === String(id);
+      if (live) { box.removeAttribute('aria-busy'); delete box.dataset.conj; }
+      res(live);
+    }, ms));
+  }
+
   // ---------- тема ----------
   function applyTheme(t) {
     document.documentElement.setAttribute('data-theme', t);
@@ -243,7 +292,7 @@
           <a href="index.html#services">Консультации</a>
           <a href="energy.html"${page === 'energy.html' ? ' aria-current="page"' : ''}>Энергетическая работа</a>
           <div class="nav-drop">
-            <button type="button" class="nav-drop-btn${onTool ? ' active' : ''}" aria-expanded="false" aria-haspopup="true">Бесплатно ${icon('chevron-down', 'chev')}</button>
+            <button type="button" class="nav-drop-btn${onTool ? ' active' : ''}" aria-expanded="false" aria-haspopup="true">Сервисы ${icon('chevron-down', 'chev')}</button>
             <div class="nav-panel" role="menu">
               ${TOOLS.map(([h, t, ic, d]) => `<a role="menuitem" href="${h}"${page === h ? ' aria-current="page"' : ''}><span class="np-ic">${icon(ic)}</span><span><b>${t}</b><small>${d}</small></span></a>`).join('')}
             </div>
@@ -332,7 +381,7 @@
         <button class="icon-btn" type="button" data-close-menu aria-label="Закрыть меню">${icon('close')}</button>
       </div>
       <nav class="mm-main">${[['index.html', 'Главная'], ['index.html#services', 'Консультации и цены'], ['energy.html', 'Энергетическая работа'], ['index.html#about', 'Обо мне'], ...(hasReviews ? [['index.html#reviews', 'Отзывы']] : []), ...(academyOn ? [['academy.html', 'Уроки астрологии']] : [])].map(([h, t], i) => `<a href="${h}" style="transition-delay:${0.04 * i}s">${t}</a>`).join('')}</nav>
-      <p class="mm-label">Бесплатно на сайте</p>
+      <p class="mm-label">Сервисы на сайте</p>
       <div class="mm-tools">${TOOLS.map(([h, t, ic]) => `<a href="${h}">${icon(ic)}<span>${t}</span></a>`).join('')}</div>
       ${premOn ? `<a class="mm-premium" data-premium-link href="premium.html">${icon('crown')}<span><b>Премиум-доступ</b><small>прогноз по датам и подробные разборы</small></span>${icon('arrow')}</a>` : ''}
       <div style="margin-top:22px;display:grid;gap:10px">
@@ -379,7 +428,7 @@
             <div class="socials">${links.map((l) => `<a href="${esc(l.href)}" target="_blank" rel="noopener" aria-label="${esc(l.label)}" title="${esc(l.label)}">${icon(l.k)}</a>`).join('')}</div>
             ${(SITE.contacts || {}).instagram ? '<p class="tiny muted" style="max-width:34ch;margin-top:10px">*Instagram принадлежит компании Meta, деятельность которой запрещена в России как экстремистская.</p>' : ''}
           </div>
-          <div><h4>Бесплатно</h4>${TOOLS.map(([h, t]) => `<a href="${h}">${t}</a>`).join('')}</div>
+          <div><h4>Сервисы</h4>${TOOLS.map(([h, t]) => `<a href="${h}">${t}</a>`).join('')}</div>
           <div><h4>Консультации</h4>${SITE.services.slice(0, 6).map((s) => `<a href="index.html#services">${esc(s.title)}</a>`).join('')}</div>
           <div><h4>Сайт</h4><a href="energy.html">Энергетическая работа</a><a href="astro.html">Астропроцессор · мои карты</a>${academyOn ? '<a href="academy.html">Уроки астрологии</a>' : ''}<a href="index.html#about">Обо мне</a><a href="index.html#faq">Вопросы и ответы</a><a href="index.html#booking">Запись</a>${premOn ? '<a href="premium.html">Премиум-доступ</a>' : ''}<a href="privacy.html">Политика конфиденциальности</a>${isAlina() ? '<a href="cabinet.html" class="muted">Кабинет астролога</a>' : ''}</div>
         </div>
@@ -1590,7 +1639,7 @@
     return { date, moon: ms, sunSign, retro, pts };
   }
 
-  window.UI = { submitIntake, birthNeed, people, peopleChips, pickList, localApi, dateHTML, cityField, cityAutocomplete, searchCities, checkDate, premOn, currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, serviceOptions, academyOn, isAlina, bookingFormHTML, bindBooking, tzLabel, dobHTML, enhanceDob, reveal, fadeIn, reduceMotion, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
+  window.UI = { conjure, submitIntake, birthNeed, people, peopleChips, pickList, localApi, dateHTML, cityField, cityAutocomplete, searchCities, checkDate, premOn, currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, serviceOptions, academyOn, isAlina, bookingFormHTML, bindBooking, tzLabel, dobHTML, enhanceDob, reveal, fadeIn, reduceMotion, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
 
   // Шапку, подвал и небо рисуем сразу (скрипт стоит в конце <body>, разметка страницы уже есть), а не по DOMContentLoaded:
   // так первый кадр страницы — и плавный переход между страницами — уже с шапкой, без мигания.

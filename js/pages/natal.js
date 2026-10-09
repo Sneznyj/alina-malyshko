@@ -148,7 +148,8 @@
     }
   }
 
-  function calc(p) {
+  /** quiet — пересчёт без «волшебства» (сменили настройки расчёта). */
+  async function calc(p, quiet) {
     params = p || form.get();
     if (!params) return;
     try {
@@ -158,6 +159,7 @@
     }
     UI.recent.add(params);
     renderRecent();
+    if (!quiet && !(await UI.conjure(document.getElementById('result'), { kind: 'natal' }))) return;
     render();
     if (window.innerWidth < 1000) document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -168,7 +170,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     // «Мои карты»: нажали на человека — сразу строим его карту
     form = UI.birthForm(document.getElementById('birthForm'), { onPick: (it) => calc(Object.assign({}, it.p, it.person ? { personId: it.person.id } : {})) });
-    document.getElementById('settingsBox').appendChild(CV.settingsForm(() => { if (params) calc(params); }));
+    document.getElementById('settingsBox').appendChild(CV.settingsForm(() => { if (params) calc(params, true); }));
     document.getElementById('calcBtn').addEventListener('click', () => calc());
     document.getElementById('birthForm').addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.matches('input:not([role=combobox])')) calc(); });
     renderRecent();
