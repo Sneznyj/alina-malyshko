@@ -1222,7 +1222,38 @@
     const what = svc ? esc(svc.duration || '') : id === 'gift' ? 'красивый сертификат на любую консультацию' : id === 'numerology' ? 'разбор чисел по дате рождения и имени' : id === 'energy' ? `${(SITE.energy && SITE.energy.duration) || 30} минут онлайн · оплата — донейшн · <a href="energy.html">подробнее и выбор времени</a>` : '';
     return what || price ? `${icon('info')}<span>${what}${what && price ? ' · ' : ''}${price}</span>` : '';
   }
-  /** Анкета — коротко: услуга, вопрос, данные рождения одной строкой, имя и контакт. Остальное Алина уточнит сама. opts.note — подпись под кнопкой. */
+  /** Какие данные рождения нужны для услуги: 'full' — дата, время (или «не знаю») и город обязательны: по ним Алина сразу
+      видит карту человека; 'optional' — по желанию; 'none' — не нужны. content.js → intake.services[id].birth;
+      по умолчанию — 'full' для консультаций, 'optional' для экспресс-ответа, уроков и «другого», 'none' для сертификата,
+      курса и энергетического выравнивания. */
+  function birthNeed(id) {
+    const c = intakeOf(id);
+    if (c.birth) return c.birth;
+    if (c.noBirth || ['gift', 'course', 'energy'].includes(id)) return 'none';
+    return ['express', 'lessons', 'other'].includes(id) ? 'optional' : 'full';
+  }
+  const lastPart = (s) => String(s || '').split(',').pop().trim();
+  /** «14.06.1997, 08:30, Минск, Беларусь» — строка для Telegram и кабинета (её же разбирает «Вставить анкету»). */
+  const birthLine = (p) => `${pad(p.d)}.${pad(p.mo)}.${p.y}, ${p.timeKnown ? `${pad(p.h)}:${pad(p.mi)}` : 'время неизвестно'}${p.place ? `, ${p.place}${p.country && p.country !== p.place ? ', ' + p.country : ''}` : ''}`;
+  /** Блок «человек» в анкете: «Мои карты», имя, дата (календарь), время или «не знаю», город (поиск). k: 'me' | 'pt' (партнёр). */
+  function ixPersonHTML(u, k) {
+    const me = k === 'me', id = u + k;
+    return `<div class="ix-person" data-ix="${k}"${me ? '' : ' hidden'}>
+        <p class="ix-legend"><span data-ix="${k}Title">${me ? 'Ваши данные' : 'Данные партнёра'}</span> <small class="ix-opt" data-ix="${k}Opt" hidden>— по желанию</small></p>
+        <div class="ix-pp" data-ix="${k}Pp"><div class="pp-box" data-pp-box hidden></div></div>
+        <div class="form-row ix-row" data-ix="${k}Row">
+          <div class="field"><label for="${id}n"><span data-ix="${k}NameLabel">${me ? 'Ваше имя' : 'Имя партнёра'}</span>${me ? ' *' : ''}</label><input class="input" id="${id}n" name="${me ? 'name' : 'ptname'}"${me ? ' required autocomplete="given-name"' : ' autocomplete="off"'} maxlength="80"></div>
+          <div class="field" data-ix="${k}Date"><label for="${id}d">Дата рождения<span data-ix="star"> *</span></label>${dobHTML(id + 'd', k + 'date')}</div>
+        </div>
+        <div class="form-row ix-row" data-ix="${k}Birth">
+          <div class="field"><label for="${id}t">Время рождения<span data-ix="star"> *</span></label><input class="input" id="${id}t" name="${k}time" type="time">
+            <label class="check ix-unk"><input type="checkbox" name="${k}unk"> Не знаю точное время</label></div>
+          <div class="field city-field"><label for="${id}c">Город рождения<span data-ix="star"> *</span></label><input class="input" id="${id}c" name="${k}city" autocomplete="off" placeholder="Начните вводить город"><div class="ac-list" id="${id}l" role="listbox"></div><div class="place-meta" id="${id}m"></div></div>
+        </div>
+      </div>`;
+  }
+  /** Анкета: услуга, данные человека (из «Моих карт» одним нажатием, дата — календарём, город — поиском), вопрос по желанию,
+      контакт. Обязательное зависит от услуги (birthNeed). opts.note — подпись под кнопкой. */
   function bookingFormHTML(prefix, preset, opts) {
     const u = prefix;
     opts = opts || {};
@@ -1231,103 +1262,217 @@
     return `
       <form class="form ix" data-booking novalidate>
         <div class="field"><label for="${u}service">Что вас интересует</label><select class="select" id="${u}service" name="service">${svcs.map((s) => `<option value="${s.id}"${sel === s.id ? ' selected' : ''}>${esc(s.title)}</option>`).join('')}</select><span class="hint ix-meta" data-ix="meta"></span></div>
-        <div class="field"><label for="${u}q"><span data-ix="qlabel">Ваш вопрос</span> <small class="ix-opt">— можно коротко</small></label><textarea class="textarea" id="${u}q" name="question" rows="2" maxlength="1500"></textarea></div>
-        <div class="field" data-ix="birth"><label for="${u}b"><span data-ix="birthTitle">Дата, время и город рождения</span> <small class="ix-opt">— можно позже</small></label><input class="input" id="${u}b" name="birth" placeholder="Например: 14.06.1997, 08:30, Минск" autocomplete="off"></div>
-        <div class="field" data-ix="partner" hidden><label for="${u}pt">Данные партнёра</label><input class="input" id="${u}pt" name="partner" placeholder="Имя, дата, время и город рождения" autocomplete="off"></div>
-        <div class="field" data-ix="fullName" hidden><label for="${u}fn">ФИО при рождении</label><input class="input" id="${u}fn" name="fullname" placeholder="Как в свидетельстве о рождении" autocomplete="off"></div>
-        ${(INTAKE.formats || []).length ? `<div class="field" data-ix="formatBox"><span class="label" id="${u}fl">Как удобнее <small class="ix-opt">— необязательно</small></span><div class="ix-chips" role="group" aria-labelledby="${u}fl">${INTAKE.formats.map((f) => `<button type="button" class="ix-chip" data-format="${esc(f.title)}" aria-pressed="false" title="${esc(f.title + (f.text ? ' — ' + f.text : ''))}">${icon(f.icon || 'sparkle')}${esc(f.short || f.title)}</button>`).join('')}</div></div>` : ''}
-        <div class="form-row ix-contact">
-          <div class="field"><label for="${u}name">Ваше имя *</label><input class="input" id="${u}name" name="name" required autocomplete="given-name"></div>
-          <div class="field"><label for="${u}contact">Telegram или телефон *</label><input class="input" id="${u}contact" name="contact" required placeholder="@ник или +7…" autocomplete="tel"></div>
+        ${ixPersonHTML(u, 'me')}
+        ${ixPersonHTML(u, 'pt')}
+        <div class="field" data-ix="fullName" hidden><label for="${u}fn">ФИО при рождении *</label><input class="input" id="${u}fn" name="fullname" placeholder="Как в свидетельстве о рождении" autocomplete="off" maxlength="120"><span class="hint">По нему считаются числа имени, души и личности.</span></div>
+        <div class="field"><label for="${u}q"><span data-ix="qlabel">Ваш вопрос</span> <small class="ix-opt">— по желанию</small></label><textarea class="textarea" id="${u}q" name="question" rows="2" maxlength="1500"></textarea></div>
+        ${(INTAKE.formats || []).length ? `<div class="field" data-ix="formatBox"><span class="label" id="${u}fl">Как удобнее <small class="ix-opt">— по желанию</small></span><div class="ix-chips" role="group" aria-labelledby="${u}fl">${INTAKE.formats.map((f) => `<button type="button" class="ix-chip" data-format="${esc(f.title)}" aria-pressed="false" title="${esc(f.title + (f.text ? ' — ' + f.text : ''))}">${icon(f.icon || 'sparkle')}${esc(f.short || f.title)}</button>`).join('')}</div></div>` : ''}
+        <div class="form-row ix-contact one" data-ix="contactRow">
+          <div class="field" data-ix="parent" hidden><label for="${u}pn">Ваше имя *</label><input class="input" id="${u}pn" name="parent" autocomplete="given-name" maxlength="80"></div>
+          <div class="field"><label for="${u}contact">Telegram или телефон *</label><input class="input" id="${u}contact" name="contact" required placeholder="@ник или +7…" autocomplete="tel" maxlength="120"></div>
         </div>
         <input class="ix-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <label class="check pp-save" data-ix="save"><input type="checkbox" name="ppsave"${store.get('ppSave', true) ? ' checked' : ''}> <span>Сохранить данные в «Мои карты» — в следующий раз выберете одним нажатием</span></label>
         <label class="check ix-consent"><input type="checkbox" name="consent" required> <span>Согласен(на) на <a href="privacy.html" target="_blank">обработку данных</a></span></label>
         <button class="btn btn-primary btn-block" type="submit">${inboxOn ? `${icon('send')} Отправить анкету Алине` : `${icon('telegram')} Отправить Алине в Telegram`}</button>
-        <p class="tiny muted center" style="margin:0">${opts.note ? esc(opts.note) : `Обязательны только имя и контакт. ${inboxOn ? 'Анкета сразу придёт мне — ' : ''}отвечу ${esc(INTAKE.replyTime || 'в течение дня')} и сама предложу время.`}</p>
+        <p class="tiny muted center" style="margin:0">${opts.note ? esc(opts.note) : `Со звёздочкой — обязательно, вопрос — по желанию. ${inboxOn ? 'Анкета сразу придёт мне — отвечу' : 'Отвечу'} ${esc(INTAKE.replyTime || 'в течение дня')} и сама предложу время.`}</p>
       </form>`;
   }
-  /** Показать поля под выбранную услугу: подсказка вопроса, чьи данные рождения, формат — только для встреч. */
+  /** Показать поля под выбранную услугу: чьи данные (свои или ребёнка), что обязательно, партнёр, ФИО, формат — только для встреч. */
   function intakeApply(form) {
-    const id = form.querySelector('[name=service]').value, cfg = intakeOf(id);
+    const id = form.querySelector('[name=service]').value, cfg = intakeOf(id), need = birthNeed(id), kid = cfg.birthOf || '';
     const q = (k) => form.querySelector(`[data-ix="${k}"]`);
     const set = (k, on) => { const el = q(k); if (el) el.hidden = !on; };
     q('meta').innerHTML = serviceMeta(id);
     form.querySelector('[name=question]').placeholder = cfg.ask || 'Что сейчас важно?';
     q('qlabel').textContent = id === 'gift' ? 'Кому и что дарите' : 'Ваш вопрос';
-    q('birthTitle').textContent = cfg.birthOf ? `Дата, время и город рождения ${cfg.birthOf}` : cfg.partner ? 'Ваши дата, время и город рождения' : 'Дата, время и город рождения';
-    set('birth', !cfg.noBirth);
-    set('partner', !!cfg.partner);
+    q('meTitle').textContent = kid ? `Данные ${kid}` : need === 'none' ? 'О вас' : 'Ваши данные';
+    q('meNameLabel').textContent = kid ? `Имя ${kid}` : 'Ваше имя';
+    form.querySelector('[name=name]').setAttribute('autocomplete', kid ? 'off' : 'given-name');
+    set('meOpt', need === 'optional');
+    for (const k of ['mePp', 'meDate', 'meBirth']) set(k, need !== 'none');
+    q('meRow').classList.toggle('one', need === 'none');
+    form.querySelectorAll('[data-ix="me"] [data-ix="star"]').forEach((s) => { s.hidden = need !== 'full'; });
+    set('pt', !!cfg.partner);
+    set('parent', !!kid);
+    q('contactRow').classList.toggle('one', !kid);
     set('fullName', !!cfg.fullName);
     set('formatBox', id !== 'gift' && !cfg.written);
+    set('save', need !== 'none' || !!cfg.partner);
   }
-  /** Текст анкеты для мессенджера и данные для сервиса форм. */
-  function intakeText(form) {
+  /** Текст анкеты (для Telegram — и «Вставить анкету» в кабинете его разберёт) и данные для ящика: строкой и точно
+      (birthData / partnerData — дата, время, координаты и пояс города: кабинет строит карту без догадок). */
+  function intakeText(form, me, pt) {
     const f = new FormData(form);
     const g = (k) => String(f.get(k) || '').trim();
-    const id = g('service'), cfg = intakeOf(id), svc = serviceOptions().find((s) => s.id === id);
+    const id = g('service'), cfg = intakeOf(id), svc = serviceOptions().find((s) => s.id === id), kid = cfg.birthOf || '';
     const fmtB = form.querySelector('[data-format][aria-pressed="true"]');
     const format = fmtB && id !== 'gift' && !cfg.written ? fmtB.dataset.format : '';
-    const birth = cfg.noBirth ? '' : g('birth');
+    const who = kid ? g('parent') : g('name');
+    const ptLine = pt ? `${pt.name ? pt.name + ', ' : ''}${birthLine(pt)}` : '';
     const tz = browserTz;
     const lines = [
       id === 'gift' ? 'Здравствуйте, Алина! Хочу подарочный сертификат ✨' : 'Здравствуйте, Алина! Хочу на консультацию ✨',
-      `Имя: ${g('name')}`,
+      `Имя: ${who}`,
       `Связь: ${g('contact')}`,
       `Услуга: ${svc ? svc.title : ''}`,
       g('question') ? `Запрос: ${g('question')}` : '',
-      birth ? `Дата рождения${cfg.birthOf ? ' ' + cfg.birthOf : ''}: ${birth}` : '',
-      cfg.partner && g('partner') ? `Партнёр: ${g('partner')}` : '',
+      kid ? `Ребёнок: ${g('name')}` : '',
+      me ? `Дата рождения${kid ? ' ' + kid : ''}: ${birthLine(me)}` : '',
+      pt ? `Партнёр: ${ptLine}` : '',
       cfg.fullName && g('fullname') ? `ФИО при рождении: ${g('fullname')}` : '',
       format ? `Формат: ${format}` : '',
       tz ? `Мой часовой пояс: ${tz} (${tzLabel(tz)})` : '',
     ].filter(Boolean);
-    const data = { name: g('name'), contact: g('contact'), service: svc && svc.title, serviceId: id, question: g('question'), birth, partner: cfg.partner ? g('partner') : '', fullname: cfg.fullName ? g('fullname') : '', format, timezone: tz };
+    const pack = (p) => (p ? { name: p.name || '', y: p.y, mo: p.mo, d: p.d, h: p.h, mi: p.mi, timeKnown: p.timeKnown, lat: p.lat, lon: p.lon, zone: p.zone, place: p.place || '', country: p.country || '' } : null);
+    const data = { name: who, contact: g('contact'), service: svc && svc.title, serviceId: id, question: g('question'), birth: me ? birthLine(me) : '', birthData: pack(me), childName: kid ? g('name') : '', partner: ptLine, partnerData: pack(pt), fullname: cfg.fullName ? g('fullname') : '', format, timezone: tz };
     return { text: lines.join('\n'), data, hp: g('website') };
   }
-  /** Анкета: формат одним нажатием, проверка и отправка. */
+  /** Город, набранный, но не выбранный из списка: берём точное совпадение названия (встроенный список, затем геокодер). */
+  async function resolvePlace(text) {
+    const n = normName(text);
+    if (n.length < 2) return null;
+    try { return (await searchCities(text)).find((c) => normName(c.name) === n) || null; } catch (e) { return null; }
+  }
+  /** Анкета: «Мои карты» одним нажатием, дата календарём, город поиском, формат одной кнопкой; проверка и отправка. */
   function bindBooking(form, onDone) {
+    const q = (n) => form.querySelector(`[name="${n}"]`);
+    const S = { me: { place: null }, pt: { place: null } };
+    enhanceDob(form);
+    for (const k of ['me', 'pt']) {
+      const city = q(k + 'city'), meta = city.parentNode.querySelector('.place-meta'), time = q(k + 'time'), unk = q(k + 'unk');
+      const showPlace = (p) => { meta.textContent = p ? `${lastPart(p.country) ? lastPart(p.country) + ' · ' : ''}${fmtCoord(+p.lat, +p.lon)}` : ''; };
+      S[k].set = (p) => { S[k].place = p; city.value = p ? p.name : ''; city.classList.remove('invalid'); showPlace(p); };
+      city.addEventListener('input', () => { S[k].place = null; showPlace(null); });
+      cityAutocomplete(city, city.parentNode.querySelector('.ac-list'), (p) => { S[k].place = p; showPlace(p); });
+      unk.addEventListener('change', () => { time.disabled = unk.checked; if (unk.checked) time.classList.remove('invalid'); });
+      peopleChips(form.querySelector(`[data-ix="${k}"] [data-pp-box]`), (it) => fillPerson(k, it), { clients: false, manage: false, max: 4 });
+    }
+    /** Человек из «Моих карт» → имя, дата, время, город (и ФИО при рождении, если сохранено). */
+    function fillPerson(k, it) {
+      const p = it.p;
+      q(k === 'me' ? 'name' : 'ptname').value = p.name || '';
+      const iso = q(k + 'date'); iso.value = `${p.y}-${pad(p.mo)}-${pad(p.d)}`; iso.dispatchEvent(new Event('change'));
+      const unk = q(k + 'unk'), time = q(k + 'time');
+      unk.checked = p.timeKnown === false; time.disabled = unk.checked;
+      time.value = p.timeKnown === false ? '' : `${pad(+p.h)}:${pad(+p.mi)}`;
+      S[k].set(p.lat != null && isFinite(+p.lat) && isFinite(+p.lon) ? { name: p.place || fmtCoord(+p.lat, +p.lon), country: '', lat: +p.lat, lon: +p.lon, tz: p.zone } : null);
+      if (k === 'me' && it.fullName && !q('fullname').value.trim()) q('fullname').value = it.fullName;
+      form.querySelectorAll(`[data-ix="${k}"] .invalid`).forEach((e) => e.classList.remove('invalid'));
+    }
+    /** Данные человека из полей. need: 'full' | 'optional', whose — «ребёнка», «партнёра» для подсказок. → { p } или { err: [поле, текст, иконка] }. */
+    async function readPerson(k, need, whose) {
+      const of = whose ? ' ' + whose : '';
+      const iso = q(k + 'date'), txt = iso.closest('[data-dob]').querySelector('.dob-text');
+      const time = q(k + 'time'), unk = q(k + 'unk'), city = q(k + 'city');
+      const p = { name: q(k === 'me' ? 'name' : 'ptname').value.trim() };
+      if (!iso.value) {
+        if (txt.value.trim()) return { err: [txt, `Проверьте дату рождения${of}: ДД.ММ.ГГГГ`, 'calendar'] };
+        if (need === 'full') return { err: [txt, `Укажите дату рождения${of} — цифрами или в календаре`, 'calendar'] };
+        return { p: null };
+      }
+      [p.y, p.mo, p.d] = iso.value.split('-').map(Number);
+      if (new Date(p.y, p.mo - 1, p.d) > new Date()) return { err: [txt, `Дата рождения${of} ещё не наступила — проверьте год`, 'calendar'] };
+      if (unk.checked || (!time.value && need !== 'full')) Object.assign(p, { h: 12, mi: 0, timeKnown: false });
+      else if (time.value) { const [h, mi] = time.value.split(':').map(Number); Object.assign(p, { h, mi, timeKnown: true }); }
+      else return { err: [time, `Укажите время рождения${of} — или отметьте «Не знаю точное время»`, 'clock'] };
+      let pl = S[k].place;
+      if (!pl && city.value.trim()) { pl = await resolvePlace(city.value); if (pl) S[k].set(pl); }
+      if (pl) Object.assign(p, { lat: +pl.lat, lon: +pl.lon, zone: pl.tz, place: pl.name, country: lastPart(pl.country) });
+      else if (city.value.trim()) return { err: [city, `Выберите город рождения${of} из списка — если его нет, ближайший крупный`, 'pin'] };
+      else if (need === 'full') return { err: [city, `Укажите город рождения${of} — начните вводить и выберите из списка`, 'pin'] };
+      return { p };
+    }
+    // имя и контакт с прошлой анкеты (только на этом устройстве) — чтобы не вводить заново
+    const mine = store.get('ixMe', null);
+    function prefill() {
+      if (!mine) return;
+      if (!q('contact').value) q('contact').value = mine.contact || '';
+      if (!q('parent').value) q('parent').value = mine.name || '';
+      if (!q('name').value && !intakeOf(q('service').value).birthOf) q('name').value = mine.name || '';
+    }
+    prefill();
     intakeApply(form);
-    form.querySelector('[name=service]').addEventListener('change', () => { intakeApply(form); fadeIn(form, 4); });
+    q('service').addEventListener('change', () => {
+      const kid = !!intakeOf(q('service').value).birthOf, n = q('name');
+      if (mine && mine.name) { if (kid && n.value === mine.name) n.value = ''; else if (!kid && !n.value) n.value = mine.name; }
+      intakeApply(form); fadeIn(form, 4);
+    });
+    q('ppsave').addEventListener('change', (e) => store.set('ppSave', e.target.checked));
     form.addEventListener('click', (e) => {
       const chip = e.target.closest('[data-format]');
       if (!chip) return;
       const on = chip.getAttribute('aria-pressed') !== 'true';
       form.querySelectorAll('[data-format]').forEach((b) => b.setAttribute('aria-pressed', String(on && b === chip)));
     });
+    /** Проверка по порядку полей: что обязательно — зависит от услуги. → { me, pt } или null (подсказка уже показана). */
+    async function validate() {
+      const id = q('service').value, cfg = intakeOf(id), need = birthNeed(id), kid = cfg.birthOf || '';
+      const fail = (el, msg, ic) => { if (el) { el.classList.add('invalid'); el.focus(); } toast(msg, ic || 'info'); return null; };
+      if (!q('name').value.trim()) return fail(q('name'), kid ? `Как зовут ${kid}?` : 'Как к вам обращаться?', 'user');
+      let me = null, pt = null, r;
+      if (need !== 'none') { r = await readPerson('me', need, kid); if (r.err) return fail(...r.err); me = r.p; }
+      if (cfg.partner) { r = await readPerson('pt', 'full', 'партнёра'); if (r.err) return fail(...r.err); pt = r.p; }
+      if (cfg.fullName && !q('fullname').value.trim()) return fail(q('fullname'), 'Напишите ФИО при рождении — по нему считаются числа имени', 'user');
+      if (kid && !q('parent').value.trim()) return fail(q('parent'), 'Как к вам обращаться?', 'user');
+      if (!q('contact').value.trim()) return fail(q('contact'), 'Оставьте контакт, чтобы я могла ответить', 'user');
+      if (!q('consent').checked) return fail(null, 'Отметьте согласие на обработку данных', 'info');
+      return { me, pt };
+    }
+    /** После отправки: запомнить на этом устройстве имя, контакт и людей («Мои карты»). */
+    function remember(me, pt) {
+      const kid = !!intakeOf(q('service').value).birthOf;
+      try { store.set('ixMe', { name: q(kid ? 'parent' : 'name').value.trim(), contact: q('contact').value.trim() }); } catch (e) { /* без памяти браузера */ }
+      if (!q('ppsave').checked) return;
+      const fn = q('fullname').value.trim(), cfg = intakeOf(q('service').value);
+      for (const p of [me, pt]) {
+        if (!p || p.lat == null) continue;
+        const sp = people.remember(p);
+        if (sp && p === me && cfg.fullName && fn && !sp.fullName) people.update(sp.id, { fullName: fn });
+      }
+    }
+    function clear() {
+      form.reset();
+      for (const k of ['me', 'pt']) { S[k].set(null); q(k + 'date').dispatchEvent(new Event('change')); q(k + 'time').disabled = false; }
+      form.querySelectorAll('[data-format]').forEach((b) => b.setAttribute('aria-pressed', 'false'));
+      form.querySelectorAll('.pp-chip.on').forEach((b) => b.classList.remove('on'));
+      prefill(); intakeApply(form);
+    }
+    let busy = false;
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      for (const k of ['name', 'contact']) {
-        const el = form.querySelector(`[name=${k}]`);
-        if (!el.value.trim()) { el.classList.add('invalid'); el.focus(); toast(k === 'name' ? 'Как к вам обращаться?' : 'Оставьте контакт, чтобы я могла ответить', 'user'); return; }
-      }
-      if (!form.querySelector('[name=consent]').checked) { toast('Отметьте согласие на обработку данных', 'info'); return; }
-      goal('booking');
-      const { text, data, hp } = intakeText(form);
-      const btn = form.querySelector('[type=submit]');
-      if (inboxOn) {
-        const label = btn.innerHTML;
-        btn.disabled = true; btn.innerHTML = `${icon('refresh')} Отправляю…`;
-        try {
-          await loadInbox();
-          const code = window.Inbox.code();
-          await window.Inbox.send({ v: 1, code, at: new Date().toISOString(), data, text, page: location.pathname.split('/').pop() || 'index.html', lang: navigator.language || '' }, { hp });
-          btn.disabled = false; btn.innerHTML = label;
-          form.reset(); intakeApply(form);
-          form.querySelectorAll('[data-format]').forEach((b) => b.setAttribute('aria-pressed', 'false'));
-          if (onDone) onDone();
-          goal('booking_inbox');
-          sentToInbox(code, data);
-          return;
-        } catch (err) { btn.disabled = false; btn.innerHTML = label; /* сервер недоступен — анкета уйдёт через мессенджер */ }
-      }
-      if (SITE.bookingEndpoint) {
-        try {
-          const r = await fetch(SITE.bookingEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(Object.assign({ message: text }, data)) });
-          if (r.ok) { form.reset(); if (onDone) onDone(); thanks(); return; }
-        } catch (err) { /* упадём в мессенджеры */ }
-      }
-      chooseChannel(text);
-      if (onDone) onDone();
+      if (busy) return;
+      busy = true;
+      const btn = form.querySelector('[type=submit]'), label = btn.innerHTML;
+      try {
+        const v = await validate();
+        if (!v) return;
+        goal('booking');
+        const { text, data, hp } = intakeText(form, v.me, v.pt);
+        remember(v.me, v.pt);
+        if (inboxOn) {
+          btn.disabled = true; btn.innerHTML = `${icon('refresh')} Отправляю…`;
+          try {
+            await loadInbox();
+            const code = window.Inbox.code();
+            await window.Inbox.send({ v: 1, code, at: new Date().toISOString(), data, text, page: location.pathname.split('/').pop() || 'index.html', lang: navigator.language || '' }, { hp });
+            btn.disabled = false; btn.innerHTML = label;
+            clear();
+            if (onDone) onDone();
+            goal('booking_inbox');
+            sentToInbox(code, data);
+            return;
+          } catch (err) { btn.disabled = false; btn.innerHTML = label; /* сервер недоступен — анкета уйдёт через мессенджер */ }
+        }
+        if (SITE.bookingEndpoint) {
+          try {
+            const r = await fetch(SITE.bookingEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(Object.assign({ message: text }, data)) });
+            if (r.ok) { clear(); if (onDone) onDone(); thanks(); return; }
+          } catch (err) { /* упадём в мессенджеры */ }
+        }
+        chooseChannel(text);
+        if (onDone) onDone();
+      } finally { busy = false; }
     });
     form.addEventListener('input', (e) => e.target.classList && e.target.classList.remove('invalid'));
   }
@@ -1399,7 +1544,7 @@
   function openBooking(preset) {
     const pr = promoInfo();
     const m = modal(`<div class="booking-head"><img src="assets/img/alina-avatar.webp" alt="" width="64" height="64"><div><span class="eyebrow" style="margin:0">анкета</span><h3 style="margin:2px 0 0">Консультация с Алиной</h3></div></div>
-      <p class="muted small" style="margin:0 0 14px">Пара строк о вашем вопросе — и анкета ${inboxOn ? 'сразу придёт мне' : 'придёт мне в Telegram'}. Отвечу сама, обычно ${esc(INTAKE.replyTime || 'в течение дня')}.</p>
+      <p class="muted small" style="margin:0 0 14px">Укажите данные рождения — и анкета ${inboxOn ? 'сразу придёт мне вместе с вашей картой' : 'придёт мне в Telegram'}. Отвечу сама, обычно ${esc(INTAKE.replyTime || 'в течение дня')}.</p>
       ${pr ? `<div class="promo-inline"><span class="sticker">−${pr.percent}%</span><span><b>${esc(pr.title)}</b><br><small>действует до ${pr.end.getDate()} ${fmt.MONTHS_GEN[pr.end.getMonth()]}</small></span></div>` : ''}
       ${bookingFormHTML('bm', preset)}`, { cls: 'booking-modal' });
     bindBooking(m.el.querySelector('form'), () => m.close());
@@ -1435,7 +1580,7 @@
     return { date, moon: ms, sunSign, retro, pts };
   }
 
-  window.UI = { submitIntake, people, peopleChips, pickList, localApi, dateHTML, cityField, cityAutocomplete, searchCities, checkDate, premOn, currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, serviceOptions, academyOn, isAlina, bookingFormHTML, bindBooking, tzLabel, dobHTML, enhanceDob, reveal, fadeIn, reduceMotion, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
+  window.UI = { submitIntake, birthNeed, people, peopleChips, pickList, localApi, dateHTML, cityField, cityAutocomplete, searchCities, checkDate, premOn, currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, serviceOptions, academyOn, isAlina, bookingFormHTML, bindBooking, tzLabel, dobHTML, enhanceDob, reveal, fadeIn, reduceMotion, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
 
   // Шапку, подвал и небо рисуем сразу (скрипт стоит в конце <body>, разметка страницы уже есть), а не по DOMContentLoaded:
   // так первый кадр страницы — и плавный переход между страницами — уже с шапкой, без мигания.

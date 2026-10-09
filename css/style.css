@@ -1190,6 +1190,17 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
 .ix-consent input { margin-top: 0; }
 .ix-pre { white-space: pre-wrap; margin: 0; background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px; font: inherit; font-size: .88rem; max-height: 220px; overflow: auto; }
 .ix-next { margin: 0 0 6px; padding-left: 1.3em; display: grid; gap: 6px; font-size: .9rem; color: var(--ink-2); }
+/* анкета: блок «человек» — «Мои карты», имя, дата календарём, время или «не знаю», город поиском */
+.ix-person { display: grid; gap: 12px; padding: 14px; border-radius: 16px; border: 1px solid var(--line); background: color-mix(in srgb, var(--lav-soft) 32%, transparent); }
+.ix-legend { margin: 0; font-size: .74rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.ix-legend .ix-opt { text-transform: none; letter-spacing: 0; font-size: .8rem; }
+.ix-pp { display: contents; }
+.ix .form-row.ix-row { gap: 12px; }
+.form-row.one { grid-template-columns: minmax(0, 1fr); }
+.ix-unk { font-size: .8rem; gap: 8px; }
+.ix-unk input { width: 16px; height: 16px; margin-top: 2px; }
+.ix .input[type="time"]:disabled { opacity: .45; }
+@media (max-width: 480px) { .ix-person { padding: 12px; } }
 /* кнопка-ссылка и стрелки месяца (кабинет: расписание) */
 .bk-link { border: 0; background: none; padding: 4px 2px; color: var(--lav-strong); font: 600 .86rem var(--ff-body); cursor: pointer; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--lav-strong) 40%, transparent); text-underline-offset: 3px; }
 .bk-link:hover { text-decoration-color: currentColor; }

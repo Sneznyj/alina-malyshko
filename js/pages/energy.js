@@ -57,6 +57,9 @@
         <p class="tiny muted center" style="margin:0">Это предварительная запись: я подтвержу время и пришлю детали. Оплата — донейшн, после сессии.</p>
       </form>`;
     renderPicker();
+    // имя и контакт с прошлой анкеты (только на этом устройстве) — чтобы не вводить заново
+    const prefill = () => { const me = UI.store.get('ixMe', null); if (!me) return; if (!$('enName').value) $('enName').value = me.name || ''; if (!$('enContact').value) $('enContact').value = me.contact || ''; };
+    prefill();
     $('enForm').addEventListener('click', (e) => {
       const d = e.target.closest('[data-day]');
       if (d) { dayKey = d.dataset.day; if (pick && BC.partsIn(pick.start, tz).key !== dayKey) pick = null; renderPicker(); UI.fadeIn($('enPicker').querySelector('.en-slots'), 4); return; }
@@ -71,6 +74,7 @@
       for (const k of ['name', 'contact']) { const el = f.querySelector(`[name=${k}]`); if (!el.value.trim()) { el.classList.add('invalid'); el.focus(); UI.toast(k === 'name' ? 'Как к вам обращаться?' : 'Оставьте контакт, чтобы я могла ответить', 'user'); return; } }
       if (!f.querySelector('[name=consent]').checked) { UI.toast('Отметьте согласие на обработку данных', 'info'); return; }
       const g = (k) => String(f.querySelector(`[name=${k}]`).value || '').trim();
+      try { UI.store.set('ixMe', { name: g('name'), contact: g('contact') }); } catch (x) { /* без памяти браузера */ }
       const alinaTz = (E.schedule && E.schedule.timezone) || 'Europe/Minsk';
       const mine = whenText(pick), hers = `${BC.hm(BC.partsIn(pick.start, alinaTz).min)} у Алины`;
       const text = ['Здравствуйте, Алина! Хочу на энергетическое выравнивание ✨', `Имя: ${g('name')}`, `Связь: ${g('contact')}`, 'Услуга: Энергетическое выравнивание', `Желаемое время: ${mine} (моё время)${alinaTz !== tz ? ' — ' + hers : ''}`, g('question') ? `Запрос: ${g('question')}` : '', `Мой часовой пояс: ${tz} (${UI.tzLabel(tz)})`].filter(Boolean).join('\n');
@@ -80,7 +84,7 @@
       UI.goal('energy');
       await UI.submitIntake({ data, text, hp: g('website'), when: `Предварительно: ${mine}` });
       btn.disabled = false; btn.innerHTML = label;
-      f.reset(); pick = null; renderPicker();
+      f.reset(); pick = null; renderPicker(); prefill();
     });
   }
 
