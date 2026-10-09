@@ -1134,15 +1134,13 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
 .cur-switch .seg button { padding: 6px 12px; }
 .cur-switch[hidden] { display: none; }
 
-/* ---------- анкета на консультацию (js/ui.js: bookingFormHTML) ---------- */
-.modal.booking-modal { width: min(720px, 100%); }
-.ix { gap: 18px; }
+/* ---------- анкета на консультацию (js/ui.js: bookingFormHTML) — коротко, в один столбик ---------- */
+.modal.booking-modal { width: min(560px, 100%); }
+.ix { gap: 14px; }
 .ix [hidden] { display: none !important; }
 .ix .notice { margin: 0; }
-.ix-sec { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 14px; }
-.ix-sec:not(:first-of-type) { padding-top: 16px; border-top: 1px dashed var(--line-2); }
-.ix-sec legend { padding: 0; margin: 0 0 2px; display: flex; align-items: center; gap: 10px; font: 600 1.2rem/1.2 var(--ff-display); color: var(--ink); }
-.ix-n { width: 26px; height: 26px; border-radius: 50%; display: inline-grid; place-items: center; flex-shrink: 0; background: var(--lav-soft); color: var(--lav-strong); font: 700 .8rem var(--ff-body); }
+.ix .textarea { min-height: 0; resize: vertical; }
+.ix-opt { font-weight: 500; color: var(--ink-3); }
 .ix-meta { display: flex; align-items: flex-start; gap: 6px; line-height: 1.45; }
 .ix-meta:empty { display: none; }
 .ix-meta svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 2px; color: var(--gold); }
@@ -1154,30 +1152,13 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
 .ix-chip:hover { border-color: var(--lav); transform: translateY(-1px); }
 .ix-chip[aria-pressed="true"] { background: linear-gradient(180deg, #6b47b8 0%, #52329a 100%); border-color: transparent; color: #fff; box-shadow: 0 8px 18px -10px rgba(82, 50, 154, .85); }
 .ix-chip[aria-pressed="true"] svg { color: #fff; }
-.ix-unk { font-size: .8rem; gap: 7px; margin-top: 2px; }
-.ix-unk input { width: 16px; height: 16px; margin-top: 2px; }
-.ix-soft { display: flex; align-items: flex-start; gap: 6px; margin: -4px 0 0; font-size: .8rem; color: var(--ink-3); }
-.ix-soft svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 2px; color: var(--ok); }
-.ix-formats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
-.ix-fmt { position: relative; cursor: pointer; display: block; }
-.ix-fmt input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
-.ix-fmt > span { display: grid; grid-template-columns: 22px minmax(0, 1fr); column-gap: 8px; row-gap: 2px; height: 100%; padding: 12px 14px; border-radius: var(--r-s); border: 1px solid var(--line-2); background: var(--surface-solid); transition: border-color .2s, box-shadow .2s, background .2s; }
-.ix-fmt svg { width: 20px; height: 20px; grid-row: span 2; margin-top: 1px; color: var(--lav-strong); }
-.ix-fmt b { font-size: .92rem; color: var(--ink); }
-.ix-fmt small { font-size: .78rem; line-height: 1.35; color: var(--ink-3); }
-.ix-fmt:hover > span { border-color: var(--lav); }
-.ix-fmt input:checked + span { border-color: var(--lav-strong); box-shadow: inset 0 0 0 1px var(--lav-strong); background: color-mix(in srgb, var(--lav-soft) 60%, var(--surface-solid)); }
-.ix-fmt input:focus-visible + span { outline: 2px solid var(--lav-strong); outline-offset: 2px; }
-.ix-tz { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 12px; border-radius: 12px; background: var(--bg-2); border: 1px solid var(--line); font-size: .84rem; color: var(--ink-2); }
-.ix-tz > svg { width: 18px; height: 18px; color: var(--lav-strong); flex-shrink: 0; }
-.ix-tz > span { flex: 1 1 200px; min-width: 0; }
-.ix-tz b { color: var(--ink); }
-.ix-tz .select { flex-basis: 100%; min-height: 40px; padding: 8px 36px 8px 12px; font-size: .88rem; }
+.ix-consent { font-size: .82rem; align-items: center; }
+.ix-consent input { margin-top: 0; }
 .ix-pre { white-space: pre-wrap; margin: 0; background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px; font: inherit; font-size: .88rem; max-height: 220px; overflow: auto; }
 .ix-next { margin: 0 0 6px; padding-left: 1.3em; display: grid; gap: 6px; font-size: .9rem; color: var(--ink-2); }
-/* кнопка-ссылка (анкета, расписание в кабинете) и стрелки месяца */
-.bk-link, .ix-link { border: 0; background: none; padding: 4px 2px; color: var(--lav-strong); font: 600 .86rem var(--ff-body); cursor: pointer; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--lav-strong) 40%, transparent); text-underline-offset: 3px; }
-.bk-link:hover, .ix-link:hover { text-decoration-color: currentColor; }
+/* кнопка-ссылка и стрелки месяца (кабинет: расписание) */
+.bk-link { border: 0; background: none; padding: 4px 2px; color: var(--lav-strong); font: 600 .86rem var(--ff-body); cursor: pointer; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--lav-strong) 40%, transparent); text-underline-offset: 3px; }
+.bk-link:hover { text-decoration-color: currentColor; }
 .bk-cal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .bk-cal-head b { font: 600 1.2rem/1.1 var(--ff-display); }
 .bk-nav { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-solid); color: var(--ink-2); display: grid; place-items: center; cursor: pointer; transition: color .2s, border-color .2s, opacity .2s; }
@@ -1185,8 +1166,7 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
 .bk-nav:hover:not(:disabled) { color: var(--lav-strong); border-color: var(--lav); }
 .bk-nav:disabled { opacity: .3; cursor: default; }
 @media (max-width: 560px) {
-  .ix-formats { grid-template-columns: minmax(0, 1fr); }
-  .ix-chip { padding: 7px 12px; font-size: .84rem; }
+  .ix-chip { padding: 7px 11px; font-size: .82rem; gap: 6px; }
 }
 
 /* ---------- кабинет: расписание записи (js/pages/cabinet-schedule.js) ---------- */

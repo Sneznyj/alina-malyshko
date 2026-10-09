@@ -1041,125 +1041,79 @@
     const what = svc ? esc(svc.duration || '') : id === 'gift' ? 'красивый сертификат на любую консультацию' : id === 'numerology' ? 'разбор чисел по дате рождения и имени' : '';
     return what || price ? `${icon('info')}<span>${what}${what && price ? ' · ' : ''}${price}</span>` : '';
   }
-  /** Анкета. opts.note — подпись под кнопкой. */
+  /** Анкета — коротко: услуга, вопрос, данные рождения одной строкой, имя и контакт. Остальное Алина уточнит сама. opts.note — подпись под кнопкой. */
   function bookingFormHTML(prefix, preset, opts) {
     const u = prefix;
     opts = opts || {};
     const svcs = serviceOptions();
     const sel = svcs.some((s) => s.id === preset) ? preset : svcs[0].id;
-    const tz = browserTz;
-    const zones = timeZones().concat(tz && !timeZones().includes(tz) ? [tz] : []);
     return `
       <form class="form ix" data-booking novalidate>
-        <fieldset class="ix-sec"><legend><span class="ix-n">1</span>О чём поговорим</legend>
-          <div class="field"><label for="${u}service">Что вас интересует</label><select class="select" id="${u}service" name="service">${svcs.map((s) => `<option value="${s.id}"${sel === s.id ? ' selected' : ''}>${esc(s.title)}</option>`).join('')}</select><span class="hint ix-meta" data-ix="meta"></span></div>
-          ${(SITE.needs || []).length ? `<div class="field" data-ix="topics"><span class="label" id="${u}tl">Темы <small class="muted">— можно несколько</small></span><div class="ix-chips" role="group" aria-labelledby="${u}tl">${SITE.needs.map((n) => `<button type="button" class="ix-chip" data-topic="${esc(n.title)}" aria-pressed="false">${icon(n.icon)}${esc(n.title)}</button>`).join('')}</div></div>` : ''}
-          <div class="field"><label for="${u}q" data-ix="qlabel">Ваш вопрос или ситуация</label><textarea class="textarea" id="${u}q" name="question" rows="3" maxlength="1500"></textarea><span class="hint">Пара предложений — так я лучше подготовлюсь к встрече.</span></div>
-        </fieldset>
-        <fieldset class="ix-sec" data-ix="birth"><legend><span class="ix-n">2</span><span data-ix="birthTitle">Данные рождения</span></legend>
-          <div class="form-row three">
-            <div class="field"><label for="${u}bd">Дата</label>${dobHTML(u + 'bd', 'bdate')}</div>
-            <div class="field"><label for="${u}bt">Время</label><input class="input" id="${u}bt" name="btime" type="time"><label class="check ix-unk"><input type="checkbox" name="bunknown"> <span>не знаю точно</span></label></div>
-            <div class="field"><label for="${u}bp">Город</label><input class="input" id="${u}bp" name="bplace" autocomplete="off"></div>
-          </div>
-          <div class="field" data-ix="partner" hidden><label for="${u}pt">Данные партнёра</label><input class="input" id="${u}pt" name="partner" placeholder="Имя, дата, время и город рождения"></div>
-          <div class="field" data-ix="fullName" hidden><label for="${u}fn">Фамилия, имя и отчество при рождении</label><input class="input" id="${u}fn" name="fullname" placeholder="Как в свидетельстве о рождении"></div>
-          <p class="hint ix-soft">${icon('leaf')}<span>Не помните точно — ничего страшного: данные можно прислать и позже.</span></p>
-        </fieldset>
-        <fieldset class="ix-sec" data-ix="when"><legend><span class="ix-n">3</span>Как и когда удобно</legend>
-          ${(INTAKE.formats || []).length ? `<div class="field" data-ix="formatBox"><span class="label" id="${u}fl">Формат</span><div class="ix-formats" role="radiogroup" aria-labelledby="${u}fl">${INTAKE.formats.map((f, i) => `<label class="ix-fmt"><input type="radio" name="format" value="${esc(f.title)}"${i === 0 ? ' checked' : ''}><span>${icon(f.icon || 'sparkle')}<b>${esc(f.title)}</b><small>${esc(f.text || '')}</small></span></label>`).join('')}</div></div>` : ''}
-          <p class="notice info" data-ix="written" hidden>${icon('message-heart')}<span>Эта услуга без встречи: ответ пришлю письменно или голосовыми сообщениями.</span></p>
-          ${(INTAKE.times || []).length ? `<div class="field" data-ix="timesBox"><span class="label" id="${u}wl">Когда вам удобно</span><div class="ix-chips" role="group" aria-labelledby="${u}wl">${INTAKE.times.map((t) => `<button type="button" class="ix-chip" data-time="${esc(t)}" aria-pressed="false">${esc(t)}</button>`).join('')}</div><input class="input" name="prefer" aria-label="Уточнение по времени" placeholder="Уточнение, например: после 19:00"></div>` : ''}
-          <div class="ix-tz">${icon('world-pin')}<span>Ваш часовой пояс: <b data-ix="tzLabel">${esc(tzLabel(tz) || 'не определился')}</b></span><button type="button" class="ix-link" data-ix="tzEdit" aria-expanded="false">изменить</button>
-            <select class="select" name="tz" aria-label="Ваш часовой пояс" hidden>${tz ? '' : '<option value="">— выберите —</option>'}${zones.map((z) => `<option${z === tz ? ' selected' : ''}>${esc(z)}</option>`).join('')}</select></div>
-        </fieldset>
-        <fieldset class="ix-sec"><legend><span class="ix-n">4</span>Как с вами связаться</legend>
-          <div class="form-row">
-            <div class="field"><label for="${u}name">Ваше имя *</label><input class="input" id="${u}name" name="name" required autocomplete="given-name"></div>
-            <div class="field"><label for="${u}contact">Telegram, WhatsApp или телефон *</label><input class="input" id="${u}contact" name="contact" required placeholder="@ник или +7…" autocomplete="tel"></div>
-          </div>
-          <label class="check"><input type="checkbox" name="first"> <span>Это моя первая консультация у астролога</span></label>
-          <label class="check"><input type="checkbox" name="consent" required> <span>Даю согласие на обработку персональных данных согласно <a href="privacy.html" target="_blank">политике конфиденциальности</a></span></label>
-        </fieldset>
-        <button class="btn btn-primary btn-block" type="submit">${icon('send')} Отправить анкету Алине</button>
-        <p class="tiny muted center" style="margin:0">${opts.note ? esc(opts.note) : `Обязательны только имя и контакт. Анкета придёт мне в Telegram — отвечу ${esc(INTAKE.replyTime || 'в течение дня')}, уточню детали и предложу время.`}</p>
+        <div class="field"><label for="${u}service">Что вас интересует</label><select class="select" id="${u}service" name="service">${svcs.map((s) => `<option value="${s.id}"${sel === s.id ? ' selected' : ''}>${esc(s.title)}</option>`).join('')}</select><span class="hint ix-meta" data-ix="meta"></span></div>
+        <div class="field"><label for="${u}q"><span data-ix="qlabel">Ваш вопрос</span> <small class="ix-opt">— можно коротко</small></label><textarea class="textarea" id="${u}q" name="question" rows="2" maxlength="1500"></textarea></div>
+        <div class="field" data-ix="birth"><label for="${u}b"><span data-ix="birthTitle">Дата, время и город рождения</span> <small class="ix-opt">— можно позже</small></label><input class="input" id="${u}b" name="birth" placeholder="Например: 14.06.1997, 08:30, Минск" autocomplete="off"></div>
+        <div class="field" data-ix="partner" hidden><label for="${u}pt">Данные партнёра</label><input class="input" id="${u}pt" name="partner" placeholder="Имя, дата, время и город рождения" autocomplete="off"></div>
+        <div class="field" data-ix="fullName" hidden><label for="${u}fn">ФИО при рождении</label><input class="input" id="${u}fn" name="fullname" placeholder="Как в свидетельстве о рождении" autocomplete="off"></div>
+        ${(INTAKE.formats || []).length ? `<div class="field" data-ix="formatBox"><span class="label" id="${u}fl">Как удобнее <small class="ix-opt">— необязательно</small></span><div class="ix-chips" role="group" aria-labelledby="${u}fl">${INTAKE.formats.map((f) => `<button type="button" class="ix-chip" data-format="${esc(f.title)}" aria-pressed="false" title="${esc(f.title + (f.text ? ' — ' + f.text : ''))}">${icon(f.icon || 'sparkle')}${esc(f.short || f.title)}</button>`).join('')}</div></div>` : ''}
+        <div class="form-row ix-contact">
+          <div class="field"><label for="${u}name">Ваше имя *</label><input class="input" id="${u}name" name="name" required autocomplete="given-name"></div>
+          <div class="field"><label for="${u}contact">Telegram или телефон *</label><input class="input" id="${u}contact" name="contact" required placeholder="@ник или +7…" autocomplete="tel"></div>
+        </div>
+        <label class="check ix-consent"><input type="checkbox" name="consent" required> <span>Согласен(на) на <a href="privacy.html" target="_blank">обработку данных</a></span></label>
+        <button class="btn btn-primary btn-block" type="submit">${icon('telegram')} Отправить Алине в Telegram</button>
+        <p class="tiny muted center" style="margin:0">${opts.note ? esc(opts.note) : `Обязательны только имя и контакт. Отвечу ${esc(INTAKE.replyTime || 'в течение дня')} и сама предложу время.`}</p>
       </form>`;
   }
-  /** Показать поля под выбранную услугу: подсказка вопроса, чьи данные рождения, формат и время — только для встреч. */
+  /** Показать поля под выбранную услугу: подсказка вопроса, чьи данные рождения, формат — только для встреч. */
   function intakeApply(form) {
     const id = form.querySelector('[name=service]').value, cfg = intakeOf(id);
     const q = (k) => form.querySelector(`[data-ix="${k}"]`);
     const set = (k, on) => { const el = q(k); if (el) el.hidden = !on; };
     q('meta').innerHTML = serviceMeta(id);
-    form.querySelector('[name=question]').placeholder = cfg.ask || 'Что сейчас важно? Можно коротко.';
-    q('qlabel').textContent = id === 'gift' ? 'Кому и что дарите' : id === 'express' ? 'Ваш вопрос' : 'Ваш вопрос или ситуация';
-    q('birthTitle').textContent = cfg.birthOf ? `Данные рождения ${cfg.birthOf}` : cfg.partner ? 'Ваши данные рождения' : 'Данные рождения';
-    set('topics', id !== 'gift' && id !== 'express' && id !== 'election');
+    form.querySelector('[name=question]').placeholder = cfg.ask || 'Что сейчас важно?';
+    q('qlabel').textContent = id === 'gift' ? 'Кому и что дарите' : 'Ваш вопрос';
+    q('birthTitle').textContent = cfg.birthOf ? `Дата, время и город рождения ${cfg.birthOf}` : cfg.partner ? 'Ваши дата, время и город рождения' : 'Дата, время и город рождения';
     set('birth', !cfg.noBirth);
     set('partner', !!cfg.partner);
     set('fullName', !!cfg.fullName);
-    set('when', id !== 'gift');
-    set('formatBox', !cfg.written);
-    set('timesBox', !cfg.written);
-    set('written', !!cfg.written);
-    // номера разделов — по порядку видимых
-    let n = 0;
-    form.querySelectorAll('.ix-sec').forEach((s) => { if (!s.hidden) s.querySelector('.ix-n').textContent = ++n; });
+    set('formatBox', id !== 'gift' && !cfg.written);
   }
   /** Текст анкеты для мессенджера и данные для сервиса форм. */
   function intakeText(form) {
     const f = new FormData(form);
     const g = (k) => String(f.get(k) || '').trim();
     const id = g('service'), cfg = intakeOf(id), svc = serviceOptions().find((s) => s.id === id);
-    const pressed = (attr) => Array.from(form.querySelectorAll(`[${attr}][aria-pressed="true"]`)).map((b) => b.getAttribute(attr));
-    const topics = id !== 'gift' && id !== 'express' && id !== 'election' ? pressed('data-topic') : [];
-    const meeting = id !== 'gift' && !cfg.written;
-    const times = meeting ? pressed('data-time') : [];
-    const bd = g('bdate');
-    const birth = cfg.noBirth ? '' : bd ? [bd.split('-').reverse().join('.'), g('bunknown') ? 'время неизвестно' : g('btime'), g('bplace')].filter(Boolean).join(', ') : g('bplace') ? `город ${g('bplace')}, дату пришлю` : '';
-    const tz = g('tz') || browserTz;
-    const prefer = [times.join(', '), meeting ? g('prefer') : ''].filter(Boolean).join('; ');
+    const fmtB = form.querySelector('[data-format][aria-pressed="true"]');
+    const format = fmtB && id !== 'gift' && !cfg.written ? fmtB.dataset.format : '';
+    const birth = cfg.noBirth ? '' : g('birth');
+    const tz = browserTz;
     const lines = [
       id === 'gift' ? 'Здравствуйте, Алина! Хочу подарочный сертификат ✨' : 'Здравствуйте, Алина! Хочу на консультацию ✨',
       `Имя: ${g('name')}`,
       `Связь: ${g('contact')}`,
       `Услуга: ${svc ? svc.title : ''}`,
-      topics.length ? `Темы: ${topics.join(', ')}` : '',
       g('question') ? `Запрос: ${g('question')}` : '',
       birth ? `Дата рождения${cfg.birthOf ? ' ' + cfg.birthOf : ''}: ${birth}` : '',
       cfg.partner && g('partner') ? `Партнёр: ${g('partner')}` : '',
       cfg.fullName && g('fullname') ? `ФИО при рождении: ${g('fullname')}` : '',
-      meeting && g('format') ? `Формат: ${g('format')}` : '',
-      prefer ? `Удобно: ${prefer}` : '',
+      format ? `Формат: ${format}` : '',
       tz ? `Мой часовой пояс: ${tz} (${tzLabel(tz)})` : '',
-      g('first') ? 'Первая консультация у астролога: да' : '',
     ].filter(Boolean);
-    const data = { name: g('name'), contact: g('contact'), service: svc && svc.title, topics, question: g('question'), birth: bd, time: g('bunknown') ? '' : g('btime'), place: g('bplace'), partner: g('partner'), fullname: g('fullname'), format: meeting ? g('format') : '', prefer, timezone: tz, first: !!g('first') };
+    const data = { name: g('name'), contact: g('contact'), service: svc && svc.title, question: g('question'), birth, partner: g('partner'), fullname: g('fullname'), format, timezone: tz };
     return { text: lines.join('\n'), data };
   }
-  /** Анкета: переключатели, часовой пояс, проверка и отправка. */
+  /** Анкета: формат одним нажатием, проверка и отправка. */
   function bindBooking(form, onDone) {
-    enhanceDob(form);
     intakeApply(form);
     form.querySelector('[name=service]').addEventListener('change', () => { intakeApply(form); fadeIn(form, 4); });
     form.addEventListener('click', (e) => {
-      const chip = e.target.closest('.ix-chip');
-      if (chip) { chip.setAttribute('aria-pressed', String(chip.getAttribute('aria-pressed') !== 'true')); return; }
-      const te = e.target.closest('[data-ix="tzEdit"]');
-      if (te) {
-        const s = form.querySelector('[name=tz]'), open = s.hidden;
-        s.hidden = !open; te.textContent = open ? 'готово' : 'изменить'; te.setAttribute('aria-expanded', String(open));
-        if (open) s.focus();
-      }
+      const chip = e.target.closest('[data-format]');
+      if (!chip) return;
+      const on = chip.getAttribute('aria-pressed') !== 'true';
+      form.querySelectorAll('[data-format]').forEach((b) => b.setAttribute('aria-pressed', String(on && b === chip)));
     });
-    form.querySelector('[name=tz]').addEventListener('change', (e) => { form.querySelector('[data-ix="tzLabel"]').textContent = tzLabel(e.target.value) || '—'; });
-    const unk = form.querySelector('[name=bunknown]'), bt = form.querySelector('[name=btime]');
-    unk.addEventListener('change', () => { bt.disabled = unk.checked; if (unk.checked) bt.value = ''; });
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      // дату рождения начали вводить, но она неполная или такой нет — подсказываем, а не теряем молча
-      const dt = form.querySelector('.dob-text'), di = form.querySelector('.dob-iso');
-      if (dt && dt.value.trim() && di && !di.value && !form.querySelector('[data-ix="birth"]').hidden) { dt.dispatchEvent(new Event('blur')); dt.classList.add('invalid'); dt.focus(); toast('Проверьте дату рождения: ДД.ММ.ГГГГ — или оставьте поле пустым', 'calendar'); return; }
       for (const k of ['name', 'contact']) {
         const el = form.querySelector(`[name=${k}]`);
         if (!el.value.trim()) { el.classList.add('invalid'); el.focus(); toast(k === 'name' ? 'Как к вам обращаться?' : 'Оставьте контакт, чтобы я могла ответить', 'user'); return; }
@@ -1208,7 +1162,7 @@
   function openBooking(preset) {
     const pr = promoInfo();
     const m = modal(`<div class="booking-head"><img src="assets/img/alina-avatar.webp" alt="" width="64" height="64"><div><span class="eyebrow" style="margin:0">анкета</span><h3 style="margin:2px 0 0">Консультация с Алиной</h3></div></div>
-      <p class="muted small" style="margin:0 0 14px">Расскажите немного о себе и своём вопросе — анкета придёт мне в Telegram. Я прочитаю её и отвечу сама, обычно ${esc(INTAKE.replyTime || 'в течение дня')}.</p>
+      <p class="muted small" style="margin:0 0 14px">Пара строк о вашем вопросе — и анкета придёт мне в Telegram. Отвечу сама, обычно ${esc(INTAKE.replyTime || 'в течение дня')}.</p>
       ${pr ? `<div class="promo-inline"><span class="sticker">−${pr.percent}%</span><span><b>${esc(pr.title)}</b><br><small>действует до ${pr.end.getDate()} ${fmt.MONTHS_GEN[pr.end.getMonth()]}</small></span></div>` : ''}
       ${bookingFormHTML('bm', preset)}`, { cls: 'booking-modal' });
     bindBooking(m.el.querySelector('form'), () => m.close());
