@@ -162,6 +162,18 @@
         <h3>${t}</h3><p class="muted">${d[h] || ''}</p>
         <span class="link-arrow">Открыть ${icon('arrow')}</span>
       </a>`).join('');
+    // премиум-доступ: подробные разделы по коду (js/premium.js, content.js → premium)
+    const P = SITE.premium;
+    if (P && P.enabled !== false && !$('premiumBand')) {
+      const from = Math.min(...(P.plans || []).map((p) => p.price));
+      $('toolsGrid').insertAdjacentHTML('afterend', `<a class="card hover premium-band reveal" id="premiumBand" href="premium.html">
+        <span class="pw-crown" aria-hidden="true">${icon('crown')}</span>
+        <div><span class="eyebrow" style="margin-bottom:4px">${esc(P.name || 'Премиум-доступ')}</span>
+          <h3>Хотите глубже? Прогноз по датам и подробные разборы</h3>
+          <p class="muted">${(P.features || []).map((f) => esc(f.title)).join(' · ')}</p></div>
+        <span class="premium-band-go">${isFinite(from) ? 'от ' + fmt.money(from) : ''}<b>Подробнее ${icon('arrow')}</b></span>
+      </a>`);
+    }
   }
 
   function about() {
@@ -217,14 +229,9 @@
   function booking() {
     const pr = UI.promoInfo();
     const promo = pr ? `<div class="promo-inline"><span class="sticker">−${pr.percent}%</span><span><b>${esc(pr.title)}</b><br><small>до ${pr.end.getDate()} ${fmt.MONTHS_GEN[pr.end.getMonth()]} — скидка применится автоматически</small></span></div>` : '';
-    if (window.Booking) {
-      // календарь записи: день и время → контакты
-      $('bookingCard').innerHTML = promo + '<div id="bookingWidget"></div>';
-      window.Booking.widget($('bookingWidget'), { prefix: 'hb' });
-    } else {
-      $('bookingCard').innerHTML = promo + UI.bookingFormHTML('hb');
-      UI.bindBooking($('bookingCard').querySelector('form'));
-    }
+    // анкета: уходит Алине в Telegram, время она предлагает сама
+    $('bookingCard').innerHTML = promo + UI.bookingFormHTML('hb');
+    UI.bindBooking($('bookingCard').querySelector('form'));
     const links = UI.contactLinks();
     $('bookingContacts').innerHTML = links.map((l) => `<a class="contact-line" href="${esc(l.href)}" target="_blank" rel="noopener">${icon(l.k)}<span>${esc(l.label)}</span></a>`).join('');
   }

@@ -1,6 +1,7 @@
-/* Синастрия: две карты → оценка совместимости цифрами (общая и по сферам).
-   Подробный разбор — аспекты пары, двойное колесо, композит, сравнение карт — только у Алины:
-   зашифрованный модуль _private/synastry-pro.js, открывается после входа (js/admin.js). */
+/* Синастрия: две карты → оценка совместимости цифрами (общая и по сферам) — бесплатно.
+   Подробный разбор — аспекты пары, двойное колесо, композит, сравнение карт — в премиум-доступе (и всегда у Алины):
+   зашифрованный модуль _private/synastry-pro.js, открывается кодом доступа (js/premium.js).
+   Без доступа — превью: сколько связей между картами, одна из них с толкованием, остальное закрыто, тарифы. */
 (function () {
   'use strict';
   const AC = window.AstroCore, T = window.ASTRO_TEXTS, UI = window.UI, CV = window.ChartView, W = window.Wheel;
@@ -44,8 +45,7 @@
       <div id="synPro"></div>
       <div class="card note-card" style="margin-top:20px">${UI.alinaNote('Цифры — только ориентир. Любую пару делают люди, а не планеты. На консультации разберу ваши карты вместе: аспекты между вами, карту союза и как мягко проходить острые углы.', '<button class="btn btn-primary btn-sm" type="button" data-book="synastry">Разобрать нашу пару</button>')}</div>`;
     CV.animateBars(box);
-    // Алина вошла — добавляем подробный разбор пары
-    if (window.Admin && window.Admin.has()) window.Admin.run(['synastry-pro']).then(() => { if (window.SynastryPro) window.SynastryPro.render(document.getElementById('synPro'), { A, B, S, nA, nB }); }).catch(() => {});
+    pro(nA, nB);
     document.getElementById('synStory').addEventListener('click', async (e) => {
       const b = e.currentTarget; b.disabled = true;
       try { const cv = await window.Cards.storySynastry(nA, nB, S); await window.Cards.show(cv, 'nasha-sovmestimost.png', 'Карточка для сторис', 'Только имена и оценки по сферам — без дат рождения.'); } catch (err) { console.error(err); UI.toast('Не получилось нарисовать карточку', 'info'); }
@@ -54,6 +54,51 @@
     requestAnimationFrame(() => setTimeout(() => box.querySelectorAll('[data-off]').forEach((c) => { c.style.strokeDashoffset = c.dataset.off; }), 80));
     UI.reveal(box);
     UI.fadeIn(box);
+  }
+
+  // ---------- подробный разбор: премиум ----------
+  const MINOR = ['quincunx', 'semisextile', 'semisquare', 'sesquisquare', 'quintile'];
+  async function pro(nA, nB) {
+    const box = document.getElementById('synPro');
+    if (!box || !window.Premium) return;
+    const s0 = S;
+    if ((await window.Premium.ensure(['synastry-pro'])) && window.SynastryPro) { if (S === s0) window.SynastryPro.render(box, { A, B, S, nA, nB }); return; }
+    if (S === s0) teaser(box, nA, nB);
+  }
+  function teaser(box, nA, nB) {
+    const P = window.Premium;
+    const list = S.aspects.filter((x) => !MINOR.includes(x.type) && x.a !== 'mc' && x.b !== 'mc');
+    const kind = (x) => (x.type === 'conj' ? 'conj' : ['trine', 'sextile'].includes(x.type) ? 'soft' : 'hard');
+    const cnt = { soft: 0, hard: 0, conj: 0 };
+    list.forEach((x) => { cnt[kind(x)]++; });
+    // одна связь открыта целиком — самая точная из «притяжения» или «эмоций»
+    const sample = list.filter((x) => ['attraction', 'emotion'].includes(x.sphere)).sort((a, b) => a.orb - b.orb)[0] || list.slice().sort((a, b) => a.orb - b.orb)[0];
+    const asp = sample && T.aspects[sample.type];
+    const spheres = {};
+    list.forEach((x) => { const k = x.sphere || 'other'; spheres[k] = (spheres[k] || 0) + 1; });
+    box.innerHTML = `<div class="card syn-teaser" style="margin-top:20px">
+        <span class="eyebrow" style="margin-bottom:6px">Подробный разбор пары</span>
+        <h3 style="margin:0 0 4px">Между вашими картами ${list.length} ${fmt.plural(list.length, 'аспект', 'аспекта', 'аспектов')}</h3>
+        <div class="fc-stats" style="margin-top:12px">
+          <div class="fc-stat soft"><b>${cnt.soft}</b><span>гармоничных — где вам легко</span></div>
+          <div class="fc-stat hard"><b>${cnt.hard}</b><span>напряжённых — где искрит</span></div>
+          <div class="fc-stat conj"><b>${cnt.conj}</b><span>соединений — где вы сплавлены</span></div>
+        </div>
+        ${sample ? `<h4 style="margin:20px 0 8px">Одна из ваших связей</h4>
+        <div class="interp"><article class="interp-item"><div class="ig glyph" style="color:${asp.color}">${asp.glyph}</div><div>
+          <h4>${T.planets[sample.a].name} <span class="muted small">(${esc(nA)})</span> ${asp.glyph} ${T.planets[sample.b].name} <span class="muted small">(${esc(nB)})</span></h4>
+          <div class="tags"><span class="badge">${asp.name}</span><span class="badge">орбис ${sample.orb.toFixed(1)}°</span>${sample.sphere && T.synSpheres[sample.sphere] ? `<span class="badge gold">${T.synSpheres[sample.sphere].name}</span>` : ''}</div>
+          <p>${T.synastryText(sample.a, sample.b, sample.type, nA, nB)}</p></div></article></div>` : ''}
+        <h4 style="margin:22px 0 10px">Ещё в разборе</h4>
+        <div class="locked-list">
+          ${list.length > 1 ? P.locked(`Все аспекты пары с толкованием — ещё ${list.length - 1}, по сферам: ${['attraction', 'emotion', 'communication', 'stability', 'growth', 'other'].filter((k) => spheres[k] && T.synSpheres[k]).map((k) => T.synSpheres[k].name.toLowerCase()).join(', ')}`, { lines: 3 }) : ''}
+          ${P.locked('Двойное колесо: ваши планеты внутри карты партнёра', { lines: 2 })}
+          ${P.locked('Композит — карта вашего союза как отдельного «существа»', { lines: 3 })}
+          ${P.locked('Сравнение карт: стихии и планеты рядом', { lines: 2 })}
+        </div>
+      </div>
+      <div style="margin-top:20px">${P.paywall({ feature: 'synastry', title: 'Подробная совместимость — в премиум-доступе', text: 'Все связи между вашими картами с толкованием, двойное колесо и композит пары.' })}</div>`;
+    UI.reveal(box);
   }
 
   function calc() {
@@ -71,6 +116,8 @@
     fa = UI.birthForm(document.getElementById('formA'), { namePlaceholder: 'Имя' });
     fb = UI.birthForm(document.getElementById('formB'), { namePlaceholder: 'Имя партнёра' });
     document.getElementById('calcBtn').addEventListener('click', calc);
+    // код доступа введён — показать подробный разбор без повторного расчёта
+    document.addEventListener('premiumchange', () => { if (S) render(); });
     // подставим последнюю карту как первого человека
     const q = new URLSearchParams(location.search);
     const ca = q.get('a') && UI.clients.get(q.get('a')), cb = q.get('b') && UI.clients.get(q.get('b'));

@@ -102,6 +102,8 @@
   const hasReviews = !!(SITE.reviews && SITE.reviews.length);
   // обучение можно скрыть целиком: academy.enabled: false в content.js
   const academyOn = !!(SITE.academy && SITE.academy.enabled !== false);
+  // премиум-доступ (платные разделы по коду, js/premium.js): premium.enabled: false в content.js — ссылки не показываются
+  const premOn = !!(SITE.premium && SITE.premium.enabled !== false);
   // Алина вошла в кабинет на этом устройстве (ключ хранит js/admin.js) — показываем ей ссылки на кабинет
   const isAlina = () => { try { return !!(localStorage.getItem('am_adminKey') || sessionStorage.getItem('am_adminKey')); } catch (e) { return false; } };
   const isPreview = location.protocol === 'file:' || /^(localhost|127\.|192\.168\.|\[::1\])/.test(location.hostname);
@@ -244,6 +246,7 @@
               ${TOOLS.map(([h, t, ic, d]) => `<a role="menuitem" href="${h}"${page === h ? ' aria-current="page"' : ''}><span class="np-ic">${icon(ic)}</span><span><b>${t}</b><small>${d}</small></span></a>`).join('')}
             </div>
           </div>
+          ${premOn ? `<a class="nav-premium" data-premium-link href="premium.html"${page === 'premium.html' ? ' aria-current="page"' : ''}>${icon('crown')}Премиум</a>` : ''}
           ${academyOn ? `<a href="academy.html"${page === 'academy.html' ? ' aria-current="page"' : ''}>Уроки</a>` : ''}
           <a href="index.html#about">Обо мне</a>
           ${hasReviews ? '<a href="index.html#reviews">Отзывы</a>' : ''}
@@ -329,6 +332,7 @@
       <nav class="mm-main">${[['index.html', 'Главная'], ['index.html#services', 'Консультации и цены'], ['index.html#about', 'Обо мне'], ...(hasReviews ? [['index.html#reviews', 'Отзывы']] : []), ...(academyOn ? [['academy.html', 'Уроки астрологии']] : [])].map(([h, t], i) => `<a href="${h}" style="transition-delay:${0.04 * i}s">${t}</a>`).join('')}</nav>
       <p class="mm-label">Бесплатно на сайте</p>
       <div class="mm-tools">${TOOLS.map(([h, t, ic]) => `<a href="${h}">${icon(ic)}<span>${t}</span></a>`).join('')}</div>
+      ${premOn ? `<a class="mm-premium" data-premium-link href="premium.html">${icon('crown')}<span><b>Премиум-доступ</b><small>прогноз по датам и подробные разборы</small></span>${icon('arrow')}</a>` : ''}
       <div style="margin-top:22px;display:grid;gap:10px">
         <button class="btn btn-primary btn-block" type="button" data-book>Записаться на консультацию</button>
         ${pr ? `<p class="small center" style="margin:0"><span class="sticker sm">−${pr.percent}%</span> ${esc(pr.short)} до ${pr.end.getDate()} ${fmt.MONTHS_GEN[pr.end.getMonth()]}</p>` : ''}
@@ -375,7 +379,7 @@
           </div>
           <div><h4>Бесплатно</h4>${TOOLS.map(([h, t]) => `<a href="${h}">${t}</a>`).join('')}</div>
           <div><h4>Консультации</h4>${SITE.services.slice(0, 6).map((s) => `<a href="index.html#services">${esc(s.title)}</a>`).join('')}</div>
-          <div><h4>Сайт</h4>${academyOn ? '<a href="academy.html">Уроки астрологии</a>' : ''}<a href="index.html#about">Обо мне</a><a href="index.html#faq">Вопросы и ответы</a><a href="index.html#booking">Запись</a><a href="privacy.html">Политика конфиденциальности</a>${isAlina() ? '<a href="cabinet.html" class="muted">Кабинет астролога</a>' : ''}</div>
+          <div><h4>Сайт</h4>${academyOn ? '<a href="academy.html">Уроки астрологии</a>' : ''}<a href="index.html#about">Обо мне</a><a href="index.html#faq">Вопросы и ответы</a><a href="index.html#booking">Запись</a>${premOn ? '<a href="premium.html">Премиум-доступ</a>' : ''}<a href="privacy.html">Политика конфиденциальности</a>${isAlina() ? '<a href="cabinet.html" class="muted">Кабинет астролога</a>' : ''}</div>
         </div>
         <p class="disclaimer">Астрология — инструмент самопознания. Она не заменяет медицинскую, психологическую, юридическую или финансовую помощь. Расчёты: тропический зодиак, эфемериды astronomy-engine и NASA JPL; точность положений — около угловой минуты.</p>
         <div class="footer-bottom"><span>© ${new Date().getFullYear()} ${esc(SITE.name)}</span><span>Иконки — Tabler Icons</span></div>
@@ -1006,65 +1010,166 @@
     get: (id) => clients.all().find((c) => c.id === id),
   };
 
-  // ---------- запись на консультацию ----------
+  // ---------- анкета на консультацию ----------
+  // Календаря для клиентов нет: клиент заполняет анкету, она уходит Алине в Telegram готовым сообщением
+  // (или в WhatsApp, на почту). Алина отвечает сама, уточняет детали и предлагает время из кабинета («Заявки»).
+  const INTAKE = SITE.intake || {};
   function serviceOptions() {
     return SITE.services.map((s) => ({ id: s.id, title: s.title })).concat(academyOn ? [{ id: 'lessons', title: 'Индивидуальные уроки астрологии' }, { id: 'course', title: 'Курс «Астрология с нуля»' }] : [], [{ id: 'numerology', title: 'Нумерология: разбор чисел' }, { id: 'gift', title: 'Подарочный сертификат' }, { id: 'other', title: 'Другое / пока не знаю' }]);
   }
-  /** Форма заявки. opts.noService — услуга выбрана раньше (календарь записи), opts.prefer — поле «когда удобно», opts.note — подпись под кнопкой. */
+  const intakeOf = (id) => (INTAKE.services || {})[id] || {};
+  /** «Берлин, UTC+2»: город по часовому поясу и смещение от UTC сейчас. */
+  function tzLabel(tz) {
+    if (!tz) return '';
+    let off = 0;
+    try {
+      const o = {};
+      for (const p of new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }).formatToParts(new Date())) o[p.type] = p.value;
+      off = Math.round((Date.UTC(+o.year, o.month - 1, +o.day, +o.hour % 24, +o.minute) - Math.floor(Date.now() / 60000) * 60000) / 60000);
+    } catch (e) { return tz; }
+    const c = CITIES.find((x) => x.tz === tz);
+    const a = Math.abs(off);
+    return `${c ? c.name : tz.split('/').pop().replace(/_/g, ' ')}, UTC${off ? (off > 0 ? '+' : '−') + Math.floor(a / 60) + (a % 60 ? ':' + pad(a % 60) : '') : ''}`;
+  }
+  /** Подпись услуги в анкете: длительность или формат, цена (с учётом акции). */
+  function serviceMeta(id) {
+    const svc = SITE.services.find((s) => s.id === id);
+    const fa = ((SITE.academy || {}).formats || []).find((f) => f.service === id);
+    let price = '';
+    if (svc && svc.price) { const p = priceFor(svc); price = `${p.old ? `<s>${money(p.old, p.code)}</s> ` : ''}<b>${money(p.now, p.code)}</b>`; }
+    else if (fa && fa.price) { const p = priceOf(fa); price = `<b>${money(p.n, p.code)}</b>${fa.unit ? ' ' + esc(fa.unit) : ''}`; }
+    const what = svc ? esc(svc.duration || '') : id === 'gift' ? 'красивый сертификат на любую консультацию' : id === 'numerology' ? 'разбор чисел по дате рождения и имени' : '';
+    return what || price ? `${icon('info')}<span>${what}${what && price ? ' · ' : ''}${price}</span>` : '';
+  }
+  /** Анкета. opts.note — подпись под кнопкой. */
   function bookingFormHTML(prefix, preset, opts) {
     const u = prefix;
     opts = opts || {};
+    const svcs = serviceOptions();
+    const sel = svcs.some((s) => s.id === preset) ? preset : svcs[0].id;
+    const tz = browserTz;
+    const zones = timeZones().concat(tz && !timeZones().includes(tz) ? [tz] : []);
     return `
-      <form class="form" data-booking novalidate>
-        <div class="form-row">
-          <div class="field"><label for="${u}name">Ваше имя *</label><input class="input" id="${u}name" name="name" required autocomplete="given-name"></div>
-          <div class="field"><label for="${u}contact">Telegram, WhatsApp или телефон *</label><input class="input" id="${u}contact" name="contact" required placeholder="@ник или +7…" autocomplete="tel"></div>
-        </div>
-        ${opts.noService ? `<input type="hidden" name="service" value="${esc(preset || '')}">` : `<div class="field"><label for="${u}service">Что вас интересует</label><select class="select" id="${u}service" name="service">${serviceOptions().map((s) => `<option value="${s.id}"${preset === s.id ? ' selected' : ''}>${esc(s.title)}</option>`).join('')}</select></div>`}
-        ${opts.prefer ? `<div class="field"><label for="${u}pref">Когда вам обычно удобно?</label><input class="input" id="${u}pref" name="prefer" placeholder="Например: будни после 19:00 по моему времени"></div>` : ''}
-        <div class="form-row three">
-          <div class="field"><label for="${u}bd">Дата рождения</label>${dobHTML(u + 'bd', 'bdate')}</div>
-          <div class="field"><label for="${u}bt">Время</label><input class="input" id="${u}bt" name="btime" type="time"></div>
-          <div class="field"><label for="${u}bp">Город рождения</label><input class="input" id="${u}bp" name="bplace"></div>
-        </div>
-        <div class="field"><label for="${u}q">Ваш вопрос или запрос</label><textarea class="textarea" id="${u}q" name="question" placeholder="Что сейчас важно? Можно коротко."></textarea></div>
-        <label class="check"><input type="checkbox" name="consent" required> <span>Даю согласие на обработку персональных данных согласно <a href="privacy.html" target="_blank">политике конфиденциальности</a></span></label>
-        <button class="btn btn-primary btn-block" type="submit">${icon('sparkle')} Отправить заявку</button>
-        <p class="tiny muted center" style="margin:0">${opts.note ? esc(opts.note) : `Отвечаю в течение дня. Время встречи подберём по вашему часовому поясу${browserTz ? ' (' + esc(browserTz.replace(/_/g, ' ')) + ')' : ''}. Данные рождения можно прислать и позже.`}</p>
+      <form class="form ix" data-booking novalidate>
+        <fieldset class="ix-sec"><legend><span class="ix-n">1</span>О чём поговорим</legend>
+          <div class="field"><label for="${u}service">Что вас интересует</label><select class="select" id="${u}service" name="service">${svcs.map((s) => `<option value="${s.id}"${sel === s.id ? ' selected' : ''}>${esc(s.title)}</option>`).join('')}</select><span class="hint ix-meta" data-ix="meta"></span></div>
+          ${(SITE.needs || []).length ? `<div class="field" data-ix="topics"><span class="label" id="${u}tl">Темы <small class="muted">— можно несколько</small></span><div class="ix-chips" role="group" aria-labelledby="${u}tl">${SITE.needs.map((n) => `<button type="button" class="ix-chip" data-topic="${esc(n.title)}" aria-pressed="false">${icon(n.icon)}${esc(n.title)}</button>`).join('')}</div></div>` : ''}
+          <div class="field"><label for="${u}q" data-ix="qlabel">Ваш вопрос или ситуация</label><textarea class="textarea" id="${u}q" name="question" rows="3" maxlength="1500"></textarea><span class="hint">Пара предложений — так я лучше подготовлюсь к встрече.</span></div>
+        </fieldset>
+        <fieldset class="ix-sec" data-ix="birth"><legend><span class="ix-n">2</span><span data-ix="birthTitle">Данные рождения</span></legend>
+          <div class="form-row three">
+            <div class="field"><label for="${u}bd">Дата</label>${dobHTML(u + 'bd', 'bdate')}</div>
+            <div class="field"><label for="${u}bt">Время</label><input class="input" id="${u}bt" name="btime" type="time"><label class="check ix-unk"><input type="checkbox" name="bunknown"> <span>не знаю точно</span></label></div>
+            <div class="field"><label for="${u}bp">Город</label><input class="input" id="${u}bp" name="bplace" autocomplete="off"></div>
+          </div>
+          <div class="field" data-ix="partner" hidden><label for="${u}pt">Данные партнёра</label><input class="input" id="${u}pt" name="partner" placeholder="Имя, дата, время и город рождения"></div>
+          <div class="field" data-ix="fullName" hidden><label for="${u}fn">Фамилия, имя и отчество при рождении</label><input class="input" id="${u}fn" name="fullname" placeholder="Как в свидетельстве о рождении"></div>
+          <p class="hint ix-soft">${icon('leaf')}<span>Не помните точно — ничего страшного: данные можно прислать и позже.</span></p>
+        </fieldset>
+        <fieldset class="ix-sec" data-ix="when"><legend><span class="ix-n">3</span>Как и когда удобно</legend>
+          ${(INTAKE.formats || []).length ? `<div class="field" data-ix="formatBox"><span class="label" id="${u}fl">Формат</span><div class="ix-formats" role="radiogroup" aria-labelledby="${u}fl">${INTAKE.formats.map((f, i) => `<label class="ix-fmt"><input type="radio" name="format" value="${esc(f.title)}"${i === 0 ? ' checked' : ''}><span>${icon(f.icon || 'sparkle')}<b>${esc(f.title)}</b><small>${esc(f.text || '')}</small></span></label>`).join('')}</div></div>` : ''}
+          <p class="notice info" data-ix="written" hidden>${icon('message-heart')}<span>Эта услуга без встречи: ответ пришлю письменно или голосовыми сообщениями.</span></p>
+          ${(INTAKE.times || []).length ? `<div class="field" data-ix="timesBox"><span class="label" id="${u}wl">Когда вам удобно</span><div class="ix-chips" role="group" aria-labelledby="${u}wl">${INTAKE.times.map((t) => `<button type="button" class="ix-chip" data-time="${esc(t)}" aria-pressed="false">${esc(t)}</button>`).join('')}</div><input class="input" name="prefer" aria-label="Уточнение по времени" placeholder="Уточнение, например: после 19:00"></div>` : ''}
+          <div class="ix-tz">${icon('world-pin')}<span>Ваш часовой пояс: <b data-ix="tzLabel">${esc(tzLabel(tz) || 'не определился')}</b></span><button type="button" class="ix-link" data-ix="tzEdit" aria-expanded="false">изменить</button>
+            <select class="select" name="tz" aria-label="Ваш часовой пояс" hidden>${tz ? '' : '<option value="">— выберите —</option>'}${zones.map((z) => `<option${z === tz ? ' selected' : ''}>${esc(z)}</option>`).join('')}</select></div>
+        </fieldset>
+        <fieldset class="ix-sec"><legend><span class="ix-n">4</span>Как с вами связаться</legend>
+          <div class="form-row">
+            <div class="field"><label for="${u}name">Ваше имя *</label><input class="input" id="${u}name" name="name" required autocomplete="given-name"></div>
+            <div class="field"><label for="${u}contact">Telegram, WhatsApp или телефон *</label><input class="input" id="${u}contact" name="contact" required placeholder="@ник или +7…" autocomplete="tel"></div>
+          </div>
+          <label class="check"><input type="checkbox" name="first"> <span>Это моя первая консультация у астролога</span></label>
+          <label class="check"><input type="checkbox" name="consent" required> <span>Даю согласие на обработку персональных данных согласно <a href="privacy.html" target="_blank">политике конфиденциальности</a></span></label>
+        </fieldset>
+        <button class="btn btn-primary btn-block" type="submit">${icon('send')} Отправить анкету Алине</button>
+        <p class="tiny muted center" style="margin:0">${opts.note ? esc(opts.note) : `Обязательны только имя и контакт. Анкета придёт мне в Telegram — отвечу ${esc(INTAKE.replyTime || 'в течение дня')}, уточню детали и предложу время.`}</p>
       </form>`;
   }
-  /** Отправка заявки. extra(formData) → { lines, data, tz } — строки о выбранном времени (календарь записи). */
-  function bindBooking(form, onDone, extra) {
+  /** Показать поля под выбранную услугу: подсказка вопроса, чьи данные рождения, формат и время — только для встреч. */
+  function intakeApply(form) {
+    const id = form.querySelector('[name=service]').value, cfg = intakeOf(id);
+    const q = (k) => form.querySelector(`[data-ix="${k}"]`);
+    const set = (k, on) => { const el = q(k); if (el) el.hidden = !on; };
+    q('meta').innerHTML = serviceMeta(id);
+    form.querySelector('[name=question]').placeholder = cfg.ask || 'Что сейчас важно? Можно коротко.';
+    q('qlabel').textContent = id === 'gift' ? 'Кому и что дарите' : id === 'express' ? 'Ваш вопрос' : 'Ваш вопрос или ситуация';
+    q('birthTitle').textContent = cfg.birthOf ? `Данные рождения ${cfg.birthOf}` : cfg.partner ? 'Ваши данные рождения' : 'Данные рождения';
+    set('topics', id !== 'gift' && id !== 'express' && id !== 'election');
+    set('birth', !cfg.noBirth);
+    set('partner', !!cfg.partner);
+    set('fullName', !!cfg.fullName);
+    set('when', id !== 'gift');
+    set('formatBox', !cfg.written);
+    set('timesBox', !cfg.written);
+    set('written', !!cfg.written);
+    // номера разделов — по порядку видимых
+    let n = 0;
+    form.querySelectorAll('.ix-sec').forEach((s) => { if (!s.hidden) s.querySelector('.ix-n').textContent = ++n; });
+  }
+  /** Текст анкеты для мессенджера и данные для сервиса форм. */
+  function intakeText(form) {
+    const f = new FormData(form);
+    const g = (k) => String(f.get(k) || '').trim();
+    const id = g('service'), cfg = intakeOf(id), svc = serviceOptions().find((s) => s.id === id);
+    const pressed = (attr) => Array.from(form.querySelectorAll(`[${attr}][aria-pressed="true"]`)).map((b) => b.getAttribute(attr));
+    const topics = id !== 'gift' && id !== 'express' && id !== 'election' ? pressed('data-topic') : [];
+    const meeting = id !== 'gift' && !cfg.written;
+    const times = meeting ? pressed('data-time') : [];
+    const bd = g('bdate');
+    const birth = cfg.noBirth ? '' : bd ? [bd.split('-').reverse().join('.'), g('bunknown') ? 'время неизвестно' : g('btime'), g('bplace')].filter(Boolean).join(', ') : g('bplace') ? `город ${g('bplace')}, дату пришлю` : '';
+    const tz = g('tz') || browserTz;
+    const prefer = [times.join(', '), meeting ? g('prefer') : ''].filter(Boolean).join('; ');
+    const lines = [
+      id === 'gift' ? 'Здравствуйте, Алина! Хочу подарочный сертификат ✨' : 'Здравствуйте, Алина! Хочу на консультацию ✨',
+      `Имя: ${g('name')}`,
+      `Связь: ${g('contact')}`,
+      `Услуга: ${svc ? svc.title : ''}`,
+      topics.length ? `Темы: ${topics.join(', ')}` : '',
+      g('question') ? `Запрос: ${g('question')}` : '',
+      birth ? `Дата рождения${cfg.birthOf ? ' ' + cfg.birthOf : ''}: ${birth}` : '',
+      cfg.partner && g('partner') ? `Партнёр: ${g('partner')}` : '',
+      cfg.fullName && g('fullname') ? `ФИО при рождении: ${g('fullname')}` : '',
+      meeting && g('format') ? `Формат: ${g('format')}` : '',
+      prefer ? `Удобно: ${prefer}` : '',
+      tz ? `Мой часовой пояс: ${tz} (${tzLabel(tz)})` : '',
+      g('first') ? 'Первая консультация у астролога: да' : '',
+    ].filter(Boolean);
+    const data = { name: g('name'), contact: g('contact'), service: svc && svc.title, topics, question: g('question'), birth: bd, time: g('bunknown') ? '' : g('btime'), place: g('bplace'), partner: g('partner'), fullname: g('fullname'), format: meeting ? g('format') : '', prefer, timezone: tz, first: !!g('first') };
+    return { text: lines.join('\n'), data };
+  }
+  /** Анкета: переключатели, часовой пояс, проверка и отправка. */
+  function bindBooking(form, onDone) {
     enhanceDob(form);
+    intakeApply(form);
+    form.querySelector('[name=service]').addEventListener('change', () => { intakeApply(form); fadeIn(form, 4); });
+    form.addEventListener('click', (e) => {
+      const chip = e.target.closest('.ix-chip');
+      if (chip) { chip.setAttribute('aria-pressed', String(chip.getAttribute('aria-pressed') !== 'true')); return; }
+      const te = e.target.closest('[data-ix="tzEdit"]');
+      if (te) {
+        const s = form.querySelector('[name=tz]'), open = s.hidden;
+        s.hidden = !open; te.textContent = open ? 'готово' : 'изменить'; te.setAttribute('aria-expanded', String(open));
+        if (open) s.focus();
+      }
+    });
+    form.querySelector('[name=tz]').addEventListener('change', (e) => { form.querySelector('[data-ix="tzLabel"]').textContent = tzLabel(e.target.value) || '—'; });
+    const unk = form.querySelector('[name=bunknown]'), bt = form.querySelector('[name=btime]');
+    unk.addEventListener('change', () => { bt.disabled = unk.checked; if (unk.checked) bt.value = ''; });
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       // дату рождения начали вводить, но она неполная или такой нет — подсказываем, а не теряем молча
       const dt = form.querySelector('.dob-text'), di = form.querySelector('.dob-iso');
-      if (dt && dt.value.trim() && di && !di.value) { dt.dispatchEvent(new Event('blur')); dt.classList.add('invalid'); dt.focus(); toast('Проверьте дату рождения: ДД.ММ.ГГГГ — или оставьте поле пустым', 'calendar'); return; }
-      const f = new FormData(form);
-      const name = (f.get('name') || '').trim(), contact = (f.get('contact') || '').trim();
-      if (!name) { form.querySelector('[name=name]').classList.add('invalid'); form.querySelector('[name=name]').focus(); return; }
-      if (!contact) { form.querySelector('[name=contact]').classList.add('invalid'); form.querySelector('[name=contact]').focus(); return; }
-      if (!f.get('consent')) { toast('Отметьте согласие на обработку данных', 'info'); return; }
+      if (dt && dt.value.trim() && di && !di.value && !form.querySelector('[data-ix="birth"]').hidden) { dt.dispatchEvent(new Event('blur')); dt.classList.add('invalid'); dt.focus(); toast('Проверьте дату рождения: ДД.ММ.ГГГГ — или оставьте поле пустым', 'calendar'); return; }
+      for (const k of ['name', 'contact']) {
+        const el = form.querySelector(`[name=${k}]`);
+        if (!el.value.trim()) { el.classList.add('invalid'); el.focus(); toast(k === 'name' ? 'Как к вам обращаться?' : 'Оставьте контакт, чтобы я могла ответить', 'user'); return; }
+      }
+      if (!form.querySelector('[name=consent]').checked) { toast('Отметьте согласие на обработку данных', 'info'); return; }
       goal('booking');
-      const svc = serviceOptions().find((s) => s.id === f.get('service'));
-      const bd = f.get('bdate');
-      const ex = extra ? extra(f) : null;
-      const tz = (ex && ex.tz) || browserTz;
-      const lines = [
-        `Здравствуйте, Алина! Хочу записаться ✨`,
-        `Имя: ${name}`,
-        `Связь: ${contact}`,
-        `Услуга: ${svc ? svc.title : ''}`,
-        ...(ex ? ex.lines : []),
-        bd ? `Дата рождения: ${bd.split('-').reverse().join('.')}${f.get('btime') ? ', ' + f.get('btime') : ''}${f.get('bplace') ? ', ' + f.get('bplace') : ''}` : '',
-        f.get('question') ? `Запрос: ${f.get('question')}` : '',
-        tz ? `Мой часовой пояс: ${tz}` : '',
-      ].filter(Boolean);
-      const text = lines.join('\n');
+      const { text, data } = intakeText(form);
       if (SITE.bookingEndpoint) {
         try {
-          const r = await fetch(SITE.bookingEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(Object.assign({ name, contact, service: svc && svc.title, birth: bd, time: f.get('btime'), place: f.get('bplace'), question: f.get('question'), timezone: tz, message: text }, ex ? ex.data : {})) });
+          const r = await fetch(SITE.bookingEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(Object.assign({ message: text }, data)) });
           if (r.ok) { form.reset(); if (onDone) onDone(); thanks(); return; }
         } catch (err) { /* упадём в мессенджеры */ }
       }
@@ -1073,35 +1178,41 @@
     });
     form.addEventListener('input', (e) => e.target.classList && e.target.classList.remove('invalid'));
   }
+  const nextSteps = () => `<ol class="ix-next">
+      <li>Я прочитаю анкету и отвечу ${esc(INTAKE.replyTime || 'в течение дня')}.</li>
+      <li>Если нужно, уточню пару деталей — так консультация будет точнее.</li>
+      <li>Предложу время по вашему часовому поясу и пришлю детали оплаты.</li></ol>`;
   function thanks() {
-    modal(`<div class="center"><div style="font-size:3rem;color:var(--gold)">✦</div><h3>Спасибо! Заявка отправлена</h3><p class="muted">Я свяжусь с вами в ближайшее время. А пока можно построить свою карту на сайте.</p><a class="btn btn-primary" href="natal.html">Моя натальная карта</a></div>`);
+    modal(`<div class="center"><div style="font-size:3rem;color:var(--gold)">✦</div><h3>Спасибо! Анкета у меня</h3><p class="muted">Что будет дальше:</p></div>${nextSteps()}<div class="center"><a class="btn btn-primary" href="natal.html">Пока — моя натальная карта</a></div>`);
   }
   function chooseChannel(text) {
     const c = SITE.contacts || {};
     const btns = [];
-    if (c.telegram) btns.push(`<button class="btn btn-primary btn-block" data-ch="tg">${icon('telegram')} Отправить в Telegram</button>`);
+    // ?text= подставляет анкету прямо в поле сообщения, остаётся нажать «Отправить»; на всякий случай текст ещё и копируем
+    if (c.telegram) btns.push(`<a class="btn btn-primary btn-block" data-ch="tg" target="_blank" rel="noopener" href="https://t.me/${esc(c.telegram.replace(/^@/, ''))}?text=${encodeURIComponent(text)}">${icon('telegram')} Отправить в Telegram</a>`);
     if (c.whatsapp) btns.push(`<a class="btn btn-ghost btn-block" target="_blank" rel="noopener" href="https://wa.me/${c.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(text)}">${icon('whatsapp')} Отправить в WhatsApp</a>`);
-    if (c.email) btns.push(`<a class="btn btn-ghost btn-block" href="mailto:${esc(c.email)}?subject=${encodeURIComponent('Запись на консультацию')}&body=${encodeURIComponent(text)}">${icon('mail')} Отправить на почту</a>`);
+    if (c.email) btns.push(`<a class="btn btn-ghost btn-block" href="mailto:${esc(c.email)}?subject=${encodeURIComponent('Анкета на консультацию')}&body=${encodeURIComponent(text)}">${icon('mail')} Отправить на почту</a>`);
     const m = modal(`
-      <h3>Почти готово ✨</h3>
-      <p class="muted">Выберите, куда отправить заявку — текст уже составлен.</p>
-      <pre style="white-space:pre-wrap;background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:14px;font:inherit;font-size:.9rem;max-height:220px;overflow:auto">${esc(text)}</pre>
-      <div style="display:grid;gap:10px;margin-top:14px">${btns.join('')}<button class="btn btn-gold btn-block" data-ch="copy">${icon('copy')} Скопировать текст</button></div>
-      ${btns.length ? '' : '<p class="notice info" style="margin-top:14px">' + icon('info') + '<span>Скопируйте текст заявки и отправьте его Алине удобным способом.</span></p>'}`);
+      <h3>Анкета готова ✨</h3>
+      <p class="muted">${c.telegram ? 'Нажмите «Отправить в Telegram» — текст уже будет в поле сообщения, останется отправить.' : 'Выберите, куда отправить анкету — текст уже составлен.'}</p>
+      <pre class="ix-pre">${esc(text)}</pre>
+      <div style="display:grid;gap:10px;margin-top:14px">${btns.join('')}<button class="btn btn-gold btn-block" type="button" data-ch="copy">${icon('copy')} Скопировать текст</button></div>
+      ${btns.length ? '' : '<p class="notice info" style="margin-top:14px">' + icon('info') + '<span>Скопируйте текст анкеты и отправьте его Алине удобным способом.</span></p>'}
+      <h4 style="margin:20px 0 6px">Что будет дальше</h4>${nextSteps()}`);
     m.el.addEventListener('click', async (e) => {
       const b = e.target.closest('[data-ch]'); if (!b) return;
-      if (b.dataset.ch === 'copy') { if (await copyText(text)) toast('Текст заявки скопирован', 'check'); }
-      if (b.dataset.ch === 'tg') { await copyText(text); toast('Текст скопирован — вставьте его в чат', 'check'); window.open('https://t.me/' + c.telegram.replace(/^@/, ''), '_blank', 'noopener'); }
+      if (b.dataset.ch === 'copy') { if (await copyText(text)) toast('Текст анкеты скопирован', 'check'); }
+      if (b.dataset.ch === 'tg') { copyText(text); toast('Если поле сообщения пустое — вставьте текст: он скопирован', 'telegram'); }
     });
   }
   function openBooking(preset) {
-    if (window.Booking) return window.Booking.open(preset);
     const pr = promoInfo();
-    const m = modal(`<div class="booking-head"><img src="assets/img/alina-avatar.webp" alt="" width="64" height="64"><div><span class="eyebrow" style="margin:0">запись</span><h3 style="margin:2px 0 0">Консультация с Алиной</h3></div></div>
-      <p class="muted small">Оставьте контакты — я напишу сама и подберу удобное время.</p>
+    const m = modal(`<div class="booking-head"><img src="assets/img/alina-avatar.webp" alt="" width="64" height="64"><div><span class="eyebrow" style="margin:0">анкета</span><h3 style="margin:2px 0 0">Консультация с Алиной</h3></div></div>
+      <p class="muted small" style="margin:0 0 14px">Расскажите немного о себе и своём вопросе — анкета придёт мне в Telegram. Я прочитаю её и отвечу сама, обычно ${esc(INTAKE.replyTime || 'в течение дня')}.</p>
       ${pr ? `<div class="promo-inline"><span class="sticker">−${pr.percent}%</span><span><b>${esc(pr.title)}</b><br><small>действует до ${pr.end.getDate()} ${fmt.MONTHS_GEN[pr.end.getMonth()]}</small></span></div>` : ''}
-      ${bookingFormHTML('bm', preset)}`, { wide: false });
+      ${bookingFormHTML('bm', preset)}`, { cls: 'booking-modal' });
     bindBooking(m.el.querySelector('form'), () => m.close());
+    return m;
   }
   document.addEventListener('click', (e) => {
     const b = e.target.closest('[data-book]');
@@ -1133,7 +1244,7 @@
     return { date, moon: ms, sunSign, retro, pts };
   }
 
-  window.UI = { currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, serviceOptions, academyOn, isAlina, bookingFormHTML, bindBooking, dobHTML, enhanceDob, reveal, fadeIn, reduceMotion, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
+  window.UI = { premOn, currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, serviceOptions, academyOn, isAlina, bookingFormHTML, bindBooking, tzLabel, dobHTML, enhanceDob, reveal, fadeIn, reduceMotion, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
 
   // Шапку, подвал и небо рисуем сразу (скрипт стоит в конце <body>, разметка страницы уже есть), а не по DOMContentLoaded:
   // так первый кадр страницы — и плавный переход между страницами — уже с шапкой, без мигания.

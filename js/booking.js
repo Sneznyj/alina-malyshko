@@ -1,5 +1,6 @@
-/* Запись через календарь: свободное время по расписанию Алины (js/schedule.js) в часовом поясе клиента.
-   BookingCore — расчёт (без страницы, проверяется в Node: _dev/test_schedule.js), Booking — окно записи. */
+/* Свободное время Алины по её расписанию — только для кабинета (Заявки → «Предложить время», Расписание).
+   Клиенты календаря не видят: они присылают анкету, а время Алина предлагает сама, уже по часам клиента.
+   BookingCore — расчёт (без страницы, проверяется в Node: _dev/test_schedule.js), Booking — подписи для кабинета. */
 (function () {
   'use strict';
   const G = typeof globalThis !== 'undefined' ? globalThis : window;
@@ -183,16 +184,13 @@
 
   if (typeof document === 'undefined' || !G.UI) return;
 
-  // ===================== окно записи =====================
-  const UI = G.UI, SITE = G.SITE, BC = G.BookingCore;
-  const { esc, icon, fmt } = UI;
-  const DOW_MON = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-  const DOW_SHORT = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+  // ===================== подписи для кабинета =====================
+  const UI = G.UI, BC = G.BookingCore;
+  const { fmt } = UI;
   const TZ_ALIAS = { 'Europe/Kyiv': 'Europe/Kiev', 'Asia/Calcutta': 'Asia/Kolkata' };
   const TZ_CITY = {};
   for (const c of UI.CITIES) if (!TZ_CITY[c.tz]) TZ_CITY[c.tz] = c.name;
 
-  const liveSchedule = () => G.SCHEDULE || null;
   const durationOf = (sched, id) => { const d = (sched && sched.durations) || {}; return Math.max(0, +d[id] || 0); };
   /** Название пояса по-человечески: «Берлин», иначе последняя часть идентификатора. */
   const tzCity = (tz) => TZ_CITY[tz] || TZ_CITY[TZ_ALIAS[tz]] || String(tz).split('/').pop().replace(/_/g, ' ');
@@ -210,237 +208,7 @@
     if (!m) return `${h} ${fmt.plural(h, 'час', 'часа', 'часов')}`;
     return `${h} ч ${m} мин`;
   }
-  const dmy = (p) => `${pad(p.d)}.${pad(p.m)}.${p.y}`;
-  const dayTitle = (key) => { const [y, m, d] = key.split('-').map(Number); const w = fmt.DOW_LONG[BC.dowOf(key)]; return `${w[0].toUpperCase() + w.slice(1)}, ${d} ${fmt.MONTHS_GEN[m - 1]}`; };
-  const monthTitle = (ym) => { const [y, m] = ym.split('-').map(Number); return `${fmt.MONTHS[m - 1]} ${y}`; };
-  const ymOf = (key) => key.slice(0, 7);
-  const addMonth = (ym, n) => { const [y, m] = ym.split('-').map(Number); const t = new Date(Date.UTC(y, m - 1 + n, 1)); return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}`; };
-  function clientTz() {
-    const saved = UI.store.get('bookTz', null);
-    if (saved && BC.validTz(saved)) return saved;
-    if (UI.browserTz && BC.validTz(UI.browserTz)) return UI.browserTz;
-    return (liveSchedule() || {}).timezone || 'Europe/Moscow';
-  }
-  /** Подпись услуги: длительность, формат, цена (с учётом акции). */
-  function serviceMeta(id, dur) {
-    const svc = SITE.services.find((s) => s.id === id);
-    const fmtA = ((SITE.academy || {}).formats || []).find((f) => f.service === id);
-    let price = '';
-    if (svc && svc.price) { const p = UI.priceFor(svc); price = `${p.old ? `<s>${UI.money(p.old, p.code)}</s> ` : ''}<b>${UI.money(p.now, p.code)}</b>`; }
-    else if (fmtA && fmtA.price) { const p = UI.priceOf(fmtA); price = `<b>${UI.money(p.n, p.code)}</b>${fmtA.unit ? ' ' + esc(fmtA.unit) : ''}`; }
-    const what = dur ? `${durLabel(dur)} · онлайн по видеосвязи` : svc ? esc(svc.duration || '') : id === 'gift' ? 'красивый сертификат на любую услугу' : '';
-    return what || price ? `<span class="hint bk-meta">${icon(dur ? 'clock' : 'info')}<span>${what}${what && price ? ' · ' : ''}${price}</span></span>` : '';
-  }
-  function noSlotText(id) {
-    if (id === 'gift') return 'Сертификат — без встречи: напишу, как оформить и вручить.';
-    if (id === 'course') return 'Набор в группу скоро — оставьте заявку, напишу первой.';
-    if (id === 'other') return 'Напишите, что вас интересует, — подскажу и подберём время.';
-    return 'Эта услуга без встречи по времени — ответ пришлю письменно или голосовым. Просто оставьте заявку.';
-  }
+  const dayTitle = (key) => { const [, m, d] = key.split('-').map(Number); const w = fmt.DOW_LONG[BC.dowOf(key)]; return `${w[0].toUpperCase() + w.slice(1)}, ${d} ${fmt.MONTHS_GEN[m - 1]}`; };
 
-  let uid = 0;
-  /**
-   * Запись по шагам: 1) услуга, день и время  2) контакты.
-   * opts: preset — услуга; prefix — для id полей; onDone — после отправки;
-   *       schedule() — своё расписание (кабинет, предпросмотр); preview — только первый шаг, без отправки.
-   */
-  function widget(root, opts) {
-    opts = opts || {};
-    const u = (opts.prefix || 'bk') + (++uid);
-    const getSched = () => (opts.schedule ? opts.schedule() : liveSchedule());
-    const services = UI.serviceOptions();
-    const st = { service: services.some((s) => s.id === opts.preset) ? opts.preset : services[0].id, tz: clientTz(), day: null, month: null, slot: null, step: 1, flex: false, tzOpen: false, list: [], days: new Map(), dur: 0 };
-    root.classList.add('bk');
-
-    function compute() {
-      const s = getSched();
-      const now = Date.now();
-      st.now = now;
-      st.dur = s ? durationOf(s, st.service) : 0;
-      st.list = st.dur ? BC.slots(s, st.dur, { now }) : [];
-      st.days = BC.byDay(st.list, st.tz);
-      if (st.slot) st.slot = st.list.find((x) => x.start === st.slot.start) || null;
-      if (!st.day && st.slot) st.day = BC.partsIn(st.slot.start, st.tz).key;
-      if (!st.day || !st.days.has(st.day)) st.day = st.days.size ? st.days.keys().next().value : null;
-      const s0 = BC.norm(s);
-      st.minYm = ymOf(BC.partsIn(now, st.tz).key);
-      st.maxYm = ymOf(BC.partsIn(now + s0.daysAhead * 86400000, st.tz).key);
-      if (!st.month || st.month < st.minYm || st.month > st.maxYm) st.month = st.day ? ymOf(st.day) : st.minYm;
-    }
-
-    const stepsHTML = () => `<ol class="bk-steps" aria-label="Шаги записи">
-        <li class="${st.step === 1 ? 'on' : 'done'}"><span>${st.step > 1 ? icon('check') : '1'}</span>${st.dur ? 'Дата и время' : 'Услуга'}</li>
-        <li class="${st.step === 2 ? 'on' : ''}"><span>2</span>Ваши данные</li></ol>`;
-
-    function calHTML() {
-      const [y, m] = st.month.split('-').map(Number);
-      const startDow = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7;
-      const nDays = new Date(Date.UTC(y, m, 0)).getUTCDate();
-      const today = BC.partsIn(st.now, st.tz).key;
-      let cells = DOW_MON.map((d) => `<span class="dw" aria-hidden="true">${d}</span>`).join('');
-      for (let i = 0; i < startDow; i++) cells += '<span></span>';
-      for (let d = 1; d <= nDays; d++) {
-        const key = BC.keyOf(y, m, d), n = (st.days.get(key) || []).length;
-        const cls = [n ? 'av' : '', key === st.day ? 'sel' : '', key === today ? 'today' : '', key < today ? 'past' : ''].filter(Boolean).join(' ');
-        cells += `<button type="button" class="bk-d ${cls}" data-day="${key}"${n ? '' : ' disabled'} aria-pressed="${key === st.day}" aria-label="${d} ${fmt.MONTHS_GEN[m - 1]}${n ? ` — свободно ${n} ${fmt.plural(n, 'вариант', 'варианта', 'вариантов')}` : ' — нет времени'}">${d}</button>`;
-      }
-      return `<div class="bk-cal">
-          <div class="bk-cal-head"><button type="button" class="bk-nav" data-bk="prev" aria-label="Предыдущий месяц"${st.month <= st.minYm ? ' disabled' : ''}>${icon('chevron-left')}</button>
-            <b aria-live="polite">${monthTitle(st.month)}</b>
-            <button type="button" class="bk-nav" data-bk="nextm" aria-label="Следующий месяц"${st.month >= st.maxYm ? ' disabled' : ''}>${icon('chevron-right')}</button></div>
-          <div class="bk-grid">${cells}</div>
-          <p class="bk-legend tiny muted"><i aria-hidden="true"></i>есть свободное время</p>
-        </div>`;
-    }
-    function timesHTML() {
-      const list = st.days.get(st.day) || [];
-      if (!st.day || !list.length) return '<div class="bk-times"><p class="muted small">В этом месяце свободных дней нет — переключите месяц.</p></div>';
-      const groups = [];
-      for (const x of list) {
-        const h = x.local.hh;
-        const g = h < 5 ? ['moon-2', 'Ночь'] : h < 12 ? ['sunrise', 'Утро'] : h < 17 ? ['sun-high', 'День'] : h < 23 ? ['moon', 'Вечер'] : ['moon-2', 'Ночь'];
-        if (!groups.length || groups[groups.length - 1].name !== g[1]) groups.push({ ic: g[0], name: g[1], items: [] });
-        groups[groups.length - 1].items.push(x);
-      }
-      const chosen = st.slot && list.some((x) => x.start === st.slot.start)
-        ? `<p class="bk-chosen">${icon('calendar-check')}<span>${BC.hm(BC.partsIn(st.slot.start, st.tz).min)}–${BC.hm(BC.partsIn(st.slot.end, st.tz).min)} · ${durLabel(st.dur)}</span></p>` : '';
-      return `<div class="bk-times"><div class="bk-day-title">${dayTitle(st.day)}</div>
-        ${groups.map((g) => `<div class="bk-group"><span class="bk-gl">${icon(g.ic)}${g.name}</span><div class="bk-chips">${g.items.map((x) => `<button type="button" class="bk-chip" data-slot="${x.start}" aria-pressed="${!!st.slot && st.slot.start === x.start}">${BC.hm(x.local.min)}</button>`).join('')}</div></div>`).join('')}
-        ${chosen}</div>`;
-    }
-    function tzHTML() {
-      return `<div class="bk-tz">${icon('world-pin')}<span>Время показано по вашему часовому поясу: <b>${esc(tzLabel(st.tz, st.now))}</b></span>
-        <button type="button" class="bk-link" data-bk="tz" aria-expanded="${st.tzOpen}">${st.tzOpen ? 'готово' : 'изменить'}</button>
-        ${st.tzOpen ? `<select class="select" data-bk="tzsel" aria-label="Ваш часовой пояс">${UI.timeZones().concat(UI.timeZones().includes(st.tz) ? [] : [st.tz]).map((z) => `<option${z === st.tz ? ' selected' : ''}>${esc(z)}</option>`).join('')}</select>` : ''}</div>`;
-    }
-    function step1() {
-      const opts1 = services.map((s) => `<option value="${s.id}"${s.id === st.service ? ' selected' : ''}>${esc(s.title)}</option>`).join('');
-      let body;
-      if (!st.dur) body = `<p class="notice info">${icon('info')}<span>${noSlotText(st.service)}</span></p>`;
-      else if (!st.list.length) body = `<p class="notice">${icon('calendar-off')}<span>В ближайшие недели свободного времени в календаре нет. Оставьте заявку — я предложу ближайшее окно.</span></p>`;
-      else body = `<div class="bk-pick">${calHTML()}${timesHTML()}</div>${tzHTML()}`;
-      const canNext = !st.dur || !st.list.length || !!st.slot;
-      return `${stepsHTML()}
-        <div class="field"><label for="${u}svc">Что вас интересует</label><select class="select" id="${u}svc" data-bk="service">${opts1}</select>${serviceMeta(st.service, st.dur)}</div>
-        <div class="bk-body">${body}</div>
-        <div class="bk-actions"><button class="btn btn-primary" type="button" data-bk="next"${canNext ? '' : ' disabled'}>${opts.preview ? 'Далее' : st.dur && st.list.length && !st.slot ? 'Выберите время' : 'Далее'} ${icon('arrow')}</button>
-          ${st.dur && st.list.length ? '<button class="bk-link" type="button" data-bk="flex">Нет удобного времени? Подберём вместе</button>' : ''}</div>`;
-    }
-    function step2() {
-      const svc = services.find((s) => s.id === st.service);
-      let sum;
-      if (st.slot) {
-        const a = BC.partsIn(st.slot.start, st.tz), b = BC.partsIn(st.slot.end, st.tz);
-        sum = `<b>${dayTitle(a.key)} · ${BC.hm(a.min)}–${BC.hm(b.min)}</b><small>${esc(svc.title)} · время ваше (${esc(tzCity(st.tz))})</small>`;
-      } else if (st.dur) sum = `<b>Время подберём вместе</b><small>${esc(svc.title)} · напишу и предложу варианты</small>`;
-      else sum = `<b>${esc(svc.title)}</b><small>${esc(noSlotText(st.service))}</small>`;
-      return `${stepsHTML()}
-        <div class="bk-summary">${icon(st.slot ? 'calendar-check' : st.dur ? 'calendar-time' : 'sparkle')}<div>${sum}</div><button class="btn btn-ghost btn-xs" type="button" data-bk="back">${icon('arrow-left')} Изменить</button></div>
-        ${UI.bookingFormHTML(u, st.service, { noService: true, prefer: !st.slot && !!st.dur, note: st.slot ? 'Отвечу в течение дня и подтвержу время. Данные рождения можно прислать и позже.' : 'Отвечаю в течение дня. Данные рождения можно прислать и позже.' })}`;
-    }
-
-    /** Строки о времени для текста заявки. */
-    function extra(f) {
-      const s = BC.norm(getSched());
-      const lines = [], data = { clientTz: st.tz };
-      if (st.slot) {
-        const a = BC.partsIn(st.slot.start, st.tz), b = BC.partsIn(st.slot.end, st.tz);
-        const same = BC.offsetMin(st.slot.start, st.tz) === BC.offsetMin(st.slot.start, s.timezone);
-        lines.push(`Время: ${DOW_SHORT[a.dow]} ${dmy(a)}, ${BC.hm(a.min)}–${BC.hm(b.min)} — ${same ? 'у нас одинаковое время' : 'моё время'} (${tzLabel(st.tz, st.slot.start)})`);
-        if (!same) {
-          const A = BC.partsIn(st.slot.start, s.timezone), B = BC.partsIn(st.slot.end, s.timezone);
-          lines.push(`По вашему времени (${tzCity(s.timezone)}): ${DOW_SHORT[A.dow]} ${dmy(A)}, ${BC.hm(A.min)}–${BC.hm(B.min)}`);
-        }
-        data.slotStart = new Date(st.slot.start).toISOString();
-        data.slotEnd = new Date(st.slot.end).toISOString();
-      } else if (st.dur) {
-        lines.push('Время: подберём вместе');
-        const pref = String(f.get('prefer') || '').trim();
-        if (pref) { lines.push(`Мне удобно: ${pref}`); data.prefer = pref; }
-      }
-      return { lines, data, tz: st.tz };
-    }
-
-    function render(focus) {
-      if (st.step === 1) compute();
-      root.innerHTML = st.step === 1 ? step1() : step2();
-      if (st.step === 2) {
-        const form = root.querySelector('form');
-        UI.bindBooking(form, opts.onDone, extra);
-        if (focus) setTimeout(() => { const n = form.querySelector('[name=name]'); if (n) n.focus({ preventScroll: true }); }, 60);
-      }
-      if (focus) UI.fadeIn(root, 8);
-    }
-    function scrollTo(el) { if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest', behavior: UI.reduceMotion() ? 'auto' : 'smooth' }); }
-    function goStep(n) {
-      st.step = n;
-      render(true);
-      const top = root.querySelector('.bk-steps');
-      if (opts.scrollTop !== false) scrollTo(top);
-    }
-
-    root.addEventListener('click', (e) => {
-      const day = e.target.closest('[data-day]');
-      if (day && !day.disabled) {
-        st.day = day.dataset.day;
-        if (st.slot && !(st.days.get(st.day) || []).some((x) => x.start === st.slot.start)) st.slot = null;
-        render();
-        UI.fadeIn(root.querySelector('.bk-times'), 6);
-        if (window.innerWidth < 700) scrollTo(root.querySelector('.bk-times'));
-        return;
-      }
-      const chip = e.target.closest('[data-slot]');
-      if (chip) {
-        st.slot = st.list.find((x) => x.start === +chip.dataset.slot) || null;
-        st.flex = false;
-        render();
-        scrollTo(root.querySelector('.bk-actions'));
-        const nb = root.querySelector('[data-bk="next"]'); if (nb) nb.focus({ preventScroll: true });
-        return;
-      }
-      const b = e.target.closest('[data-bk]');
-      if (!b || b.tagName === 'SELECT') return;
-      const k = b.dataset.bk;
-      if (k === 'prev' || k === 'nextm') {
-        st.month = addMonth(st.month, k === 'prev' ? -1 : 1);
-        const first = Array.from(st.days.keys()).find((x) => ymOf(x) === st.month);
-        if (first) st.day = first;
-        render();
-        UI.fadeIn(root.querySelector('.bk-pick'), 4);
-      }
-      if (k === 'tz') { st.tzOpen = !st.tzOpen; render(); if (st.tzOpen) { const s = root.querySelector('[data-bk="tzsel"]'); if (s) s.focus(); } }
-      if (k === 'flex') { st.slot = null; st.flex = true; if (opts.preview) { UI.toast('Здесь клиент перейдёт к форме: «время подберём вместе»', 'info'); return; } goStep(2); }
-      if (k === 'next') {
-        if (opts.preview) { UI.toast(st.slot ? 'Дальше клиент оставит контакты — это предпросмотр' : 'Сначала выберите время', 'info'); return; }
-        if (st.dur && st.list.length && !st.slot) { UI.toast('Выберите удобное время', 'clock'); return; }
-        goStep(2);
-      }
-      if (k === 'back') goStep(1);
-    });
-    root.addEventListener('change', (e) => {
-      const t = e.target;
-      if (t.dataset.bk === 'service') { st.service = t.value; st.slot = null; st.day = null; st.month = null; render(); UI.fadeIn(root.querySelector('.bk-body'), 6); }
-      if (t.dataset.bk === 'tzsel' && BC.validTz(t.value)) { st.tz = t.value; UI.store.set('bookTz', t.value); st.day = null; st.month = null; st.slot = st.slot && { start: st.slot.start }; render(); }
-    });
-
-    render();
-    return {
-      refresh() { if (st.step === 1) render(); },
-      setService(id) { if (services.some((s) => s.id === id)) { st.service = id; st.slot = null; st.day = null; st.month = null; st.step = 1; render(); } },
-      state: st,
-    };
-  }
-
-  /** Окно записи поверх страницы (кнопки «Записаться»). */
-  function open(preset) {
-    const pr = UI.promoInfo();
-    const m = UI.modal(`<div class="booking-head"><img src="assets/img/alina-avatar.webp" alt="" width="64" height="64"><div><span class="eyebrow" style="margin:0">запись</span><h3 style="margin:2px 0 0">Консультация с Алиной</h3></div></div>
-      <p class="muted small" style="margin:0 0 14px">Выберите удобный день и время — я подтвержу запись сама.</p>
-      ${pr ? `<div class="promo-inline"><span class="sticker">−${pr.percent}%</span><span><b>${esc(pr.title)}</b><br><small>действует до ${pr.end.getDate()} ${fmt.MONTHS_GEN[pr.end.getMonth()]}</small></span></div>` : ''}
-      <div class="bk-root"></div>`, { cls: 'booking-modal' });
-    widget(m.el.querySelector('.bk-root'), { preset, prefix: 'bm', onDone: () => m.close() });
-    return m;
-  }
-
-  G.Booking = { widget, open, tzCity, tzLabel, durLabel, dayTitle, liveSchedule, durationOf };
+  G.Booking = { tzCity, tzLabel, durLabel, dayTitle, durationOf };
 })();

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Премиум-доступ — личный прогноз и подробные разборы · Алина Малышко</title>
+<meta name="description" content="Премиум-доступ на сайте астролога Алины Малышко: личный прогноз по датам, подробная совместимость пары, натальная карта полностью и нумерологический календарь. Без автосписаний.">
+<meta name="theme-color" content="#9b87d9">
+<meta property="og:title" content="Премиум-доступ: прогноз по датам и подробные разборы">
+<meta property="og:image" content="https://sneznyj.github.io/alina-malyshko/assets/img/og-image.jpg">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&family=Caveat:wght@500;600;700&family=Noto+Sans+Symbols&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>try{var t=localStorage.getItem('am_theme');document.documentElement.setAttribute('data-theme',t?JSON.parse(t):(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}try{if(!window.CSSViewTransitionRule&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('pt-fallback')}catch(e){}</script>
+<link rel="expect" href="#pt-ready" blocking="render">
+</head>
+<body>
+<main id="main" class="premium-page">
+  <section class="page-hero">
+    <div class="container hero-anim">
+      <span class="eyebrow">Премиум-доступ</span>
+      <h1>Точные прогнозы и <em class="accent">подробные разборы</em></h1>
+      <p class="lead">Базовые инструменты сайта бесплатны. Премиум открывает то, что обычно остаётся за кадром: личный прогноз по датам, все связи пары, натальную карту целиком и нумерологический календарь.</p>
+      <div id="pmStatus"></div>
+    </div>
+  </section>
+
+  <section class="section tight" style="padding-top:0">
+    <div class="container">
+      <div class="grid grid-2" id="pmFeatures"></div>
+    </div>
+  </section>
+
+  <section class="section tight" id="plans">
+    <div class="container">
+      <div class="section-head center reveal">
+        <span class="eyebrow">тарифы</span>
+        <h2>Один доступ — <em class="accent">все премиум-разделы</em></h2>
+        <p class="lead">Оплата разовая, без подписки с автосписанием: срок закончится — продлите, когда захотите.</p>
+      </div>
+      <div id="pmPlans" class="pm-plans"></div>
+    </div>
+  </section>
+
+  <section class="section tight">
+    <div class="container">
+      <div class="section-head center reveal">
+        <span class="eyebrow">как это работает</span>
+        <h2>Четыре шага до <em class="accent">полного прогноза</em></h2>
+      </div>
+      <ol class="pm-steps" id="pmSteps"></ol>
+      <div class="card pm-activate reveal" id="pmActivate"></div>
+    </div>
+  </section>
+
+  <section class="section tight">
+    <div class="container pm-narrow">
+      <div class="section-head center reveal">
+        <span class="eyebrow both">вопросы</span>
+        <h2>Что важно <em class="accent">знать</em></h2>
+      </div>
+      <div class="accordion" id="pmFaq"></div>
+      <div class="card pm-terms reveal" id="pmTerms" style="margin-top:22px"></div>
+      <div class="card note-card reveal" style="margin-top:22px" id="pmNote"></div>
+    </div>
+  </section>
+</main>
+
+<script src="js/content.js"></script>
+<script src="js/vendor/astronomy.browser.min.js"></script>
+<script src="js/astro.js"></script>
+<script src="js/texts.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/ui.js"></script>
+<span id="pt-ready" hidden></span>
+<script src="js/admin.js"></script>
+<script src="js/premium.js"></script>
+<script src="js/pages/premium.js"></script>
+</body>
+</html>

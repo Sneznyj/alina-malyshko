@@ -45,55 +45,29 @@
     return `<article class="interp-item reveal"><div class="ig glyph">${icon}</div><div><h4>${title}</h4>${tags.length ? `<div class="tags">${tags.join('')}</div>` : ''}${paras.filter(Boolean).map((p) => `<p>${p}</p>`).join('')}</div></article>`;
   }
 
-  function interpretation(chart, opts) {
-    opts = opts || {};
+  /** Бесплатное толкование: планеты в знаках. Полное (дома, управитель, кармические точки, MC, аспекты) —
+      в премиум-доступе: зашифрованный модуль _private/natal-pro.js (NatalPro.interpretation). */
+  function interpretation(chart) {
     const out = [];
     const tagSign = (p) => `<span class="badge">${AC.fmtDeg(p.lon)} ${T.signs[p.sign].name}</span>`;
-    const tagHouse = (p) => (p.house ? `<span class="badge gold">${ROMAN[p.house - 1]} дом · ${T.houses[p.house].title}</span>` : '');
+    const tagHouse = (p) => (p.house ? `<span class="badge gold">${ROMAN[p.house - 1]} дом</span>` : '');
     const tagDig = (p) => (p.dignity ? `<span class="badge ${p.dignity === 'domicile' || p.dignity === 'exaltation' ? 'ok' : 'warn'}">${T.dignity[p.dignity]}</span>` : '');
     const tagR = (p) => (p.retro ? '<span class="badge rose">ретроградный</span>' : '');
-
     out.push('<h3 style="margin-top:6px">Большая тройка</h3>');
     for (const id of ['sun', 'moon', 'asc']) {
       const p = chart.byId[id];
       if (!p) { out.push(item('AC', 'Асцендент', [], ['Чтобы узнать Асцендент и дома, нужно время рождения. Если оно неизвестно — его можно восстановить ректификацией.'])); continue; }
-      out.push(item(T.planets[id].glyph, `${T.planets[id].name} ${T.signs[p.sign].loc}`, [tagSign(p), tagHouse(p), tagDig(p)], [T.planetInSign(id, p.sign), id !== 'asc' ? T.planetInHouse(id, p.house) : '']));
-    }
-    if (chart.summary.ascRuler) {
-      const r = chart.byId[chart.summary.ascRuler];
-      out.push(item(T.planets[r.id].glyph, `Управитель карты — ${T.planets[r.id].name}`, [tagSign(r), tagHouse(r)], [`Планета, которая управляет вашим Асцендентом, — «водитель» всей карты. ${T.planets[r.id].name} ${T.signs[r.sign].loc}${r.house ? ' в ' + ROMAN[r.house - 1] + ' доме' : ''}: многое в жизни крутится вокруг темы «${r.house ? T.houses[r.house].topic : T.planets[r.id].keys}».`]));
+      out.push(item(T.planets[id].glyph, `${T.planets[id].name} ${T.signs[p.sign].loc}`, [tagSign(p), tagHouse(p), tagDig(p)], [T.planetInSign(id, p.sign)]));
     }
     out.push('<h3>Личные планеты</h3>');
     for (const id of ['mercury', 'venus', 'mars']) {
       const p = chart.byId[id];
-      out.push(item(T.planets[id].glyph, `${T.planets[id].name} ${T.signs[p.sign].loc}`, [tagSign(p), tagHouse(p), tagDig(p), tagR(p)], [T.planetInSign(id, p.sign), T.planetInHouse(id, p.house), p.dignity ? T.dignityAbout[p.dignity] : '']));
+      out.push(item(T.planets[id].glyph, `${T.planets[id].name} ${T.signs[p.sign].loc}`, [tagSign(p), tagHouse(p), tagDig(p), tagR(p)], [T.planetInSign(id, p.sign)]));
     }
     out.push('<h3>Социальные и высшие планеты</h3>');
     for (const id of ['jupiter', 'saturn', 'uranus', 'neptune', 'pluto']) {
       const p = chart.byId[id];
-      out.push(item(T.planets[id].glyph, `${T.planets[id].name} ${T.signs[p.sign].loc}`, [tagSign(p), tagHouse(p), tagDig(p), tagR(p)], [T.planetInSign(id, p.sign), T.planetInHouse(id, p.house)]));
-    }
-    out.push('<h3>Кармические точки</h3>');
-    for (const id of ['node', 'chiron', 'lilith']) {
-      const p = chart.byId[id];
-      if (!p) continue;
-      const pl = T.planets[id];
-      const signText = id === 'node' ? T.signs[p.sign].node : T.planetInSign(id, p.sign);
-      out.push(item(pl.glyph, `${pl.name} ${T.signs[p.sign].loc}`, [tagSign(p), tagHouse(p), tagR(p)], [pl.about, signText, T.planetInHouse(id, p.house)]));
-    }
-    if (chart.byId.mc) {
-      const p = chart.byId.mc;
-      out.push('<h3>Призвание</h3>');
-      out.push(item('MC', `MC ${T.signs[p.sign].loc}`, [tagSign(p)], [T.planetInSign('mc', p.sign)]));
-    }
-    // ключевые аспекты
-    const key = chart.aspects.filter((a) => ['conj', 'opp', 'square', 'trine', 'sextile'].includes(a.type) && AC.PLANETS.includes(a.a) && AC.PLANETS.includes(a.b)).slice(0, opts.maxAspects || 10);
-    if (key.length) {
-      out.push('<h3>Ключевые аспекты</h3>');
-      for (const a of key) {
-        const asp = T.aspects[a.type];
-        out.push(item(asp.glyph, `${T.planets[a.a].name} ${asp.glyph} ${T.planets[a.b].name} · ${asp.name.toLowerCase()}`, [`<span class="badge">орбис ${a.orb.toFixed(1)}°</span>`, a.applying != null ? `<span class="badge ${a.applying ? 'gold' : ''}">${a.applying ? 'сходящийся' : 'расходящийся'}</span>` : ''], [T.aspectText(a.a, a.b, a.type)]));
-      }
+      out.push(item(T.planets[id].glyph, `${T.planets[id].name} ${T.signs[p.sign].loc}`, [tagSign(p), tagHouse(p), tagDig(p), tagR(p)], [T.planetInSign(id, p.sign)]));
     }
     return `<div class="interp">${out.join('')}</div>`;
   }

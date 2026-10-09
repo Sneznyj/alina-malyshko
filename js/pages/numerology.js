@@ -1,5 +1,7 @@
 /* Нумерология: дата и имя → главные числа, квадрат Пифагора, личный год; основы, значения чисел, вопросы.
-   Расчёты — js/numerology.js, тексты — js/numerology-data.js. */
+   Расчёты — js/numerology.js, тексты — js/numerology-data.js.
+   Премиум (js/premium.js → зашифрованный _private/numerology-pro.js): личные месяцы, календарь личных дней,
+   личный день сегодня и следующий год. Без доступа во вкладке «Личный год» — сам год и цикл, остальное закрыто. */
 (function () {
   'use strict';
   const UI = window.UI, N = window.Numerology, TX = window.NUMEROLOGY_TEXTS;
@@ -7,7 +9,7 @@
   const $ = (id) => document.getElementById(id);
   const LIST = [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33];
   const pl = (n, a, b, c) => fmt.plural(n, a, b, c);
-  let res = null, tile = 'birthday', cell = 1, monthSel = null;
+  let res = null, tile = 'birthday', cell = 1;
 
   // ---------- помощники вида ----------
   /** Число в кольце: размер s — 'xl' | 'm' | 's'. */
@@ -24,10 +26,8 @@
     const now = new Date();
     const lp = N.lifePath(y, m, d), bd = N.birthday(d), nm = N.nameNumbers(name);
     const py = N.personalYear(m, d, now.getFullYear());
-    const pm = N.personalMonth(py.value, now.getMonth() + 1);
     return {
-      name: name.trim(), iso, y, m, d, lp, bd, nm, py, pm,
-      pd: N.personalDay(pm, now.getDate()),
+      name: name.trim(), iso, y, m, d, lp, bd, nm, py,
       pyNext: N.personalYear(m, d, now.getFullYear() + 1),
       sq: N.pythagoras(y, m, d), year: now.getFullYear(), month: now.getMonth() + 1,
     };
@@ -149,26 +149,37 @@
 
   // ---------- вкладка «Личный год» ----------
   function yearHTML(r) {
-    const y = TX.years[r.py.value], nx = TX.years[r.pyNext.value];
+    const y = TX.years[r.py.value];
     const cycle = Array.from({ length: 9 }, (_, i) => i + 1).map((k) => `<span class="cy${k === r.py.value ? ' now' : k < r.py.value ? ' past' : ''}" title="${esc(TX.years[k].title)}">${k}</span>`).join('');
-    if (monthSel == null) monthSel = r.month;
-    const months = fmt.MONTHS.map((mn, i) => { const v = N.personalMonth(r.py.value, i + 1); return `<button type="button" class="pmo${i + 1 === monthSel ? ' sel' : ''}${i + 1 === r.month ? ' cur' : ''}" data-month="${i + 1}" aria-pressed="${i + 1 === monthSel}"><span>${mn.slice(0, 3)}</span><b>${v}</b></button>`; }).join('');
-    const pmSel = N.personalMonth(r.py.value, monthSel);
     return `<div class="num-hero">
         ${orb(r.py.value, 'xl')}
         <div class="num-hero-text"><span class="num-label">Личный год ${r.year}</span><h3>${esc(y.title)}</h3><p>${esc(y.text)}</p>${chips(y.focus)}</div>
       </div>
       <div class="num-cycle" aria-label="Девятилетний цикл: шаг ${r.py.value} из 9">${cycle}</div>
       <p class="tiny muted center" style="margin:6px 0 0">Ваш девятилетний цикл: шаг ${r.py.value} из 9. Личный год меняется 1 января.</p>
-      <h4 style="margin-top:22px">Личные месяцы</h4>
-      <div class="pm-grid" role="group" aria-label="Месяцы">${months}</div>
-      <p class="pm-detail" id="pmDetail">${monthText(r, monthSel, pmSel)}</p>
-      <div class="grid grid-2" style="margin-top:16px">
-        <div class="num-mini">${icon('sun-high')}<div><b>Сегодня — личный день ${r.pd}</b><span class="small">хорошо ${esc(TX.tips[r.pd])}</span></div></div>
-        <div class="num-mini">${icon('calendar-repeat')}<div><b>${r.year + 1} — личный год ${r.pyNext.value}</b><span class="small">${esc(nx.title.toLowerCase())}</span></div></div>
-      </div>`;
+      <div id="numYearPro">${yearMore(r)}</div>`;
   }
-  const monthText = (r, m, v) => `<b>${fmt.MONTHS[m - 1]} — личный месяц ${v}.</b> Хорошо ${esc(TX.tips[v])}.`;
+  /** Без доступа: месяцы видны, их числа и календарь дней — закрыты (расчёта на странице нет). */
+  function yearMore(r) {
+    const P = window.Premium;
+    if (!P) return '';
+    const months = fmt.MONTHS.map((mn, i) => `<span class="pmo-l${i + 1 === r.month ? ' cur' : ''}"><span>${mn.slice(0, 3)}</span>${icon('lock')}</span>`).join('');
+    return `<h4 style="margin-top:22px">Личные месяцы</h4>
+      <div class="pm-grid pm-locked" aria-hidden="true">${months}</div>
+      <div class="locked-list" style="margin-top:14px">
+        ${P.locked('Календарь личных дней: для чего хорош каждый день месяца', { lines: 2 })}
+        ${P.locked(`Сегодня — ваш личный день и совет на него · ${r.year + 1} — каким будет следующий личный год`, { lines: 1 })}
+      </div>
+      <div style="margin-top:16px">${P.paywall({ feature: 'numerology', compact: true, title: 'Личные месяцы и дни — в премиум-доступе' })}</div>`;
+  }
+  async function yearUpgrade() {
+    const r = res;
+    if (!window.Premium || !(await window.Premium.ensure(['numerology-pro'])) || !window.NumerologyPro || res !== r) return;
+    const box = $('numYearPro');
+    if (!box) return;
+    box.innerHTML = window.NumerologyPro.html(r);
+    window.NumerologyPro.bind(box, () => res);
+  }
 
   // ---------- результат ----------
   function render(focus) {
@@ -193,6 +204,7 @@
       <div class="card note-card" style="margin-top:20px">${UI.alinaNote('Числа — первые штрихи портрета. На консультации я соединяю нумерологию с натальной картой: так видно не только «какой вы», но и когда лучше действовать.', '<button class="btn btn-primary btn-sm" type="button" data-book="numerology">Разобрать с Алиной</button><a class="btn btn-ghost btn-sm" href="natal.html">Натальная карта</a>')}</div>`;
     UI.tabs(box);
     showMeaning(r.lp.value);
+    yearUpgrade();
     if (focus) { UI.fadeIn(box); if (window.innerWidth < 1000) box.scrollIntoView({ behavior: UI.reduceMotion() ? 'auto' : 'smooth', block: 'start' }); }
   }
 
@@ -238,6 +250,7 @@
   }
   function run(input, focus) {
     res = calc(input.name, input.iso);
+    if (window.NumerologyPro) window.NumerologyPro.reset();
     UI.store.set('numerology', input);
     render(focus);
   }
@@ -246,6 +259,8 @@
     $('nmDateBox').innerHTML = UI.dobHTML('nmDate', '');
     UI.enhanceDob($('nmDateBox'));
     staticBlocks();
+    // код доступа введён — открыть месяцы и дни без повторного ввода
+    document.addEventListener('premiumchange', () => { if (res) render(); });
     $('numForm').addEventListener('submit', (e) => { e.preventDefault(); const i = readForm(); if (i) run(i, true); });
     $('numSeg').addEventListener('click', (e) => { const b = e.target.closest('[data-n]'); if (b) { showMeaning(+b.dataset.n); UI.fadeIn($('numMeaning'), 6); } });
     $('numResult').addEventListener('click', async (e) => {
@@ -253,8 +268,6 @@
       if (t) { tile = t.dataset.tile; $('numResult').querySelectorAll('[data-tile]').forEach((b) => { const on = b === t; b.classList.toggle('sel', on); b.setAttribute('aria-pressed', String(on)); }); $('numDetail').innerHTML = tileDetail(res); UI.fadeIn($('numDetail'), 6); return; }
       const c = e.target.closest('[data-cell]');
       if (c) { cell = +c.dataset.cell; $('numResult').querySelectorAll('[data-cell]').forEach((b) => { const on = b === c; b.classList.toggle('sel', on); b.setAttribute('aria-pressed', String(on)); }); $('pqSide').innerHTML = cellDetail(res); UI.fadeIn($('pqSide'), 6); if (window.innerWidth < 700) $('pqSide').scrollIntoView({ behavior: UI.reduceMotion() ? 'auto' : 'smooth', block: 'nearest' }); return; }
-      const mo = e.target.closest('[data-month]');
-      if (mo) { monthSel = +mo.dataset.month; $('numResult').querySelectorAll('[data-month]').forEach((b) => { const on = b === mo; b.classList.toggle('sel', on); b.setAttribute('aria-pressed', String(on)); }); $('pmDetail').innerHTML = monthText(res, monthSel, N.personalMonth(res.py.value, monthSel)); UI.fadeIn($('pmDetail'), 4); return; }
       const g = e.target.closest('[data-go-tab]');
       if (g) { const b = document.getElementById(g.dataset.goTab + '-btn'); if (b) { b.click(); b.focus(); } return; }
       if (e.target.closest('[data-focus-name]')) { $('nmName').focus(); $('nmName').scrollIntoView({ behavior: UI.reduceMotion() ? 'auto' : 'smooth', block: 'center' }); return; }

@@ -1,19 +1,21 @@
-/* Вход Алины: кабинет, личный прогноз и подробная совместимость открываются только по паролю.
-   Код этих разделов лежит на сайте зашифрованным (js/locked/*, собирает _dev/lock.js): пароль превращается в ключ
+/* Вход Алины и закрытый код сайта.
+   Код кабинета лежит на сайте зашифрованным (js/locked/*, собирает _dev/lock.js): пароль превращается в ключ
    (PBKDF2-SHA256 → AES-256-GCM), ключ расшифровывает код прямо в браузере. Без пароля код не прочитать.
-   «Запомнить на этом устройстве» хранит ключ (не пароль) в localStorage, иначе — до закрытия вкладки. */
+   «Запомнить на этом устройстве» хранит ключ (не пароль) в localStorage, иначе — до закрытия вкладки.
+   Премиум-разделы (прогноз, подробная совместимость, полная натальная карта, нумерология-прогноз) зашифрованы
+   отдельным ключом доступа: Алине он достаётся из meta по её ключу (ей открыто всё), клиентам — из кода доступа (js/premium.js). */
 (function () {
   'use strict';
   const STORE = 'am_adminKey';
   const UI = window.UI;
   const b64d = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
   const b64e = (u8) => { let s = ''; for (const x of u8) s += String.fromCharCode(x); return btoa(s); };
-  let cached = null;
+  let cached = null, cachedP = null, cachedS = null;
   const ran = {};
 
   const stored = () => { try { return localStorage.getItem(STORE) || sessionStorage.getItem(STORE); } catch (e) { return null; } };
   function save(raw, remember) { try { (remember ? localStorage : sessionStorage).setItem(STORE, raw); } catch (e) { /* приватный режим */ } }
-  function clear() { cached = null; try { localStorage.removeItem(STORE); sessionStorage.removeItem(STORE); } catch (e) { /* нет */ } }
+  function clear() { cached = null; cachedP = null; cachedS = null; try { localStorage.removeItem(STORE); sessionStorage.removeItem(STORE); } catch (e) { /* нет */ } }
   const canCrypto = () => !!(window.crypto && crypto.subtle);
 
   function loadScript(src) {
@@ -54,13 +56,41 @@
     const url = URL.createObjectURL(new Blob([code + '\n//# sourceURL=locked/' + name + '.js'], { type: 'text/javascript' }));
     try { await loadScript(url); } catch (e) { new Function(code)(); } finally { URL.revokeObjectURL(url); }
   }
+  // ---------- премиум: ключ доступа и ключ подписи кодов — для Алины лежат в meta, зашифрованные её ключом ----------
+  const isPremium = (m, n) => !!(m.premium && (m.premium.names || []).includes(n));
+  /** Ключ премиум-разделов по входу Алины (или null). */
+  async function premiumKey() {
+    if (cachedP) return cachedP;
+    const k = await key();
+    if (!k) return null;
+    const m = await meta();
+    if (!m.premium) return null;
+    try { cachedP = await crypto.subtle.importKey('raw', b64d(await decrypt(k, m.premium.wrapK)), 'AES-GCM', false, ['decrypt']); } catch (e) { return null; }
+    return cachedP;
+  }
+  /** Ключ подписи кодов доступа — только у Алины (кабинет → «Доступы»). */
+  async function signKey() {
+    if (cachedS) return cachedS;
+    const k = await key();
+    if (!k) return null;
+    const m = await meta();
+    if (!m.premium) return null;
+    const jwk = JSON.parse(await decrypt(k, m.premium.wrapS));
+    cachedS = await crypto.subtle.importKey('jwk', jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+    return cachedS;
+  }
+  /** Ключ для раздела: премиум — у Алины или по коду доступа (js/premium.js), остальное — только у Алины. */
+  async function keyFor(m, n) {
+    if (!isPremium(m, n)) return key();
+    return (await premiumKey()) || (window.Premium && window.Premium.contentKey ? await window.Premium.contentKey() : null);
+  }
   /** Расшифровать и запустить разделы по порядку. */
   async function run(names) {
-    const k = await key();
-    if (!k) throw new Error('locked');
     const m = await meta();
     for (const n of names) {
       if (ran[n]) continue;
+      const k = await keyFor(m, n);
+      if (!k) throw new Error('locked');
       if (!(window.LOCKED || {})[n]) await loadScript(`js/locked/${n}.js?v=${(m.v || {})[n] || ''}`);
       await exec(await decrypt(k, window.LOCKED[n]), n);
       ran[n] = true;
@@ -118,5 +148,5 @@
     });
   }
 
-  window.Admin = { has: () => !!stored(), key, login, logout, run, page };
+  window.Admin = { has: () => !!stored(), key, login, logout, run, page, meta, decrypt, premiumKey, signKey, canCrypto };
 })();

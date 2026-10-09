@@ -1,4 +1,7 @@
-/* Натальная карта: форма → расчёт → колесо, толкование, аспекты, баланс, таблицы. */
+/* Натальная карта: форма → расчёт → колесо, толкование, аспекты, баланс, таблицы.
+   Бесплатно: колесо, большая тройка, планеты в знаках, баланс, таблицы и сетка аспектов.
+   Премиум (js/premium.js → зашифрованный _private/natal-pro.js): планеты в домах, управитель карты, кармические точки,
+   призвание (MC), ключевые аспекты и толкование всех аспектов. Без доступа на их месте — закрытые карточки и тарифы. */
 (function () {
   'use strict';
   const AC = window.AstroCore, T = window.ASTRO_TEXTS, UI = window.UI, CV = window.ChartView, W = window.Wheel;
@@ -41,11 +44,12 @@
             <div style="margin-top:26px">${CV.big3(c)}</div>
             ${keySummary(c)}
           </div>
-          <div class="tab-panel" role="tabpanel" id="tab-interp" aria-labelledby="tab-interp-btn" hidden>${CV.interpretation(c)}</div>
+          <div class="tab-panel" role="tabpanel" id="tab-interp" aria-labelledby="tab-interp-btn" hidden>${CV.interpretation(c)}<div id="natalMore">${moreTeaser(c)}</div></div>
           <div class="tab-panel" role="tabpanel" id="tab-aspects" aria-labelledby="tab-aspects-btn" hidden>
             <p class="muted small">Аспекты — угловые расстояния между планетами. Гармоничные (трин, секстиль) дают лёгкость, напряжённые (квадрат, оппозиция) — внутренний вызов и рост.</p>
             ${CV.aspectGrid(c)}
             <div style="margin-top:20px">${CV.aspectList(c)}</div>
+            <div id="aspMore">${aspTeaser(c)}</div>
           </div>
           <div class="tab-panel" role="tabpanel" id="tab-balance" aria-labelledby="tab-balance-btn" hidden>${CV.balance(c)}</div>
           <div class="tab-panel" role="tabpanel" id="tab-data" aria-labelledby="tab-data-btn" hidden>
@@ -61,6 +65,39 @@
     box.querySelector('.result-head').addEventListener('click', onAction);
     UI.reveal(box);
     UI.fadeIn(box);
+    upgrade(c);
+  }
+
+  // ---------- премиум: полное толкование ----------
+  const MAJOR = ['conj', 'opp', 'square', 'trine', 'sextile'];
+  const majorAspects = (c) => c.aspects.filter((a) => MAJOR.includes(a.type) && AC.PLANETS.includes(a.a) && AC.PLANETS.includes(a.b));
+  /** Без доступа: что ещё откроется — заголовки без текстов (самих толкований на странице нет). */
+  function moreTeaser(c) {
+    if (!window.Premium) return '';
+    const P = window.Premium;
+    const withHouse = ['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto'].filter((id) => c.byId[id] && c.byId[id].house).length;
+    const items = [
+      withHouse ? P.locked(`Планеты в домах — ${withHouse} ${fmt.plural(withHouse, 'толкование', 'толкования', 'толкований')}: в какой сфере жизни проявляется каждая планета`, { lines: 3 }) : '',
+      c.summary.ascRuler ? P.locked('Управитель карты — «водитель» всей вашей карты и его главная тема', { lines: 2 }) : '',
+      P.locked('Кармические точки: Лунный узел, Хирон и Лилит — задачи и уроки', { lines: 3 }),
+      c.byId.mc ? P.locked(`Призвание — MC ${T.signs[c.byId.mc.sign].loc}`, { lines: 2 }) : '',
+      majorAspects(c).length ? P.locked(`Ключевые аспекты карты — ${Math.min(10, majorAspects(c).length)} подробных толкований`, { lines: 3 }) : '',
+    ].join('');
+    return `<h3>Ещё в вашей карте</h3><div class="locked-list">${items}</div>${P.paywall({ feature: 'natal', compact: true, title: 'Натальная карта полностью — в премиум-доступе' })}`;
+  }
+  function aspTeaser(c) {
+    if (!window.Premium) return '';
+    const n = majorAspects(c).length;
+    return n ? `<div style="margin-top:22px">${window.Premium.locked(`Толкование всех аспектов вашей карты — ${n}: соединения, гармоничные и напряжённые`, { lines: 3, meta: 'премиум' })}</div>` : '';
+  }
+  /** Есть доступ — подменяем закрытые карточки полным толкованием. */
+  async function upgrade(c) {
+    if (!window.Premium || !(await window.Premium.ensure(['natal-pro'])) || !window.NatalPro || current !== c) return;
+    const ti = document.getElementById('tab-interp'), am = document.getElementById('aspMore');
+    if (!ti) return;
+    ti.innerHTML = window.NatalPro.interpretation(c);
+    if (am) am.innerHTML = window.NatalPro.aspects(c);
+    UI.reveal(document.getElementById('result'));
   }
 
   function keySummary(c) {
@@ -123,6 +160,8 @@
       const p = UI.recent.list()[+b.dataset.i]; form.set(p); calc(p);
     });
     renderRecent();
+    // код доступа введён или закончился — перерисовать карту с нужным толкованием
+    document.addEventListener('premiumchange', () => { if (current) render(); });
     document.addEventListener('themechange', () => { if (current) { const wb = document.getElementById('wheelBox'); if (wb) { wb.innerHTML = W.svg(current, { minor: UI.settings.minor, animate: false }); W.attach(wb); } } });
     // открыть клиента из кабинета
     const q = new URLSearchParams(location.search);

@@ -19,15 +19,16 @@
 </head>
 <body>
 <main id="main">
-  <section class="page-hero" data-private hidden>
+  <section class="page-hero">
     <div class="container hero-anim">
-      <span class="eyebrow">Прогноз</span>
+      <span class="eyebrow">Прогноз · премиум</span>
       <h1>Ваш <em class="accent">личный</em> прогноз</h1>
       <p class="lead">Транзиты — как текущие планеты «касаются» вашей карты. Здесь видно, когда наступают периоды роста, перемен и проверки, и сколько они продлятся. Плюс соляр — карта вашего года — и прогрессии.</p>
+      <p class="small muted" style="margin:0">Расчёт и главная тема периода — бесплатно. Полный прогноз с толкованием и датами — в <a href="premium.html">премиум-доступе</a>.</p>
     </div>
   </section>
 
-  <section class="section tight" style="padding-top:0" data-private hidden>
+  <section class="section tight" style="padding-top:0">
     <div class="container tool-layout">
       <aside>
         <div class="card">
@@ -55,7 +56,6 @@
 </main>
 
 <script src="js/content.js"></script>
-<script src="js/schedule.js"></script>
 <script src="js/vendor/astronomy.browser.min.js"></script>
 <script src="js/chiron-data.js"></script>
 <script src="js/astro.js"></script>
@@ -63,11 +63,11 @@
 <script src="js/icons.js"></script>
 <script src="js/ui.js"></script>
 <span id="pt-ready" hidden></span>
-<script src="js/booking.js"></script>
 <script src="js/admin.js"></script>
+<script src="js/premium.js"></script>
 <script src="js/wheel.js"></script>
 <script src="js/chart-view.js"></script>
-<!-- код прогноза зашифрован (js/locked), открывается после входа Алины -->
-<script>Admin.page({ names: ['forecast'], title: 'Личный прогноз', text: 'Транзиты по месяцам, соляр и прогрессии — личный прогноз Алина готовит на консультации.', visitor: '<div class="hero-cta" style="justify-content:center;margin:6px 0 18px"><button class="btn btn-primary" type="button" data-book="forecast">Записаться на прогноз на год</button><a class="btn btn-ghost" href="index.html#services">Все консультации</a></div>' });</script>
+<!-- подробный прогноз зашифрован (js/locked/forecast.js): открывается кодом премиум-доступа или входом Алины -->
+<script src="js/pages/forecast.js"></script>
 </body>
 </html>
