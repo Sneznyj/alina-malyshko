@@ -16,6 +16,33 @@
   const hm = (d) => { const p = tzParts(d, city.tz); return `${p.hh}:${p.mm}`; };
   const dayKey = (d) => { const p = tzParts(d, city.tz); return `${p.y}-${p.m}-${p.d}`; };
   const localMidnight = (y, m, d) => AC.localToUTC(y, m, d, 0, 0, city.tz).date;
+  /** «14:20, 12 окт» — время, а дата только если это не тот день, о котором речь. */
+  const hmd = (t, ref) => hm(t) + (dayKey(t) !== dayKey(ref) ? ` ${tzParts(t, city.tz).d} ${fmt.MONTHS_SHORT[tzParts(t, city.tz).m - 1]}` : '');
+
+  // ---- Луна без курса: часы ----
+  const ASPECT = { 0: ['соединение', '☌'], 60: ['секстиль', '⚹'], 90: ['квадрат', '□'], 120: ['трин', '△'], 180: ['оппозиция', '☍'] };
+  function dur(ms) {
+    const m = Math.max(1, Math.round(ms / 60000)), h = Math.floor(m / 60), r = m % 60;
+    return h ? `${h} ч${r ? ' ' + r + ' мин' : ''}` : `${r} мин`;
+  }
+  /** Часть периода без курса внутри суток d: подпись «14:20–18:05», «до 06:15», «с 21:40» или «весь день» и доли суток для шкалы. */
+  function vocPart(v, d) {
+    const s = Math.max(v.start, d.d0), e = Math.min(v.end, d.d1), len = d.d1 - d.d0;
+    const fromPrev = v.start <= d.d0, toNext = v.end >= d.d1;
+    const label = fromPrev && toNext ? 'весь день' : fromPrev ? `до ${hm(v.end)}` : toNext ? `с ${hm(v.start)}` : `${hm(v.start)}–${hm(v.end)}`;
+    return { label, a: (s - d.d0) / len, b: (e - d.d0) / len, ms: e - s };
+  }
+  /** Полоска-шкала суток с отрезками без курса. */
+  function vocBar(d, cls) {
+    return `<span class="${cls || 'voc-bar'}" aria-hidden="true">${d.voc.map((v) => { const p = vocPart(v, d); return `<i style="left:${(p.a * 100).toFixed(2)}%;width:${Math.max(1.5, (p.b - p.a) * 100).toFixed(2)}%"></i>`; }).join('')}</span>`;
+  }
+  /** Откуда берётся период: последний аспект Луны в знаке и переход в следующий знак. */
+  function vocWhy(v) {
+    const asp = v.lastAspect && ASPECT[v.lastAspect.angle];
+    const pl = asp && T.planets[v.lastAspect.id];
+    const start = asp ? `после последнего аспекта Луны в этом знаке — ${asp[0]} <span class="glyph">☽ ${asp[1]} ${pl ? pl.glyph : ''}</span>${pl ? ' (' + pl.name + ')' : ''} в ${hm(v.start)}` : 'с входа Луны в знак — аспектов в этом знаке она не делает';
+    return `Начинается ${start}. Заканчивается в ${hm(v.end)}, когда Луна переходит в новый знак: дальше Луна ${T.signs[v.nextSign].loc}.`;
+  }
 
   function monthData(y, m) {
     const start = localMidnight(y, m, 1);
@@ -58,7 +85,7 @@
         lunar: active,
       });
     }
-    return { y, m, start, end, days: out };
+    return { y, m, start, end, days: out, voc };
   }
   function nextDay(y, m, d) { const x = new Date(Date.UTC(y, m - 1, d + 1)); return [x.getUTCFullYear(), x.getUTCMonth() + 1, x.getUTCDate()]; }
 
@@ -86,7 +113,7 @@
           <div class="row" style="gap:10px;margin-bottom:14px">
             <span class="chip"><span class="glyph" style="color:var(--lav-strong);font-size:1.1rem">${T.signs[ms.sign].glyph}</span>Луна ${T.signs[ms.sign].loc}${ingNext ? ' до ' + hm(ingNext.date) + (dayKey(ingNext.date) !== dayKey(now) ? ' (' + fmt.dateShort(ingNext.date) + ')' : '') : ''}</span>
             ${ld ? `<span class="chip"><b style="color:var(--gold)">${ld.day}</b> лунный день · ${ldt.sym}</span>` : ''}
-            ${vocNow ? `<span class="chip" style="color:var(--rose-strong)">Луна без курса до ${hm(vocNow.end)}</span>` : vocNext ? `<span class="chip">Луна без курса с ${hm(vocNext.start)}${dayKey(vocNext.start) !== dayKey(now) ? ' (' + fmt.dateShort(vocNext.start) + ')' : ''}</span>` : ''}
+            ${vocNow ? `<span class="chip voc-chip now">${icon('moon-off')}Луна без курса сейчас: до ${hmd(vocNow.end, now)} · ещё ${dur(vocNow.end - now)}</span>` : vocNext ? `<span class="chip voc-chip">${icon('moon-off')}Луна без курса: ${hmd(vocNext.start, now)} – ${hmd(vocNext.end, vocNext.start)} · ${dur(vocNext.end - vocNext.start)}</span>` : ''}
           </div>
           <div class="grid grid-2">
             ${ldt ? `<div><h4>${ld.day} лунные сутки — «${ldt.sym}»</h4><p class="small" style="margin-bottom:6px">${ldt.text}</p><p class="small muted" style="margin:0">Начались ${hm(ld.start)}${dayKey(ld.start) !== dayKey(now) ? ' ' + fmt.dateShort(ld.start) : ''}${ld.end ? ', продлятся до ' + hm(ld.end) + (dayKey(ld.end) !== dayKey(now) ? ' ' + fmt.dateShort(ld.end) : '') : ''}.</p></div>` : ''}
@@ -122,12 +149,13 @@
         const k = `${d.y}-${d.m}-${d.d}`;
         const ev = d.eclipses.length ? (d.eclipses[0].type === 'solar' ? 'Солн. затмение' : 'Лун. затмение') : d.phases.length ? PHASE_NAMES[d.phases[0].phase] : '';
         const lds = d.lunar.map((x) => x.n);
-        h += `<button class="day${k === todayK ? ' today' : ''}${selected === i ? ' sel' : ''}" type="button" data-i="${i}" aria-label="${d.d} ${fmt.MONTHS_GEN[d.m - 1]}">
+        const vl = d.voc.map((v) => vocPart(v, d).label);
+        h += `<button class="day${k === todayK ? ' today' : ''}${selected === i ? ' sel' : ''}" type="button" data-i="${i}" aria-label="${d.d} ${fmt.MONTHS_GEN[d.m - 1]}${vl.length ? ', Луна без курса ' + vl.join(' и ') : ''}">
           <span class="dn">${d.d}<span style="width:22px;height:22px;display:inline-block">${UI.moonSVG(d.ms.angle)}</span></span>
           <span class="ms">${T.signs[d.signStart].glyph}${d.ingress.length ? ` <small style="font-family:var(--ff-body);font-size:.7rem;color:var(--ink-3)">→</small> ${T.signs[d.ingress[0].to].glyph}<small style="font-family:var(--ff-body);font-size:.66rem;color:var(--ink-3)"> ${hm(d.ingress[0].date)}</small>` : ''}</span>
           <span class="ld">${lds.length ? lds.filter((v, j, a) => a.indexOf(v) === j).join('–') + ' л. д.' : ''}</span>
           ${ev ? `<span class="ev">${ev}</span>` : ''}
-          ${d.voc.length ? '<span class="voc">без курса</span>' : ''}
+          ${vl.length ? `<span class="voc"><i>без курса </i>${vl.map((x) => esc(x).replace('–', '–<wbr>')).join(', ')}</span>${vocBar(d)}` : ''}
         </button>`;
       });
       cal.innerHTML = h;
@@ -135,6 +163,7 @@
       if (!had) UI.fadeIn(cal, 6);
       const todayIdx = data.days.findIndex((d) => `${d.y}-${d.m}-${d.d}` === todayK);
       showDay(selected != null && data.days[selected] ? selected : todayIdx >= 0 ? todayIdx : 0);
+      renderVocList();
     }, 20);
   }
 
@@ -158,17 +187,52 @@
         <span class="chip">освещено ${Math.round(d.ms.illum * 100)}% · ${T.moonPhaseNow[d.ms.phase8].name.toLowerCase()}</span>
         ${d.phases.map((p) => `<span class="chip" style="color:var(--gold)">${PHASE_NAMES[p.phase]} в ${hm(p.date)} · ${T.signs[AC.signOf(p.lon)].loc}</span>`).join('')}
         ${d.eclipses.map((e) => `<span class="chip" style="color:var(--rose-strong)">${e.type === 'solar' ? 'Солнечное' : 'Лунное'} затмение (${T.eclipseKind[e.kind] || e.kind}) в ${hm(e.date)}</span>`).join('')}
-        ${d.voc.map((v) => `<span class="chip" style="color:var(--rose-strong)">Без курса: ${v.start < d.d0 ? 'с прошлого дня' : hm(v.start)} — ${v.end > d.d1 ? 'до следующего дня' : hm(v.end)}</span>`).join('')}
       </div>
+      ${vocDayHTML(d)}
       <div class="grid grid-2">
         <div class="interp">${rows.join('')}</div>
         <div>
           <div class="card" style="box-shadow:none"><h4>Луна ${T.signs[signs[signs.length - 1]].loc}</h4><p class="small"><b style="color:var(--ok)">Благоприятно:</b> ${mis.good}.</p><p class="small" style="margin:0"><b style="color:var(--rose-strong)">Лучше отложить:</b> ${mis.avoid}.</p></div>
           ${d.eclipses.length ? `<div class="notice" style="margin-top:12px">${icon('sparkle')}<span>${T.eclipseMeaning[d.eclipses[0].type]}</span></div>` : ''}
-          ${d.voc.length ? `<div class="notice info" style="margin-top:12px">${icon('info')}<span>В период Луны без курса лучше не начинать важное: отдыхайте, завершайте дела, планируйте.</span></div>` : ''}
         </div>
       </div>`;
     UI.fadeIn(dd, 6);
+  }
+
+  /** Блок «Луна без курса» в подробностях дня: шкала суток, точные часы, длительность, откуда период. */
+  function vocDayHTML(d) {
+    if (!d.voc.length) return `<div class="voc-day none">${icon('circle-check')}<span>Луны без курса в этот день нет — весь день Луна «в курсе».</span></div>`;
+    const parts = d.voc.map((v) => vocPart(v, d));
+    const total = parts.reduce((a, p) => a + p.ms, 0);
+    const ticks = [0, 6, 12, 18, 24].map((x) => `<span style="left:${(x / 24) * 100}%">${String(x).padStart(2, '0')}:00</span>`).join('');
+    return `<div class="voc-day">
+      <div class="voc-day-head">${icon('moon-off')}<div><b>Луна без курса: ${parts.map((p) => p.label).join(' и ')}</b><small>в этот день — ${dur(total)} · время: ${esc(city.name)}</small></div></div>
+      <div class="voc-scale">${vocBar(d, 'voc-track')}<div class="voc-ticks" aria-hidden="true">${ticks}</div></div>
+      ${d.voc.map((v) => { const inDay = v.start >= d.d0 && v.end <= d.d1; return `<div class="voc-item">${inDay ? '' : `<b>Весь период: ${hmd(v.start, d.noon)} – ${hmd(v.end, d.noon)}</b> <span class="muted">· ${dur(v.end - v.start)}</span>`}<p class="small muted">${vocWhy(v)}</p></div>`; }).join('')}
+      <p class="small voc-tip">${icon('info')}<span>В эти часы лучше не начинать важное — подписание, покупки, старт проекта. Хорошо отдыхать, завершать начатое, наводить порядок и планировать.</span></p>
+    </div>`;
+  }
+
+  /** Все периоды Луны без курса за месяц — списком, с точными часами. */
+  function renderVocList() {
+    const box = document.getElementById('vocList');
+    if (!box || !data) return;
+    const now = new Date();
+    const list = data.voc.filter((v) => v.end > data.start && v.start < data.end);
+    const dayIdx = (t) => data.days.findIndex((d) => t >= d.d0 && t < d.d1);
+    box.innerHTML = `<div class="row between" style="margin-bottom:10px"><h3 style="margin:0">Луна без курса — ${fmt.MONTHS[data.m - 1].toLowerCase()} ${data.y}</h3><span class="small muted">${esc(city.name)} · ${esc(city.tz)}</span></div>
+      <p class="small muted" style="margin:0 0 14px">Все периоды месяца с точным временем начала и конца. Нажмите на строку — откроется этот день.</p>
+      <div class="voc-list">${list.map((v) => {
+        const st = now >= v.end ? 'past' : now >= v.start ? 'now' : '';
+        const i = Math.max(0, dayIdx(v.start < data.start ? data.start : v.start));
+        const s = tzParts(v.start, city.tz), e = tzParts(v.end, city.tz);
+        const same = dayKey(v.start) === dayKey(v.end);
+        return `<button type="button" class="voc-row ${st}" data-day="${i}">
+          <span class="vd">${same ? `${s.d} ${fmt.MONTHS_SHORT[s.m - 1]}` : s.m === e.m ? `${s.d}–${e.d} ${fmt.MONTHS_SHORT[s.m - 1]}` : `${s.d} ${fmt.MONTHS_SHORT[s.m - 1]} – ${e.d} ${fmt.MONTHS_SHORT[e.m - 1]}`}</span>
+          <span class="vt"><b>${hm(v.start)} – ${hm(v.end)}</b><small>${dur(v.end - v.start)}${st === 'now' ? ' · <em>сейчас</em>' : ''}</small></span>
+          <span class="vs glyph" title="Луна ${T.signs[v.sign].loc} → ${T.signs[v.nextSign].loc}">${T.signs[v.sign].glyph} → ${T.signs[v.nextSign].glyph}</span>
+        </button>`;
+      }).join('') || '<p class="small muted">В этом месяце периодов нет.</p>'}</div>`;
   }
 
   function setCity(c) {
@@ -188,6 +252,12 @@
     document.getElementById('prevM').addEventListener('click', () => { selected = null; view.m--; if (view.m < 1) { view.m = 12; view.y--; } renderMonth(); });
     document.getElementById('nextM').addEventListener('click', () => { selected = null; view.m++; if (view.m > 12) { view.m = 1; view.y++; } renderMonth(); });
     document.getElementById('cal').addEventListener('click', (e) => { const b = e.target.closest('[data-i]'); if (b) showDay(+b.dataset.i); });
+    document.getElementById('vocList').addEventListener('click', (e) => {
+      const r = e.target.closest('[data-day]'); if (!r) return;
+      showDay(+r.dataset.day);
+      const dd = document.getElementById('dayDetail');
+      if (dd.scrollIntoView) dd.scrollIntoView({ behavior: UI.reduceMotion() ? 'auto' : 'smooth', block: 'start' });
+    });
     setCity(city);
   });
 })();

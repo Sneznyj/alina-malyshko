@@ -573,7 +573,7 @@ em.accent, .accent { font-style: italic; color: var(--lav-strong); }
 .cal .day .ld { color: var(--ink-3); }
 .cal .day .ev { font-weight: 700; color: var(--gold); font-size: .72rem; }
 .cal .day .voc { color: var(--rose-strong); font-weight: 600; font-size: .7rem; }
-@media (max-width: 700px) { .cal { gap: 3px; } .cal .day { min-height: 70px; padding: 5px; font-size: .64rem; } .cal .day .ld, .cal .day .voc { display: none; } .cal .day .dn { font-size: .85rem; } .cal .day .dn svg { width: 16px; height: 16px; } }
+@media (max-width: 700px) { .cal { gap: 3px; } .cal .day { min-height: 70px; padding: 5px; font-size: .64rem; } .cal .day .ld { display: none; } .cal .day .dn { font-size: .85rem; } .cal .day .dn svg { width: 16px; height: 16px; } }
 
 /* ---------- астрособытия ---------- */
 .gantt { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 8px 14px; align-items: center; }
@@ -1291,4 +1291,50 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
   .booking-modal .promo-inline { padding: 8px 12px; margin-bottom: 10px; font-size: .82rem; }
   .booking-modal .bk-actions { position: sticky; bottom: calc(-1 * clamp(20px, 3vw, 32px) - 1px); z-index: 2; margin: 0 calc(-1 * clamp(20px, 3vw, 32px)) calc(-1 * clamp(20px, 3vw, 32px)); padding: 12px clamp(20px, 3vw, 32px) calc(14px + env(safe-area-inset-bottom)); background: linear-gradient(to bottom, color-mix(in srgb, var(--surface-solid) 0%, transparent), var(--surface-solid) 22%); }
   .booking-modal .bk-actions .bk-link { margin: 0 auto; }
+}
+
+/* ---------- лунный календарь: Луна без курса по часам (js/pages/moon.js) ---------- */
+.cal .day { position: relative; }
+.cal .day .voc { line-height: 1.25; font-variant-numeric: tabular-nums; }
+.cal .day .voc i { font-style: normal; font-weight: 600; }
+.voc-bar { display: block; position: relative; height: 4px; margin-top: auto; border-radius: 99px; background: var(--line); overflow: hidden; }
+.voc-bar i, .voc-track i { position: absolute; top: 0; bottom: 0; border-radius: 99px; background: linear-gradient(90deg, var(--rose-strong), #b07ad8); }
+.voc-chip { color: var(--rose-strong); }
+.voc-chip svg { width: 16px; height: 16px; }
+.voc-chip.now { background: color-mix(in srgb, var(--rose) 70%, var(--surface)); border-color: color-mix(in srgb, var(--rose-strong) 35%, transparent); font-weight: 600; }
+.voc-day { margin: 0 0 18px; padding: 14px 16px; border-radius: var(--r-s); background: color-mix(in srgb, var(--rose) 45%, var(--surface)); border: 1px solid color-mix(in srgb, var(--rose-strong) 25%, transparent); display: grid; gap: 10px; }
+.voc-day.none { display: flex; align-items: center; gap: 10px; background: color-mix(in srgb, var(--ok) 8%, var(--surface)); border-color: color-mix(in srgb, var(--ok) 25%, transparent); font-size: .9rem; color: var(--ink-2); }
+.voc-day.none svg { width: 20px; height: 20px; color: var(--ok); flex-shrink: 0; }
+.voc-day-head { display: flex; align-items: center; gap: 12px; }
+.voc-day-head > svg { width: 26px; height: 26px; color: var(--rose-strong); flex-shrink: 0; }
+.voc-day-head div { display: grid; gap: 2px; }
+.voc-day-head b { font-size: 1.02rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+.voc-day-head small { color: var(--ink-2); font-size: .82rem; }
+.voc-scale { padding-bottom: 18px; position: relative; }
+.voc-track { display: block; position: relative; height: 10px; border-radius: 99px; background: color-mix(in srgb, var(--surface-solid) 70%, var(--line-2)); overflow: hidden; }
+.voc-ticks { position: absolute; left: 0; right: 0; bottom: 0; height: 14px; font-size: .66rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.voc-ticks span { position: absolute; transform: translateX(-50%); }
+.voc-ticks span:first-child { transform: none; }
+.voc-ticks span:last-child { transform: translateX(-100%); }
+.voc-item b { font-variant-numeric: tabular-nums; }
+.voc-item p { margin: 4px 0 0; }
+.voc-item .glyph { color: var(--lav-strong); }
+.voc-tip { display: flex; gap: 8px; margin: 0; color: var(--ink-2); }
+.voc-tip svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--rose-strong); margin-top: 1px; }
+.voc-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+.voc-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-align: left; cursor: pointer; font: inherit; font-size: .88rem; transition: border-color .2s, transform .2s; }
+.voc-row:hover { border-color: var(--lav); transform: translateY(-1px); }
+.voc-row .vd { font-weight: 700; color: var(--ink-2); }
+.voc-row .vt { display: grid; gap: 1px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.voc-row .vt small { color: var(--ink-3); font-size: .76rem; }
+.voc-row .vt em { font-style: normal; font-weight: 700; color: var(--rose-strong); }
+.voc-row .vs { color: var(--lav-strong); font-size: 1rem; white-space: nowrap; }
+.voc-row.now { border-color: color-mix(in srgb, var(--rose-strong) 45%, transparent); background: color-mix(in srgb, var(--rose) 55%, var(--surface)); }
+.voc-row.past { background: transparent; border-style: dashed; }
+.voc-row.past .vd, .voc-row.past .vt b, .voc-row.past .vs { color: var(--ink-3); }
+@media (max-width: 700px) {
+  .cal .day .voc { display: block; font-size: .56rem; letter-spacing: -.01em; }
+  .cal .day .voc i { display: none; }
+  .voc-bar { height: 3px; }
+  .voc-row { grid-template-columns: 68px minmax(0, 1fr) auto; }
 }
