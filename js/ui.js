@@ -96,6 +96,7 @@
     ['horoscope.html', 'Гороскоп', 'sparkle', 'на сегодня и месяц'],
     ['moon.html', 'Лунный календарь', 'moon-stars', 'лунные сутки'],
     ['sky.html', 'Астрособытия', 'telescope', 'ретро, затмения'],
+    ['numerology.html', 'Нумерология', 'numerology', 'числа по дате и имени'],
   ];
   // пункт «Отзывы» в меню — только когда в content.js есть отзывы (иначе блок на главной скрыт)
   const hasReviews = !!(SITE.reviews && SITE.reviews.length);
@@ -1007,7 +1008,7 @@
 
   // ---------- запись на консультацию ----------
   function serviceOptions() {
-    return SITE.services.map((s) => ({ id: s.id, title: s.title })).concat(academyOn ? [{ id: 'lessons', title: 'Индивидуальные уроки астрологии' }, { id: 'course', title: 'Курс «Астрология с нуля»' }] : [], [{ id: 'gift', title: 'Подарочный сертификат' }, { id: 'other', title: 'Другое / пока не знаю' }]);
+    return SITE.services.map((s) => ({ id: s.id, title: s.title })).concat(academyOn ? [{ id: 'lessons', title: 'Индивидуальные уроки астрологии' }, { id: 'course', title: 'Курс «Астрология с нуля»' }] : [], [{ id: 'numerology', title: 'Нумерология: разбор чисел' }, { id: 'gift', title: 'Подарочный сертификат' }, { id: 'other', title: 'Другое / пока не знаю' }]);
   }
   /** Форма заявки. opts.noService — услуга выбрана раньше (календарь записи), opts.prefer — поле «когда удобно», opts.note — подпись под кнопкой. */
   function bookingFormHTML(prefix, preset, opts) {

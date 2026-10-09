@@ -195,6 +195,49 @@
     return cv;
   }
 
+  // ---------- сторис: нумерология «Мои числа» ----------
+  // r — результат со страницы нумерологии: lp, bd, nm, py, name. Дату рождения на карточку не пишем.
+  async function storyNumbers(r) {
+    await fontsReady();
+    const NT = window.NUMEROLOGY_TEXTS;
+    const W = 1080, H = 1920, cv = canvas(W, H), ctx = cv.getContext('2d');
+    nightBg(ctx, W, H, r.lp.value * 131 + r.bd.value * 7 + 3);
+    await brand(ctx, W / 2, 268, true);
+    handTitle(ctx, 'мои числа', W / 2, 420, 84, C.gold, -3);
+    const first = (r.name || '').split(/\s+/).filter(Boolean);
+    // «Фамилия Имя Отчество» → имя; одно-два слова → первое
+    const shown = first.length >= 3 ? first[1] : first[0] || '';
+    if (shown) { ctx.font = font(600, 72, F.display, true); ctx.fillStyle = C.ink; ctx.textAlign = 'center'; ctx.fillText(shown, W / 2, 510); }
+    // главное число — в золотом кольце
+    const cx = W / 2, cy = 800, R = 205;
+    const halo = ctx.createRadialGradient(cx, cy, R * 0.4, cx, cy, R * 1.6);
+    halo.addColorStop(0, 'rgba(232, 198, 127, 0.22)'); halo.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = halo; ctx.fillRect(0, cy - R * 1.7, W, R * 3.4);
+    ctx.lineWidth = 10; ctx.strokeStyle = C.gold; ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
+    ctx.lineWidth = 2; ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.arc(cx, cy, R + 26, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
+    // цифры — шрифтом Manrope: у Cormorant на холсте старинные цифры («1» похожа на «I»)
+    ctx.font = font(500, r.lp.value > 9 ? 170 : 210, F.body); ctx.fillStyle = C.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(r.lp.value), cx, cy + 8); ctx.textBaseline = 'alphabetic';
+    ctx.font = font(700, 24, F.body); spaced(ctx, 6); ctx.fillStyle = C.ink3; ctx.fillText('ЧИСЛО ЖИЗНЕННОГО ПУТИ', cx, cy + R + 80); spaced(ctx, 0);
+    const t = NT.numbers[r.lp.value];
+    ctx.font = font(600, 70, F.display, true); ctx.fillStyle = C.gold; ctx.fillText(t.name, cx, cy + R + 160);
+    ctx.font = font(500, 32, F.body); ctx.fillStyle = C.ink2; ctx.fillText(t.keys, cx, cy + R + 215);
+    // остальные числа
+    const tiles = [['день рождения', r.bd.value]];
+    if (r.nm) { tiles.push(['имя', r.nm.expression.value]); if (r.nm.soul) tiles.push(['душа', r.nm.soul.value]); if (r.nm.personality) tiles.push(['личность', r.nm.personality.value]); }
+    tiles.push([`${new Date().getFullYear()} год`, r.py.value]);
+    const show = tiles.slice(0, 4), gap = 220, x0 = cx - ((show.length - 1) * gap) / 2, ty = 1380;
+    show.forEach(([label, v], i) => {
+      const x = x0 + i * gap;
+      ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.beginPath(); ctx.arc(x, ty, 72, 0, Math.PI * 2); ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(232, 198, 127, 0.7)'; ctx.stroke();
+      ctx.font = font(500, 64, F.body); ctx.fillStyle = C.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(v), x, ty + 4); ctx.textBaseline = 'alphabetic';
+      ctx.font = font(700, 22, F.body); spaced(ctx, 3); ctx.fillStyle = C.ink3; ctx.fillText(label.toUpperCase(), x, ty + 112); spaced(ctx, 0);
+    });
+    footer(ctx, W, 1660, 'Узнай свои числа', true);
+    return cv;
+  }
+
   // ---------- сторис: Луна сегодня ----------
   async function storyMoon(date, city) {
     await fontsReady();
@@ -311,5 +354,5 @@
     });
   }
 
-  window.Cards = { storyNatal, storySynastry, storyMoon, certificate, show, fontsReady };
+  window.Cards = { storyNatal, storySynastry, storyMoon, storyNumbers, certificate, show, fontsReady };
 })();

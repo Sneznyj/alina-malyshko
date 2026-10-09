@@ -44,7 +44,7 @@ globalThis.SCHEDULE = {
   // Длительность услуг для календаря, минут. 0 — время встречи не выбирается (письменные услуги, ответ голосовым).
   durations: {
     natal: 120, forecast: 90, synastry: 90, career: 75, child: 60, lessons: 60,
-    election: 0, rectification: 0, express: 0,
+    election: 0, rectification: 0, express: 0, numerology: 60,
   },
 
   updated: '2026-10-09T00:00:00Z', // когда расписание меняли (кабинет ставит сам)

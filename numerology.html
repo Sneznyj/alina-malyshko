@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Нумерология по дате рождения и имени — число жизненного пути, квадрат Пифагора · Алина Малышко</title>
+<meta name="description" content="Бесплатный расчёт нумерологии: число жизненного пути, числа имени, души и личности, квадрат Пифагора, личный год. Основы нумерологии простыми словами — бережно и без страшилок.">
+<meta name="theme-color" content="#9b87d9">
+<meta property="og:title" content="Нумерология: ваши числа по дате рождения и имени">
+<meta property="og:image" content="https://sneznyj.github.io/alina-malyshko/assets/img/og-image.jpg">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&family=Caveat:wght@500;600;700&family=Noto+Sans+Symbols&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>try{var t=localStorage.getItem('am_theme');document.documentElement.setAttribute('data-theme',t?JSON.parse(t):(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}try{if(!window.CSSViewTransitionRule&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('pt-fallback')}catch(e){}</script>
+<link rel="expect" href="#pt-ready" blocking="render">
+</head>
+<body>
+<main id="main">
+  <section class="page-hero">
+    <div class="container hero-anim">
+      <span class="eyebrow">Нумерология</span>
+      <h1>Язык ваших <em class="accent">чисел</em></h1>
+      <p class="lead">В дате рождения и имени нумерология видит ритм — числа от 1 до 9. Узнайте свои главные числа за минуту: расчёт прямо здесь, значения — простыми словами и без страшилок.</p>
+      <div class="num-today" id="numToday"></div>
+    </div>
+  </section>
+
+  <section class="section tight" style="padding-top:0">
+    <div class="container tool-layout">
+      <aside>
+        <div class="card">
+          <form class="form" id="numForm" novalidate>
+            <div class="field"><label for="nmDate">Дата рождения *</label><div id="nmDateBox"></div></div>
+            <div class="field"><label for="nmName">Полное имя при рождении</label>
+              <input class="input" id="nmName" autocomplete="name" placeholder="Фамилия Имя Отчество" spellcheck="false">
+              <span class="hint">Для чисел имени, души и личности. Можно только имя — а можно сравнить с нынешним.</span></div>
+            <button class="btn btn-primary btn-block" type="submit">Рассчитать мои числа</button>
+            <p class="tiny muted" style="margin:0">Расчёт идёт прямо в вашем браузере — данные никуда не отправляются.</p>
+          </form>
+        </div>
+      </aside>
+      <div id="numResult">
+        <div class="card result-empty num-empty">
+          <div class="num-empty-digits" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div>
+          <h3>Ваши числа ждут</h3>
+          <p class="muted" style="max-width:46ch;margin-inline:auto">Введите дату рождения — и вы увидите число жизненного пути, квадрат Пифагора и свой личный год. Добавьте имя — и узнаете числа имени, души и личности.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="numBasics">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">основы</span>
+        <h2>Нумерология <em class="accent">за пять минут</em></h2>
+        <p class="lead">Главное, что стоит знать о числах, — коротко и по делу.</p>
+      </div>
+      <div class="grid grid-3" id="numBasicsGrid"></div>
+
+      <div class="card reveal" style="margin-top:22px" id="numMeanings">
+        <div class="row between" style="margin-bottom:14px"><h3 style="margin:0">Значения чисел</h3><span class="small muted">от 1 до 9 и мастер-числа</span></div>
+        <div class="seg num-seg" role="group" aria-label="Выберите число" id="numSeg"></div>
+        <div id="numMeaning" style="margin-top:18px"></div>
+      </div>
+
+      <details class="card reveal num-letters" style="margin-top:22px">
+        <summary><b>Таблица букв</b> <span class="small muted">— пифагорейская система для русского алфавита</span></summary>
+        <div class="table-wrap" style="margin-top:14px" id="numLetters"></div>
+        <p class="small muted" style="margin:12px 0 0">Буквы раскладываются по кругу алфавита: А — 1, Б — 2 … З — 9, И — снова 1. Для латиницы так же: A — 1 … I — 9, J — 1. Гласные (а, е, ё, и, о, у, ы, э, ю, я) дают число души, согласные — число личности.</p>
+      </details>
+    </div>
+  </section>
+
+  <section class="section" id="numFaq" style="padding-top:0">
+    <div class="container">
+      <div class="section-head center reveal">
+        <span class="eyebrow both">вопросы</span>
+        <h2>Частые вопросы о нумерологии</h2>
+      </div>
+      <div class="accordion" id="numFaqList"></div>
+      <div class="card note-card reveal" style="margin-top:26px;max-width:820px;margin-inline:auto" id="numNote"></div>
+    </div>
+  </section>
+</main>
+
+<script src="js/content.js"></script>
+<script src="js/schedule.js"></script>
+<script src="js/vendor/astronomy.browser.min.js"></script>
+<script src="js/chiron-data.js"></script>
+<script src="js/astro.js"></script>
+<script src="js/texts.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/ui.js"></script>
+<span id="pt-ready" hidden></span>
+<script src="js/booking.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/cards.js"></script>
+<script src="js/numerology.js"></script>
+<script src="js/numerology-data.js"></script>
+<script src="js/pages/numerology.js"></script>
+</body>
+</html>
