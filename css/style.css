@@ -1338,3 +1338,32 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
   .voc-bar { height: 3px; }
   .voc-row { grid-template-columns: 68px minmax(0, 1fr) auto; }
 }
+
+/* ---------- дата рождения: ввод цифрами и выбор в календаре (ui.js → dobHTML / enhanceDob) ---------- */
+.dob { position: relative; min-width: 0; }
+.dob-text { padding-right: 40px; font-variant-numeric: tabular-nums; }
+.dob-btn { position: absolute; right: 5px; top: 7px; width: 32px; height: 32px; border-radius: 10px; border: 0; background: transparent; color: var(--lav-strong); display: grid; place-items: center; cursor: pointer; transition: background .2s, color .2s; }
+.dob-btn svg { width: 20px; height: 20px; }
+.dob-btn:hover, .dob-btn[aria-expanded="true"] { background: var(--lav-soft); }
+.dob-hint { display: block; margin-top: 5px; font-size: .76rem; line-height: 1.35; color: var(--ink-3); }
+.dob-hint:empty { display: none; }
+.dob-hint.ok { color: var(--ink-2); }
+.dob-hint.ok::before { content: '✓ '; color: var(--ok); font-weight: 700; }
+.dob-hint.bad { color: var(--ink-2); }
+.dob-hint.bad::before { content: '✕ '; color: var(--bad); font-weight: 700; }
+.dob-pop { position: absolute; z-index: 40; top: 52px; left: 0; width: min(316px, calc(100vw - 32px)); padding: 12px; border-radius: 16px; background: var(--surface-solid); border: 1px solid var(--line); box-shadow: var(--shadow-lg); }
+.dob-pop.right { left: auto; right: 0; }
+.dob-pop-head { display: grid; grid-template-columns: 32px minmax(0, 1fr) 84px 32px; gap: 6px; align-items: center; margin-bottom: 8px; }
+.dob-pop .select { min-height: 38px; padding: 6px 28px 6px 10px; font-size: .9rem; background-position: right 10px center; }
+.dob-nav { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-solid); color: var(--ink-2); display: grid; place-items: center; cursor: pointer; }
+.dob-nav svg { width: 16px; height: 16px; }
+.dob-nav:hover { color: var(--lav-strong); border-color: var(--lav); }
+.dob-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.dob-grid .dw { font-size: .64rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); text-align: center; padding: 4px 0; }
+.dob-grid button { aspect-ratio: 1 / 1; min-width: 0; padding: 0; border: 0; border-radius: 9px; background: transparent; color: var(--ink); font: 600 .86rem var(--ff-body); font-variant-numeric: tabular-nums; cursor: pointer; transition: background .15s, color .15s; }
+.dob-grid button:hover { background: var(--lav-soft); color: var(--lav-deep); }
+.dob-grid button.today { box-shadow: inset 0 0 0 1.5px var(--gold-2); }
+.dob-grid button.sel { background: linear-gradient(180deg, #6b47b8 0%, #52329a 100%); color: #fff; }
+.card:has(.dob-pop) { z-index: 5; }
+/* дата рождения шире времени: «23.11.1988» целиком даже в узкой колонке */
+@media (min-width: 641px) { .form-row.dob-row { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); } }

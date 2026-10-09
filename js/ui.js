@@ -746,6 +746,148 @@
   }
   const fmtCoord = (lat, lon) => `${Math.abs(lat).toFixed(2)}° ${lat >= 0 ? 'с. ш.' : 'ю. ш.'}, ${Math.abs(lon).toFixed(2)}° ${lon >= 0 ? 'в. д.' : 'з. д.'}`;
 
+  // ---------- дата рождения: набор цифрами (точки ставятся сами) и выбор «год → месяц → день» ----------
+  // Видимое поле — текст «ДД.ММ.ГГГГ»; рядом скрытое <input type="date"> со значением ГГГГ-ММ-ДД: его читают формы
+  // (FormData, birthForm), и если записать в него значение с событием input/change — видимое поле обновится само.
+  const MONTH_STEMS = ['янв', 'фев', 'мар', 'апр', 'ма', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+  const SEP = /[.\/\-\s,]/;
+  const daysIn = (y, m) => new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const MONTHS_LOC = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'];
+  function dobHTML(id, name) {
+    return `<div class="dob" data-dob>
+      <input class="input dob-text" id="${id}" type="text" inputmode="numeric" autocomplete="bday" placeholder="ДД.ММ.ГГГГ" spellcheck="false" aria-describedby="${id}-h">
+      <button class="dob-btn" type="button" aria-label="Выбрать дату в календаре" aria-haspopup="dialog" aria-expanded="false">${icon('calendar')}</button>
+      <input class="dob-iso" type="date" ${name ? `name="${name}" ` : ''}hidden tabindex="-1" aria-hidden="true">
+      <span class="dob-hint" id="${id}-h" aria-live="polite"></span>
+    </div>`;
+  }
+  /** Разбор того, что вставили целиком: «1997-06-14», «14 июня 1997», «14/6/97». → [д, м, г] или null. */
+  function parseLooseDate(s) {
+    s = String(s || '').trim().toLowerCase().replace(/ё/g, 'е');
+    let m = /^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/.exec(s);
+    if (m) return [+m[3], +m[2], +m[1]];
+    m = /^(\d{1,2})\s*([а-я]+)\.?\s*(\d{2,4})/.exec(s);
+    if (m) { const i = MONTH_STEMS.findIndex((st) => m[2].startsWith(st)); if (i >= 0) return [+m[1], i + 1, +m[3]]; }
+    return null;
+  }
+  const fullYear = (yy) => (yy >= 100 ? yy : yy + (2000 + yy <= new Date().getFullYear() ? 2000 : 1900));
+  /** Проверка даты: { iso, text } или { err }. */
+  function checkDate(d, m, y) {
+    if (!(m >= 1 && m <= 12)) return { err: 'Месяц — от 01 до 12' };
+    if (!(y >= 1900 && y <= 2099)) return { err: 'Год — от 1900 до 2099' };
+    if (!(d >= 1 && d <= daysIn(y, m))) return { err: `Такого дня нет: в ${MONTHS_LOC[m - 1]} ${y} года ${daysIn(y, m)} ${fmt.plural(daysIn(y, m), 'день', 'дня', 'дней')}` };
+    const dt = new Date(y, m - 1, d), now = new Date();
+    let age = now.getFullYear() - y - (now.getMonth() < m - 1 || (now.getMonth() === m - 1 && now.getDate() < d) ? 1 : 0);
+    const text = `${d} ${MONTHS_GEN[m - 1]} ${y}, ${DOW_LONG[dt.getDay()]}${dt <= now && age >= 0 ? ` · ${age} ${fmt.plural(age, 'год', 'года', 'лет')}` : ''}`;
+    return { iso: `${y}-${pad(m)}-${pad(d)}`, text };
+  }
+  /** Оживить поля даты внутри root (повторный вызов безопасен). */
+  function enhanceDob(root) {
+    $$('[data-dob]:not([data-ready])', root).forEach((box) => {
+      box.dataset.ready = '1';
+      const txt = $('.dob-text', box), iso = $('.dob-iso', box), hint = $('.dob-hint', box), btn = $('.dob-btn', box);
+      let syncing = false, pop = null;
+      const setHint = (t, kind) => { hint.textContent = t || ''; hint.className = 'dob-hint' + (kind ? ' ' + kind : ''); };
+      function commit(final) {
+        const dg = txt.value.replace(/\D/g, '');
+        let res = null;
+        if (dg.length === 8) res = checkDate(+dg.slice(0, 2), +dg.slice(2, 4), +dg.slice(4));
+        else if (final && dg.length === 6) { const y = fullYear(+dg.slice(4)); txt.value = `${dg.slice(0, 2)}.${dg.slice(2, 4)}.${y}`; res = checkDate(+dg.slice(0, 2), +dg.slice(2, 4), y); }
+        else if (final && dg.length) res = { err: 'Введите дату полностью: день, месяц, год — ДД.ММ.ГГГГ' };
+        const value = res && res.iso ? res.iso : '';
+        if (res && res.iso) setHint(res.text, 'ok');
+        else if (res && res.err) setHint(res.err, 'bad');
+        else setHint('');
+        txt.classList.toggle('invalid', !!(res && res.err));
+        txt.setAttribute('aria-invalid', res && res.err ? 'true' : 'false');
+        if (iso.value !== value) { syncing = true; iso.value = value; iso.dispatchEvent(new Event('change', { bubbles: true })); syncing = false; }
+      }
+      function show(isoVal) {
+        const [y, m, d] = String(isoVal || '').split('-');
+        txt.value = y && m && d ? `${d}.${m}.${y}` : '';
+        commit(true);
+      }
+      txt.addEventListener('input', () => {
+        const raw = txt.value, caretEnd = txt.selectionStart >= raw.length;
+        const loose = /[а-яё]/i.test(raw) || /^\s*\d{4}[-./]/.test(raw) ? parseLooseDate(raw) : null;
+        if (loose) { const [d, m, y] = loose; txt.value = `${pad(d)}.${pad(m)}.${fullYear(y)}`; commit(true); return; }
+        // «1.» → «01.», «14.6.» → «14.06.»: день и месяц одной цифрой с точкой
+        const r = raw.replace(/^(\d)(?=[.\/\-\s,])/, '0$1').replace(/^(\d\d)[.\/\-\s,]+(\d)(?=[.\/\-\s,])/, '$1.0$2');
+        const dg = r.replace(/\D/g, '').slice(0, 8);
+        let out = dg.slice(0, 2);
+        if (dg.length > 2) out += '.' + dg.slice(2, 4);
+        if (dg.length > 4) out += '.' + dg.slice(4);
+        if (SEP.test(r.slice(-1)) && (dg.length === 2 || dg.length === 4)) out += '.';
+        if (out !== raw) {
+          const before = r.slice(0, txt.selectionStart + (r.length - raw.length)).replace(/\D/g, '').length;
+          txt.value = out;
+          let pos = out.length;
+          if (!caretEnd) { pos = 0; let seen = 0; while (pos < out.length && seen < before) { if (/\d/.test(out[pos])) seen++; pos++; } }
+          try { txt.setSelectionRange(pos, pos); } catch (e) { /* не во всех браузерах */ }
+        }
+        commit(false);
+      });
+      txt.addEventListener('blur', () => commit(true));
+      // значение записали в скрытое поле снаружи (недавние карты, клиент, проверки) — показываем его
+      iso.addEventListener('input', () => { if (!syncing) show(iso.value); });
+      iso.addEventListener('change', () => { if (!syncing) show(iso.value); });
+
+      // ---- выбор в календаре: год и месяц списками, день — сеткой ----
+      function closePop() {
+        if (!pop) return;
+        pop.remove(); pop = null; btn.setAttribute('aria-expanded', 'false');
+        document.removeEventListener('mousedown', outside, true); document.removeEventListener('keydown', onEsc, true);
+      }
+      function outside(e) { if (pop && !box.contains(e.target)) closePop(); }
+      function onEsc(e) { if (e.key === 'Escape' && pop) { e.stopPropagation(); closePop(); btn.focus(); } }
+      function renderPop(y, m) {
+        const now = new Date();
+        const cur = iso.value ? iso.value.split('-').map(Number) : null;
+        const lead = (new Date(y, m - 1, 1).getDay() + 6) % 7;
+        let cells = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((d) => `<span class="dw">${d}</span>`).join('');
+        for (let i = 0; i < lead; i++) cells += '<span></span>';
+        for (let d = 1; d <= daysIn(y, m); d++) {
+          const sel = cur && cur[0] === y && cur[1] === m && cur[2] === d;
+          const today = now.getFullYear() === y && now.getMonth() === m - 1 && now.getDate() === d;
+          cells += `<button type="button" data-d="${d}" class="${sel ? 'sel' : ''}${today ? ' today' : ''}" aria-label="${d} ${MONTHS_GEN[m - 1]} ${y}"${sel ? ' aria-pressed="true"' : ''}>${d}</button>`;
+        }
+        const years = []; for (let yy = now.getFullYear() + 1; yy >= 1900; yy--) years.push(yy);
+        pop.innerHTML = `<div class="dob-pop-head">
+            <button type="button" class="dob-nav" data-step="-1" aria-label="Предыдущий месяц">${icon('chevron-left')}</button>
+            <select class="select" data-pm aria-label="Месяц">${MONTHS.map((t, i) => `<option value="${i + 1}"${i + 1 === m ? ' selected' : ''}>${t}</option>`).join('')}</select>
+            <select class="select" data-py aria-label="Год">${years.map((yy) => `<option${yy === y ? ' selected' : ''}>${yy}</option>`).join('')}</select>
+            <button type="button" class="dob-nav" data-step="1" aria-label="Следующий месяц">${icon('chevron-right')}</button>
+          </div><div class="dob-grid">${cells}</div>`;
+        pop.dataset.y = y; pop.dataset.m = m;
+      }
+      function openPop() {
+        if (pop) { closePop(); return; }
+        const cur = iso.value ? iso.value.split('-').map(Number) : null;
+        const now = new Date();
+        pop = document.createElement('div');
+        pop.className = 'dob-pop'; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', 'Выбор даты');
+        box.appendChild(pop);
+        renderPop(cur ? cur[0] : now.getFullYear() - 30, cur ? cur[1] : now.getMonth() + 1);
+        // не вылезать за правый край экрана
+        const r = box.getBoundingClientRect();
+        if (r.left + pop.offsetWidth > window.innerWidth - 8) pop.classList.add('right');
+        btn.setAttribute('aria-expanded', 'true');
+        document.addEventListener('mousedown', outside, true); document.addEventListener('keydown', onEsc, true);
+        fadeIn(pop, -4);
+        const f = $(cur ? '.dob-grid .sel' : '[data-py]', pop); if (f) f.focus();
+        pop.addEventListener('change', (e) => { if (e.target.matches('[data-pm],[data-py]')) { renderPop(+$('[data-py]', pop).value, +$('[data-pm]', pop).value); const s = $(e.target.matches('[data-pm]') ? '[data-pm]' : '[data-py]', pop); if (s) s.focus(); } });
+        pop.addEventListener('click', (e) => {
+          const nav = e.target.closest('[data-step]');
+          if (nav) { let y = +pop.dataset.y, m = +pop.dataset.m + +nav.dataset.step; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; } if (y >= 1900 && y <= new Date().getFullYear() + 1) renderPop(y, m); const n = $(`[data-step="${nav.dataset.step}"]`, pop); if (n) n.focus(); return; }
+          const day = e.target.closest('[data-d]');
+          if (day) { show(`${pop.dataset.y}-${pad(+pop.dataset.m)}-${pad(+day.dataset.d)}`); closePop(); txt.focus(); }
+        });
+      }
+      btn.addEventListener('click', openPop);
+      if (iso.value) show(iso.value);
+    });
+  }
+
   // ---------- форма данных рождения ----------
   let formUid = 0;
   function birthForm(container, opts) {
@@ -755,8 +897,8 @@
       <div class="form" data-bf>
         ${opts.title ? `<h3 style="margin:0">${opts.title}</h3>` : ''}
         <div class="field"><label for="${u}n">Имя</label><input class="input" id="${u}n" autocomplete="off" placeholder="${opts.namePlaceholder || 'Как вас зовут?'}"></div>
-        <div class="form-row">
-          <div class="field"><label for="${u}d">Дата рождения</label><input class="input" id="${u}d" type="date" min="1900-01-01" max="2099-12-31" required></div>
+        <div class="form-row dob-row">
+          <div class="field"><label for="${u}d">Дата рождения</label>${dobHTML(u + 'd')}</div>
           <div class="field"><label for="${u}t">Время</label><input class="input" id="${u}t" type="time" value="12:00"></div>
         </div>
         <label class="check"><input type="checkbox" id="${u}u"> Не знаю время рождения</label>
@@ -777,6 +919,8 @@
         </details>
       </div>`;
     const el = (s) => container.querySelector('#' + u + s);
+    enhanceDob(container);
+    const dobIso = () => $('.dob-iso', el('d').parentNode);
     const city = el('c'), list = el('l'), meta = el('m'), unk = el('u'), time = el('t');
     let place = null, items = [], active = -1, timer = null;
     el('z').value = defaultCity().tz;
@@ -812,8 +956,8 @@
 
     const api = {
       get() {
-        const ds = el('d').value;
-        if (!ds) { el('d').classList.add('invalid'); el('d').focus(); toast('Укажите дату рождения', 'calendar'); return null; }
+        const ds = dobIso().value;
+        if (!ds) { el('d').classList.add('invalid'); el('d').focus(); toast(el('d').value.trim() ? 'Проверьте дату рождения: ДД.ММ.ГГГГ' : 'Укажите дату рождения', 'calendar'); return null; }
         el('d').classList.remove('invalid');
         const [y, mo, d] = ds.split('-').map(Number);
         const tk = !unk.checked;
@@ -827,7 +971,7 @@
       set(p) {
         if (!p) return;
         el('n').value = p.name || '';
-        el('d').value = `${p.y}-${pad(p.mo)}-${pad(p.d)}`;
+        const di = dobIso(); di.value = `${p.y}-${pad(p.mo)}-${pad(p.d)}`; di.dispatchEvent(new Event('change'));
         unk.checked = p.timeKnown === false; time.disabled = unk.checked;
         time.value = `${pad(p.h != null ? p.h : 12)}:${pad(p.mi || 0)}`;
         setPlace({ name: p.place || '', country: '', lat: p.lat, lon: p.lon, tz: p.zone });
@@ -876,7 +1020,7 @@
         ${opts.noService ? `<input type="hidden" name="service" value="${esc(preset || '')}">` : `<div class="field"><label for="${u}service">Что вас интересует</label><select class="select" id="${u}service" name="service">${serviceOptions().map((s) => `<option value="${s.id}"${preset === s.id ? ' selected' : ''}>${esc(s.title)}</option>`).join('')}</select></div>`}
         ${opts.prefer ? `<div class="field"><label for="${u}pref">Когда вам обычно удобно?</label><input class="input" id="${u}pref" name="prefer" placeholder="Например: будни после 19:00 по моему времени"></div>` : ''}
         <div class="form-row three">
-          <div class="field"><label for="${u}bd">Дата рождения</label><input class="input" id="${u}bd" name="bdate" type="date" min="1900-01-01" max="2099-12-31"></div>
+          <div class="field"><label for="${u}bd">Дата рождения</label>${dobHTML(u + 'bd', 'bdate')}</div>
           <div class="field"><label for="${u}bt">Время</label><input class="input" id="${u}bt" name="btime" type="time"></div>
           <div class="field"><label for="${u}bp">Город рождения</label><input class="input" id="${u}bp" name="bplace"></div>
         </div>
@@ -888,8 +1032,12 @@
   }
   /** Отправка заявки. extra(formData) → { lines, data, tz } — строки о выбранном времени (календарь записи). */
   function bindBooking(form, onDone, extra) {
+    enhanceDob(form);
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      // дату рождения начали вводить, но она неполная или такой нет — подсказываем, а не теряем молча
+      const dt = form.querySelector('.dob-text'), di = form.querySelector('.dob-iso');
+      if (dt && dt.value.trim() && di && !di.value) { dt.dispatchEvent(new Event('blur')); dt.classList.add('invalid'); dt.focus(); toast('Проверьте дату рождения: ДД.ММ.ГГГГ — или оставьте поле пустым', 'calendar'); return; }
       const f = new FormData(form);
       const name = (f.get('name') || '').trim(), contact = (f.get('contact') || '').trim();
       if (!name) { form.querySelector('[name=name]').classList.add('invalid'); form.querySelector('[name=name]').focus(); return; }
@@ -982,7 +1130,7 @@
     return { date, moon: ms, sunSign, retro, pts };
   }
 
-  window.UI = { currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, serviceOptions, bookingFormHTML, bindBooking, reveal, fadeIn, reduceMotion, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
+  window.UI = { currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, serviceOptions, bookingFormHTML, bindBooking, dobHTML, enhanceDob, reveal, fadeIn, reduceMotion, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
 
   // Шапку, подвал и небо рисуем сразу (скрипт стоит в конце <body>, разметка страницы уже есть), а не по DOMContentLoaded:
   // так первый кадр страницы — и плавный переход между страницами — уже с шапкой, без мигания.
