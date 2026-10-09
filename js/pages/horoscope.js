@@ -28,6 +28,16 @@
     document.querySelectorAll('#picker .sign-btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.sign === sign)));
   }
 
+  /** Выбрали знак (кнопкой или из «Моих карт»): короткое «волшебство» — знак доворачивается наверх круга, — потом гороскоп. */
+  async function pick(s, scroll) {
+    sign = s; UI.store.set('horoSign', sign); history.replaceState(null, '', '#' + sign);
+    document.querySelectorAll('#picker .sign-btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.sign === sign)));
+    const box = document.getElementById('horo');
+    if (scroll) box.scrollIntoView({ behavior: UI.reduceMotion() ? 'auto' : 'smooth', block: 'start' });
+    if (!(await UI.conjure(box, { kind: 'horo', sign: AC.SIGNS.indexOf(s) }))) return;
+    render(); UI.fadeIn(box);
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('picker').innerHTML = AC.SIGNS.map((id) => `<button class="sign-btn" type="button" data-sign="${id}" aria-pressed="false"><span class="g">${T.signs[id].glyph}</span><span class="n">${T.signs[id].name}</span><span class="d">${T.signs[id].dates.replace(/ — /, '–').replace(/(\d+) (\S+)–(\d+) (\S+)/, '$1 $2 – $3 $4').replace(/января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря/g, (m) => fmt.MONTHS_SHORT[fmt.MONTHS_GEN.indexOf(m)])}</span></button>`).join('');
     const hash = location.hash.slice(1);
@@ -37,9 +47,9 @@
     const ppBox = document.getElementById('horoPeople');
     if (ppBox) {
       const sunOf = (it) => { try { return AC.signOf(AC.body('sun', AC.localToUTC(it.p.y, it.p.mo, it.p.d, it.p.timeKnown === false ? 12 : it.p.h, it.p.timeKnown === false ? 0 : it.p.mi, it.p.zone).date).lon); } catch (e) { return null; } };
-      UI.peopleChips(ppBox, (it) => { const s = sunOf(it); if (!s) return; sign = s; UI.store.set('horoSign', sign); history.replaceState(null, '', '#' + sign); render(); UI.fadeIn(document.getElementById('horo')); }, { label: 'Знаки моих людей', max: 6, sub: (it) => { const s = sunOf(it); return s ? T.signs[s].name : ''; } });
+      UI.peopleChips(ppBox, (it) => { const s = sunOf(it); if (s) pick(s, false); }, { label: 'Знаки моих людей', max: 6, sub: (it) => { const s = sunOf(it); return s ? T.signs[s].name : ''; } });
     }
-    document.getElementById('picker').addEventListener('click', (e) => { const b = e.target.closest('[data-sign]'); if (!b) return; sign = b.dataset.sign; UI.store.set('horoSign', sign); history.replaceState(null, '', '#' + sign); render(); UI.fadeIn(document.getElementById('horo')); document.getElementById('horo').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    document.getElementById('picker').addEventListener('click', (e) => { const b = e.target.closest('[data-sign]'); if (b) pick(b.dataset.sign, true); });
     document.getElementById('horo').addEventListener('click', (e) => { const b = e.target.closest('[data-mode]'); if (!b) return; mode = b.dataset.mode; render(); });
     render();
   });

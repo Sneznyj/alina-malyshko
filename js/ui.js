@@ -59,14 +59,15 @@
 
   // ---------- «волшебство» перед результатом расчёта ----------
   // Пока «звёзды складываются»: круг зодиака оживает, планеты собираются по орбитам и соединяются линиями, под кругом —
-  // 2–3 фразы о том, что сейчас считается. Недолго: первый расчёт за визит ~1,3 с, следующие ~0,7 с; без анимаций
-  // (prefers-reduced-motion) — сразу. conjure(box, { kind }) кладёт сцену в box и через это время отвечает true —
+  // 3 фразы о том, что сейчас считается. Первый расчёт за визит — 3 с (просьба Павла), следующие — 2 с; без анимаций
+  // (prefers-reduced-motion) — сразу. conjure(box, { kind, sign }) кладёт сцену в box и через это время отвечает true —
   // тогда страница рисует результат на её месте; false — пока шла анимация, начали новый расчёт (этот не рисовать).
   const CONJ_LINES = {
     natal: ['Сверяю положение планет', 'Строю дома и углы карты', 'Соединяю аспекты'],
     synastry: ['Сверяю две карты', 'Ищу точки притяжения', 'Считаю совместимость'],
     forecast: ['Смотрю, куда идут планеты', 'Строю карту года', 'Отмечаю важные даты'],
     numbers: ['Складываю числа даты', 'Считаю путь и имя', 'Собираю квадрат'],
+    horo: ['Смотрю на небо над вашим знаком', 'Сверяю Луну и планеты', 'Собираю гороскоп'],
   };
   const ZOD = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'].map((g) => g + '︎');
   let conjCount = 0, conjSeq = 0;
@@ -75,7 +76,7 @@
     if (!box || reduceMotion()) return Promise.resolve(true);
     const id = ++conjSeq;
     box.dataset.conj = id;
-    const ms = opts.ms || (conjCount++ ? 720 : 1300);
+    const ms = opts.ms || (conjCount++ ? 2000 : 3000);
     const lines = (opts.lines || CONJ_LINES[opts.kind] || CONJ_LINES.natal).slice(0, ms < 1000 ? 2 : 3);
     const ring = opts.kind === 'numbers' ? ['1', '2', '3', '4', '5', '6', '7', '8', '9', '11', '22', '33'] : ZOD;
     const R = 76, rnd = (a, b) => a + Math.random() * (b - a), f1 = (x) => x.toFixed(1);
@@ -86,8 +87,8 @@
     box.innerHTML = `<div class="conj" role="status" style="--ms:${ms}ms">
         <svg class="conj-orb" viewBox="-100 -100 200 200" aria-hidden="true">
           <circle class="conj-glow" r="62"/>
-          <g class="conj-ring"><circle class="conj-c1" r="${R + 12}"/><circle class="conj-c2" r="${R - 12}"/>
-            ${ring.map((g, i) => { const a = (i * 30 + 15) * Math.PI / 180; return `<text class="conj-g${opts.kind === 'numbers' ? ' num' : ''}" style="--i:${i}" x="${f1(R * Math.sin(a))}" y="${f1(-R * Math.cos(a))}">${g}</text>`; }).join('')}</g>
+          <g class="conj-ring" style="--end:${opts.sign >= 0 ? -(opts.sign * 30 + 15) : 15}deg"><circle class="conj-c1" r="${R + 12}"/><circle class="conj-c2" r="${R - 12}"/>
+            ${ring.map((g, i) => { const a = (i * 30 + 15) * Math.PI / 180; return `<text class="conj-g${opts.kind === 'numbers' ? ' num' : ''}${opts.sign === i ? ' on' : ''}" style="--i:${i}" x="${f1(R * Math.sin(a))}" y="${f1(-R * Math.cos(a))}">${g}</text>`; }).join('')}</g>
           <g class="conj-lines">${pairs.map(([a, b], i) => { const [x1, y1] = xy(pts[a]), [x2, y2] = xy(pts[b]); return `<line pathLength="1" style="--i:${i}" x1="${f1(x1)}" y1="${f1(y1)}" x2="${f1(x2)}" y2="${f1(y2)}"/>`; }).join('')}</g>
           ${pts.map((p, i) => `<g class="conj-pl" style="--a:${f1(p.a)}deg;--s:${f1(p.spin)}deg;--i:${i}"><circle class="${p.c}" cx="0" cy="${-p.r}" r="${i === 0 ? 4.2 : 3.2}"/></g>`).join('')}
           <path class="conj-star" d="M0,-15 C2,-3 3,-2 15,0 C3,2 2,3 0,15 C-2,3 -3,2 -15,0 C-3,-2 -2,-3 0,-15Z"/>

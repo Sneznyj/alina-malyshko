@@ -741,11 +741,16 @@ body.scroll-lock { overflow: hidden; }
 .conj-orb * { transform-box: view-box; transform-origin: 0 0; }
 .conj-glow { fill: var(--lav-soft); opacity: .55; animation: conjGlow var(--ms) ease-in-out both; }
 @keyframes conjGlow { 0% { transform: scale(.4); opacity: 0; } 50% { transform: scale(1); opacity: .7; } 100% { transform: scale(1.12); opacity: .45; } }
+/* круг доворачивается до --end (в гороскопе — выбранный знак наверх), знаки при этом остаются ровными */
 .conj-ring { animation: conjSpin var(--ms) cubic-bezier(.3,.7,.3,1) both; }
-@keyframes conjSpin { from { transform: rotate(-60deg); } to { transform: rotate(15deg); } }
+@keyframes conjSpin { from { transform: rotate(calc(var(--end) - 75deg)); } to { transform: rotate(var(--end)); } }
 .conj-c1 { fill: none; stroke: var(--line-2); stroke-width: 1; }
 .conj-c2 { fill: none; stroke: var(--gold); stroke-opacity: .5; stroke-width: 1; stroke-dasharray: 2 5; }
-.conj-g { font-family: var(--ff-glyph); font-size: 13px; fill: var(--lav-strong); text-anchor: middle; dominant-baseline: central; opacity: 0; animation: conjG calc(var(--ms) * .45) ease forwards; animation-delay: calc(var(--ms) * .03 * var(--i)); }
+.conj-orb .conj-g { transform-box: fill-box; transform-origin: center; }
+.conj-g { font-family: var(--ff-glyph); font-size: 13px; fill: var(--lav-strong); text-anchor: middle; dominant-baseline: central; opacity: 0; animation: conjG calc(var(--ms) * .45) ease forwards, conjUp var(--ms) cubic-bezier(.3,.7,.3,1) both; animation-delay: calc(var(--ms) * .03 * var(--i)), 0s; }
+@keyframes conjUp { from { transform: rotate(calc(75deg - var(--end))); } to { transform: rotate(calc(0deg - var(--end))); } }
+.conj-g.on { animation: conjG calc(var(--ms) * .45) ease forwards, conjUp var(--ms) cubic-bezier(.3,.7,.3,1) both, conjOn calc(var(--ms) * .28) cubic-bezier(.3,1.4,.5,1) forwards; animation-delay: calc(var(--ms) * .03 * var(--i)), 0s, calc(var(--ms) * .5); }
+@keyframes conjOn { to { font-size: 24px; fill: var(--gold); opacity: 1; } }
 .conj-g.num { font-family: var(--ff-body); font-weight: 700; font-size: 11px; fill: var(--gold); }
 @keyframes conjG { 0% { opacity: 0; } 45% { opacity: 1; fill: var(--gold); } 100% { opacity: .8; } }
 .conj-pl { animation: conjPl calc(var(--ms) * .62) cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--ms) * .03 * var(--i)); transform: rotate(var(--a)); }
