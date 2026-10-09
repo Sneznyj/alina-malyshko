@@ -617,7 +617,7 @@
   function modal(html, opts) {
     opts = opts || {};
     const back = document.createElement('div'); back.className = 'modal-back';
-    back.innerHTML = `<div class="modal ${opts.wide ? 'wide' : ''}" role="dialog" aria-modal="true"><button class="icon-btn x" type="button" aria-label="Закрыть">${icon('close')}</button>${html}</div>`;
+    back.innerHTML = `<div class="modal ${opts.wide ? 'wide' : ''} ${opts.cls || ''}" role="dialog" aria-modal="true"><button class="icon-btn x" type="button" aria-label="Закрыть">${icon('close')}</button>${html}</div>`;
     document.body.appendChild(back);
     const prevFocus = document.activeElement;
     requestAnimationFrame(() => back.classList.add('open'));
@@ -863,15 +863,18 @@
   function serviceOptions() {
     return SITE.services.map((s) => ({ id: s.id, title: s.title })).concat([{ id: 'lessons', title: 'Индивидуальные уроки астрологии' }, { id: 'course', title: 'Курс «Астрология с нуля»' }, { id: 'gift', title: 'Подарочный сертификат' }, { id: 'other', title: 'Другое / пока не знаю' }]);
   }
-  function bookingFormHTML(prefix, preset) {
+  /** Форма заявки. opts.noService — услуга выбрана раньше (календарь записи), opts.prefer — поле «когда удобно», opts.note — подпись под кнопкой. */
+  function bookingFormHTML(prefix, preset, opts) {
     const u = prefix;
+    opts = opts || {};
     return `
       <form class="form" data-booking novalidate>
         <div class="form-row">
           <div class="field"><label for="${u}name">Ваше имя *</label><input class="input" id="${u}name" name="name" required autocomplete="given-name"></div>
           <div class="field"><label for="${u}contact">Telegram, WhatsApp или телефон *</label><input class="input" id="${u}contact" name="contact" required placeholder="@ник или +7…" autocomplete="tel"></div>
         </div>
-        <div class="field"><label for="${u}service">Что вас интересует</label><select class="select" id="${u}service" name="service">${serviceOptions().map((s) => `<option value="${s.id}"${preset === s.id ? ' selected' : ''}>${esc(s.title)}</option>`).join('')}</select></div>
+        ${opts.noService ? `<input type="hidden" name="service" value="${esc(preset || '')}">` : `<div class="field"><label for="${u}service">Что вас интересует</label><select class="select" id="${u}service" name="service">${serviceOptions().map((s) => `<option value="${s.id}"${preset === s.id ? ' selected' : ''}>${esc(s.title)}</option>`).join('')}</select></div>`}
+        ${opts.prefer ? `<div class="field"><label for="${u}pref">Когда вам обычно удобно?</label><input class="input" id="${u}pref" name="prefer" placeholder="Например: будни после 19:00 по моему времени"></div>` : ''}
         <div class="form-row three">
           <div class="field"><label for="${u}bd">Дата рождения</label><input class="input" id="${u}bd" name="bdate" type="date" min="1900-01-01" max="2099-12-31"></div>
           <div class="field"><label for="${u}bt">Время</label><input class="input" id="${u}bt" name="btime" type="time"></div>
@@ -880,10 +883,11 @@
         <div class="field"><label for="${u}q">Ваш вопрос или запрос</label><textarea class="textarea" id="${u}q" name="question" placeholder="Что сейчас важно? Можно коротко."></textarea></div>
         <label class="check"><input type="checkbox" name="consent" required> <span>Даю согласие на обработку персональных данных согласно <a href="privacy.html" target="_blank">политике конфиденциальности</a></span></label>
         <button class="btn btn-primary btn-block" type="submit">${icon('sparkle')} Отправить заявку</button>
-        <p class="tiny muted center" style="margin:0">Отвечаю в течение дня. Время встречи подберём по вашему часовому поясу${browserTz ? ' (' + esc(browserTz.replace(/_/g, ' ')) + ')' : ''}. Данные рождения можно прислать и позже.</p>
+        <p class="tiny muted center" style="margin:0">${opts.note ? esc(opts.note) : `Отвечаю в течение дня. Время встречи подберём по вашему часовому поясу${browserTz ? ' (' + esc(browserTz.replace(/_/g, ' ')) + ')' : ''}. Данные рождения можно прислать и позже.`}</p>
       </form>`;
   }
-  function bindBooking(form, onDone) {
+  /** Отправка заявки. extra(formData) → { lines, data, tz } — строки о выбранном времени (календарь записи). */
+  function bindBooking(form, onDone, extra) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const f = new FormData(form);
@@ -894,19 +898,22 @@
       goal('booking');
       const svc = serviceOptions().find((s) => s.id === f.get('service'));
       const bd = f.get('bdate');
+      const ex = extra ? extra(f) : null;
+      const tz = (ex && ex.tz) || browserTz;
       const lines = [
         `Здравствуйте, Алина! Хочу записаться ✨`,
         `Имя: ${name}`,
         `Связь: ${contact}`,
         `Услуга: ${svc ? svc.title : ''}`,
+        ...(ex ? ex.lines : []),
         bd ? `Дата рождения: ${bd.split('-').reverse().join('.')}${f.get('btime') ? ', ' + f.get('btime') : ''}${f.get('bplace') ? ', ' + f.get('bplace') : ''}` : '',
         f.get('question') ? `Запрос: ${f.get('question')}` : '',
-        browserTz ? `Мой часовой пояс: ${browserTz}` : '',
+        tz ? `Мой часовой пояс: ${tz}` : '',
       ].filter(Boolean);
       const text = lines.join('\n');
       if (SITE.bookingEndpoint) {
         try {
-          const r = await fetch(SITE.bookingEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ name, contact, service: svc && svc.title, birth: bd, time: f.get('btime'), place: f.get('bplace'), question: f.get('question'), message: text }) });
+          const r = await fetch(SITE.bookingEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(Object.assign({ name, contact, service: svc && svc.title, birth: bd, time: f.get('btime'), place: f.get('bplace'), question: f.get('question'), timezone: tz, message: text }, ex ? ex.data : {})) });
           if (r.ok) { form.reset(); if (onDone) onDone(); thanks(); return; }
         } catch (err) { /* упадём в мессенджеры */ }
       }
@@ -937,6 +944,7 @@
     });
   }
   function openBooking(preset) {
+    if (window.Booking) return window.Booking.open(preset);
     const pr = promoInfo();
     const m = modal(`<div class="booking-head"><img src="assets/img/alina-avatar.webp" alt="" width="64" height="64"><div><span class="eyebrow" style="margin:0">запись</span><h3 style="margin:2px 0 0">Консультация с Алиной</h3></div></div>
       <p class="muted small">Оставьте контакты — я напишу сама и подберу удобное время.</p>
@@ -974,7 +982,7 @@
     return { date, moon: ms, sunSign, retro, pts };
   }
 
-  window.UI = { currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, bookingFormHTML, bindBooking, reveal, fadeIn, reduceMotion, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
+  window.UI = { currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, serviceOptions, bookingFormHTML, bindBooking, reveal, fadeIn, reduceMotion, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
 
   // Шапку, подвал и небо рисуем сразу (скрипт стоит в конце <body>, разметка страницы уже есть), а не по DOMContentLoaded:
   // так первый кадр страницы — и плавный переход между страницами — уже с шапкой, без мигания.

@@ -85,6 +85,8 @@
   function curSwitch() {
     const box = $('curSwitch');
     if (!box) return;
+    // одна валюта (сейчас только рубли) — переключатель не нужен
+    if (Object.keys(SITE.currencies || {}).length < 2) { box.hidden = true; box.innerHTML = ''; return; }
     const cur = UI.currency();
     const names = { RUB: 'рубли', USD: 'доллары', EUR: 'евро' };
     box.innerHTML = '<span class="small muted">Цены в</span><div class="seg" role="group" aria-label="Валюта">' +
@@ -208,8 +210,15 @@
 
   function booking() {
     const pr = UI.promoInfo();
-    $('bookingCard').innerHTML = (pr ? `<div class="promo-inline"><span class="sticker">−${pr.percent}%</span><span><b>${esc(pr.title)}</b><br><small>до ${pr.end.getDate()} ${fmt.MONTHS_GEN[pr.end.getMonth()]} — скидка применится автоматически</small></span></div>` : '') + UI.bookingFormHTML('hb');
-    UI.bindBooking($('bookingCard').querySelector('form'));
+    const promo = pr ? `<div class="promo-inline"><span class="sticker">−${pr.percent}%</span><span><b>${esc(pr.title)}</b><br><small>до ${pr.end.getDate()} ${fmt.MONTHS_GEN[pr.end.getMonth()]} — скидка применится автоматически</small></span></div>` : '';
+    if (window.Booking) {
+      // календарь записи: день и время → контакты
+      $('bookingCard').innerHTML = promo + '<div id="bookingWidget"></div>';
+      window.Booking.widget($('bookingWidget'), { prefix: 'hb' });
+    } else {
+      $('bookingCard').innerHTML = promo + UI.bookingFormHTML('hb');
+      UI.bindBooking($('bookingCard').querySelector('form'));
+    }
     const links = UI.contactLinks();
     $('bookingContacts').innerHTML = links.map((l) => `<a class="contact-line" href="${esc(l.href)}" target="_blank" rel="noopener">${icon(l.k)}<span>${esc(l.label)}</span></a>`).join('');
   }

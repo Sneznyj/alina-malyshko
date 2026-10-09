@@ -33,6 +33,7 @@
         <ul>
           <li>Имя и контакт для связи (мессенджер, телефон или почта) — из формы записи.</li>
           <li>Дата, время и место рождения, а также ваш вопрос — если вы их указали.</li>
+          <li>Выбранные в календаре день и время консультации и ваш часовой пояс — чтобы встреча была в удобное для вас время.</li>
         </ul>
         <p>Заявка отправляется мне только тогда, когда вы сами нажимаете «Отправить» в выбранном мессенджере или почте.</p>
         <h3>3. Что происходит с данными в инструментах сайта</h3>
@@ -57,12 +58,14 @@
   </section>
 </main>
 <script src="js/content.js"></script>
+<script src="js/schedule.js"></script>
 <script src="js/vendor/astronomy.browser.min.js"></script>
 <script src="js/astro.js"></script>
 <script src="js/texts.js"></script>
 <script src="js/icons.js"></script>
 <script src="js/ui.js"></script>
 <span id="pt-ready" hidden></span>
+<script src="js/booking.js"></script>
 <script>document.querySelectorAll('.js-name').forEach(function (e) { e.textContent = SITE.name; });</script>
 </body>
 </html>

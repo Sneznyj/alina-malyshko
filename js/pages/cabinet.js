@@ -33,11 +33,11 @@
 
   // ---------- навигация ----------
   const NAV = [
-    ['dashboard', 'Обзор', 'home'], ['clients', 'Клиенты', 'users'], ['sessions', 'Консультации', 'calendar'],
+    ['dashboard', 'Обзор', 'home'], ['clients', 'Клиенты', 'users'], ['sessions', 'Консультации', 'calendar'], ['schedule', 'Расписание', 'calendar-time'],
     ['elect', 'Подбор дат', 'star'], ['certs', 'Сертификаты', 'gift'], ['templates', 'Шаблоны', 'copy'], ['tools', 'Инструменты', 'chart'], ['settings', 'Настройки', 'settings'],
   ];
   function nav() {
-    const counts = { clients: DB.clients().length, sessions: DB.sessions().filter((s) => s.status === 'planned' && sessDate(s) >= new Date(Date.now() - 86400000)).length };
+    const counts = { clients: DB.clients().length, sessions: DB.sessions().filter((s) => s.status === 'planned' && sessDate(s) >= new Date(Date.now() - 86400000)).length, schedule: window.CabinetSchedule && window.CabinetSchedule.needsPublish() ? '!' : 0 };
     document.getElementById('cabNav').innerHTML = NAV.map(([k, t, i]) => `<button type="button" data-view="${k}" aria-current="${viewName === k}">${icon(i)}${t}${counts[k] ? `<span class="count">${counts[k]}</span>` : ''}</button>`).join('');
   }
   function show(v) { viewName = v; nav(); VIEWS[v](); UI.reveal(document.getElementById('view')); UI.fadeIn(document.getElementById('view')); }
@@ -207,7 +207,7 @@
     for (const s of all) { if (s.status === 'cancelled') continue; const d = sessDate(s); const k = d.getFullYear() * 12 + d.getMonth(); byM[k] = byM[k] || { n: 0, sum: 0, paid: 0 }; byM[k].n++; byM[k].sum += +s.price || 0; if (s.paid) byM[k].paid += +s.price || 0; }
     const months = Object.keys(byM).map(Number).sort((a, b) => b - a).slice(0, 6);
     document.getElementById('view').innerHTML = `
-      <div class="row between"><h2 style="margin:0">Консультации</h2><button class="btn btn-primary btn-sm" type="button" data-act="newSession">${icon('plus')} Новая консультация</button></div>
+      <div class="row between"><h2 style="margin:0">Консультации</h2><div class="row"><button class="btn btn-ghost btn-sm" type="button" data-act="fromRequest">${icon('clipboard-plus')} Из заявки</button><button class="btn btn-primary btn-sm" type="button" data-act="newSession">${icon('plus')} Новая консультация</button></div></div>
       <div class="seg" style="margin:16px 0" role="group">${[['upcoming', 'Предстоящие'], ['past', 'Прошедшие'], ['unpaid', 'Не оплачены']].map(([k, t]) => `<button type="button" data-sf="${k}" aria-pressed="${sessFilter === k}">${t}</button>`).join('')}</div>
       <div class="list">${list.map(sessionRow).join('') || '<div class="empty card">Здесь пока пусто.</div>'}</div>
       ${months.length ? `<h3 style="margin-top:28px">По месяцам</h3><div class="table-wrap"><table class="table"><thead><tr><th>Месяц</th><th>Консультаций</th><th>Сумма</th><th>Оплачено</th></tr></thead><tbody>${months.map((k) => `<tr><td>${fmt.MONTHS[k % 12]} ${Math.floor(k / 12)}</td><td>${byM[k].n}</td><td>${fmt.money(byM[k].sum) || '—'}</td><td>${fmt.money(byM[k].paid) || '—'}</td></tr>`).join('')}</tbody></table></div>` : ''}`;
@@ -231,6 +231,7 @@
           <div class="field"><label for="sfT">Время</label><input class="input" type="time" id="sfT" value="${s.time}"></div>
           <div class="field"><label for="sfDur">Минут</label><input class="input" type="number" id="sfDur" min="10" step="5" value="${s.duration || 60}"></div>
         </div>
+        <div class="field"><label for="sfTz">Часовой пояс клиента</label><select class="select" id="sfTz"><option value="">Как у меня</option>${UI.timeZones().concat(s.clientTz && !UI.timeZones().includes(s.clientTz) ? [s.clientTz] : []).map((z) => `<option${z === s.clientTz ? ' selected' : ''}>${esc(z)}</option>`).join('')}</select><span class="hint">Время выше — ваше. В шаблонах сообщений ({дата}, {время}) оно будет по часам клиента.</span></div>
         <div class="form-row">
           <div class="field"><label for="sfP">Стоимость, ${esc(SITE.currency || '₽')}</label><input class="input" type="number" id="sfP" min="0" step="100" value="${s.price || 0}"></div>
           <div class="field"><label for="sfSt">Статус</label><select class="select" id="sfSt">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}"${k === s.status ? ' selected' : ''}>${v[0]}</option>`).join('')}</select></div>
@@ -247,7 +248,7 @@
     $m('#sfS').addEventListener('change', () => { const sv = svcs.find((x) => x[0] === $m('#sfS').value); if (sv && sv[2] && !s.id) $m('#sfP').value = sv[2]; });
     $m('#sfSave').addEventListener('click', () => {
       const list = DB.sessions();
-      const data = { clientId: $m('#sfC').value, service: $m('#sfS').value, date: $m('#sfD').value || today, time: $m('#sfT').value || '12:00', duration: +$m('#sfDur').value || 60, price: +$m('#sfP').value || 0, status: $m('#sfSt').value, paid: $m('#sfPaid').checked, notes: $m('#sfN').value, outline: Array.from(m.el.querySelectorAll('[data-ol]:checked')).map((x) => +x.dataset.ol) };
+      const data = { clientId: $m('#sfC').value, service: $m('#sfS').value, date: $m('#sfD').value || today, time: $m('#sfT').value || '12:00', duration: +$m('#sfDur').value || 60, clientTz: $m('#sfTz').value, price: +$m('#sfP').value || 0, status: $m('#sfSt').value, paid: $m('#sfPaid').checked, notes: $m('#sfN').value, outline: Array.from(m.el.querySelectorAll('[data-ol]:checked')).map((x) => +x.dataset.ol) };
       if (s.id) { const i = list.findIndex((x) => x.id === s.id); list[i] = Object.assign({}, list[i], data); } else list.push(Object.assign({ id: uid('s'), created: new Date().toISOString() }, data));
       DB.saveSessions(list); m.close(); UI.toast('Консультация сохранена', 'check'); show(viewName);
     });
@@ -260,7 +261,11 @@
   function fillTpl(text, s, client) {
     const c = client || (s && UI.clients.get(s.clientId));
     const d = s ? sessDate(s) : null;
-    return text.replace(/\{имя\}/g, c ? c.name.split(' ')[0] : '___').replace(/\{дата\}/g, d ? fmt.dm(d) : '___').replace(/\{время\}/g, d ? fmt.time(d) : '___').replace(/\{услуга\}/g, s ? serviceTitle(s.service) : '___');
+    // у клиента из другого часового пояса дата и время в сообщении — по его часам
+    const BC = window.BookingCore;
+    const p = d && s.clientTz && BC && BC.validTz(s.clientTz) ? BC.partsIn(d.getTime(), s.clientTz) : null;
+    const dm = d ? (p ? `${p.d} ${fmt.MONTHS_GEN[p.m - 1]}` : fmt.dm(d)) : '___', tm = d ? (p ? BC.hm(p.min) : fmt.time(d)) : '___';
+    return text.replace(/\{имя\}/g, c ? c.name.split(' ')[0] : '___').replace(/\{дата\}/g, dm).replace(/\{время\}/g, tm).replace(/\{услуга\}/g, s ? serviceTitle(s.service) : '___');
   }
 
   // ---------- подбор благоприятных дат ----------
@@ -419,7 +424,7 @@
       ['academy.html', '✎', 'Мини-курс', 'Материалы, которые можно давать ученикам.'],
     ];
     document.getElementById('view').innerHTML = `<h2>Инструменты</h2><div class="grid grid-2">${t.map(([h, g, n, d]) => `<a class="card hover tool-tile" style="min-height:0" href="${h}"><span class="t-glyph" style="font-size:1.8rem">${g}</span><h3 style="font-size:1.3rem;margin:0">${n}</h3><p class="small muted" style="margin:0">${d}</p></a>`).join('')}</div>
-      <div class="card" style="margin-top:18px"><h3>Где редактировать сайт</h3><p class="small">Тексты, цены, контакты, отзывы и вопросы — в файле <code>js/content.js</code>. Толкования планет, знаков, домов и лунных суток — в <code>js/texts.js</code>. Уроки — в <code>js/academy-data.js</code>. Подробная инструкция — в <code>README.md</code>.</p></div>`;
+      <div class="card" style="margin-top:18px"><h3>Где редактировать сайт</h3><p class="small">Рабочие часы, выходные и отпуск для записи — в разделе «Расписание» этого кабинета (файл <code>js/schedule.js</code>). Тексты, цены, контакты, отзывы и вопросы — в файле <code>js/content.js</code>. Толкования планет, знаков, домов и лунных суток — в <code>js/texts.js</code>. Уроки — в <code>js/academy-data.js</code>. Подробная инструкция — в <code>README.md</code>.</p></div>`;
   }
 
   // ---------- настройки ----------
@@ -442,7 +447,7 @@
   }
 
   function exportData() {
-    const data = { app: 'alina-astro-cabinet', version: 1, exported: new Date().toISOString(), clients: DB.clients(), sessions: DB.sessions(), templates: DB.templates(), settings: UI.settings };
+    const data = { app: 'alina-astro-cabinet', version: 1, exported: new Date().toISOString(), clients: DB.clients(), sessions: DB.sessions(), templates: DB.templates(), settings: UI.settings, scheduleDraft: store.get('scheduleDraft', null) };
     UI.download(`kabinet-astrologa-${fmt.ymd(new Date())}.json`, JSON.stringify(data, null, 2), 'application/json');
     UI.toast('Резервная копия сохранена', 'download');
   }
@@ -458,6 +463,7 @@
         DB.saveClients(mode ? merge(DB.clients(), d.clients || []) : d.clients || []);
         DB.saveSessions(mode ? merge(DB.sessions(), d.sessions || []) : d.sessions || []);
         if (d.templates) DB.saveTemplates(d.templates);
+        if (d.scheduleDraft && !store.get('scheduleDraft', null)) store.set('scheduleDraft', d.scheduleDraft);
         UI.toast('Данные загружены', 'check'); show('clients');
       } catch (err) { UI.toast('Это не файл копии кабинета', 'info'); }
     };
@@ -465,7 +471,8 @@
   }
 
 
-  const VIEWS = { dashboard, clients: clientsView, sessions: sessionsView, elect: electView, certs: certsView, templates: templatesView, tools: toolsView, settings: settingsView };
+  if (window.CabinetSchedule) window.CabinetSchedule.init({ DB, sessDate, serviceTitle, clientName, uid, show, nav });
+  const VIEWS = { dashboard, clients: clientsView, sessions: sessionsView, schedule: () => window.CabinetSchedule.view(), elect: electView, certs: certsView, templates: templatesView, tools: toolsView, settings: settingsView };
 
   document.addEventListener('DOMContentLoaded', () => {
     nav(); show(location.hash.slice(1) in VIEWS ? location.hash.slice(1) : 'dashboard');
@@ -488,6 +495,7 @@
         const k = a.dataset.act;
         if (k === 'newClient') clientForm();
         if (k === 'newSession') sessionForm();
+        if (k === 'fromRequest') window.CabinetSchedule.requestDialog();
         if (k === 'export') exportData();
         if (k === 'clearDemo') { DB.saveClients(DB.clients().filter((c) => !c.demo)); DB.saveSessions(DB.sessions().filter((s) => !s.demo)); UI.toast('Демо-данные убраны', 'check'); show(viewName); }
         if (k === 'wipe') { if (confirm('Удалить ВСЕХ клиентов и консультации с этого устройства? Сначала лучше скачать копию.')) { DB.saveClients([]); DB.saveSessions([]); UI.toast('Данные удалены', 'trash'); show(viewName); } }
