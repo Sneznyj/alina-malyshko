@@ -93,7 +93,7 @@
         <div class="card"><h4>Лунная фаза рождения</h4>
           <div class="row" style="flex-wrap:nowrap;align-items:flex-start"><div style="width:64px;flex-shrink:0">${UI.moonSVG(s.elongation)}</div><div><b>${ph.name}</b><p class="small" style="margin:4px 0 0">${ph.birth}</p></div></div></div>
       </div>
-      ${st || s.retro.length ? `<div class="card" style="margin-top:16px"><h4>Особенности карты</h4><ul class="small" style="margin:8px 0 0;padding-left:1.1em">${st}${s.retro.length ? `<li><b>Ретроградные планеты:</b> ${s.retro.map((id) => T.planets[id].name).join(', ')} — их темы проживаются глубже, «изнутри», часто с возвратом к прошлому опыту.</li>` : ''}</ul></div>` : ''}`;
+      ${st || s.retro.length ? `<div class="card" style="margin-top:16px"><h4>Особенности карты</h4><ul class="small" style="margin:8px 0 0;padding-left:1.1em">${st}${s.retro.length ? `<li><b>Ретроградные планеты:</b> ${s.retro.map((id) => T.planets[id].name).join(', ')} — их темы проживаются вдумчиво, «изнутри», часто с возвратом к прошлому опыту.</li>` : ''}</ul></div>` : ''}`;
   }
 
   function animateBars(root) {

@@ -33,6 +33,12 @@
     const hash = location.hash.slice(1);
     const r = UI.recent.list()[0];
     sign = AC.SIGNS.includes(hash) ? hash : UI.store.get('horoSign', null) || (r ? AC.signOf(AC.chart(r).byId.sun.lon) : 'aries');
+    // «Мои карты»: знак Солнца каждого сохранённого человека — одним нажатием
+    const ppBox = document.getElementById('horoPeople');
+    if (ppBox) {
+      const sunOf = (it) => { try { return AC.signOf(AC.body('sun', AC.localToUTC(it.p.y, it.p.mo, it.p.d, it.p.timeKnown === false ? 12 : it.p.h, it.p.timeKnown === false ? 0 : it.p.mi, it.p.zone).date).lon); } catch (e) { return null; } };
+      UI.peopleChips(ppBox, (it) => { const s = sunOf(it); if (!s) return; sign = s; UI.store.set('horoSign', sign); history.replaceState(null, '', '#' + sign); render(); UI.fadeIn(document.getElementById('horo')); }, { label: 'Знаки моих людей', max: 6, sub: (it) => { const s = sunOf(it); return s ? T.signs[s].name : ''; } });
+    }
     document.getElementById('picker').addEventListener('click', (e) => { const b = e.target.closest('[data-sign]'); if (!b) return; sign = b.dataset.sign; UI.store.set('horoSign', sign); history.replaceState(null, '', '#' + sign); render(); UI.fadeIn(document.getElementById('horo')); document.getElementById('horo').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
     document.getElementById('horo').addEventListener('click', (e) => { const b = e.target.closest('[data-mode]'); if (!b) return; mode = b.dataset.mode; render(); });
     render();

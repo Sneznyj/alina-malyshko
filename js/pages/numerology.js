@@ -255,13 +255,27 @@
     render(focus);
   }
 
+  let picked = null; // человек из «Моих карт» — ему запоминаем ФИО при рождении
   document.addEventListener('DOMContentLoaded', () => {
     $('nmDateBox').innerHTML = UI.dobHTML('nmDate', '');
     UI.enhanceDob($('nmDateBox'));
+    // «Мои карты»: нажали на человека — дата и ФИО подставились, числа посчитались
+    const ppBox = document.getElementById('nmPeople');
+    if (ppBox) UI.peopleChips(ppBox, (it) => {
+      picked = it.person || null;
+      const iso = `${it.p.y}-${String(it.p.mo).padStart(2, '0')}-${String(it.p.d).padStart(2, '0')}`;
+      setForm(it.fullName || it.p.name || '', iso);
+      run({ name: it.fullName || it.p.name || '', iso }, true);
+    });
     staticBlocks();
     // код доступа введён — открыть месяцы и дни без повторного ввода
     document.addEventListener('premiumchange', () => { if (res) render(); });
-    $('numForm').addEventListener('submit', (e) => { e.preventDefault(); const i = readForm(); if (i) run(i, true); });
+    $('numForm').addEventListener('submit', (e) => {
+      e.preventDefault(); const i = readForm(); if (!i) return;
+      // ФИО полностью (2+ слова) — запомним выбранному человеку, чтобы в следующий раз не вводить
+      if (picked && i.name.split(/\s+/).length >= 2 && UI.people.get(picked.id)) UI.people.update(picked.id, { fullName: i.name });
+      run(i, true);
+    });
     $('numSeg').addEventListener('click', (e) => { const b = e.target.closest('[data-n]'); if (b) { showMeaning(+b.dataset.n); UI.fadeIn($('numMeaning'), 6); } });
     $('numResult').addEventListener('click', async (e) => {
       const t = e.target.closest('[data-tile]');
@@ -284,7 +298,9 @@
     const last = UI.store.get('numerology', null);
     const rec = (UI.recent.list() || [])[0];
     const pad = (n) => String(n).padStart(2, '0');
-    if (cl && cl.birth) { setForm(cl.name, `${cl.birth.y}-${pad(cl.birth.mo)}-${pad(cl.birth.d)}`); run({ name: cl.name, iso: `${cl.birth.y}-${pad(cl.birth.mo)}-${pad(cl.birth.d)}` }); }
+    const pp = q.get('person') && UI.people.get(q.get('person'));
+    if (pp && pp.birth) { picked = pp; const nm = pp.fullName || pp.name || ''; const iso = `${pp.birth.y}-${pad(pp.birth.mo)}-${pad(pp.birth.d)}`; setForm(nm, iso); run({ name: nm, iso }); }
+    else if (cl && cl.birth) { setForm(cl.name, `${cl.birth.y}-${pad(cl.birth.mo)}-${pad(cl.birth.d)}`); run({ name: cl.name, iso: `${cl.birth.y}-${pad(cl.birth.mo)}-${pad(cl.birth.d)}` }); }
     else if (last && last.iso) { setForm(last.name, last.iso); run(last); }
     else if (rec && rec.y) setForm(rec.name || '', `${rec.y}-${pad(rec.mo)}-${pad(rec.d)}`);
     UI.reveal();

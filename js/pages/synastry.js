@@ -115,6 +115,10 @@
   document.addEventListener('DOMContentLoaded', () => {
     fa = UI.birthForm(document.getElementById('formA'), { namePlaceholder: 'Имя' });
     fb = UI.birthForm(document.getElementById('formB'), { namePlaceholder: 'Имя партнёра' });
+    // из астропроцессора: synastry.html?pa=<id>&pb=<id>
+    const qs = new URLSearchParams(location.search), pa = qs.get('pa') && UI.people.get(qs.get('pa')), pb = qs.get('pb') && UI.people.get(qs.get('pb'));
+    if (pa && pa.birth) fa.set(UI.people.params(pa));
+    if (pb && pb.birth) fb.set(UI.people.params(pb));
     document.getElementById('calcBtn').addEventListener('click', calc);
     // код доступа введён — показать подробный разбор без повторного расчёта
     document.addEventListener('premiumchange', () => { if (S) render(); });

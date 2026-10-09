@@ -154,7 +154,7 @@
 
   function tools() {
     const tones = ['', 'gold', 'rose'];
-    const d = { 'natal.html': 'Колесо карты, планеты в знаках и домах, аспекты и подробное толкование.', 'synastry.html': 'Синастрия двух карт: притяжение, эмоции, общение и надёжность союза.', 'forecast.html': 'Транзиты к вашей карте по месяцам, соляр, прогрессии и профекция года.', 'horoscope.html': 'На сегодня, завтра и месяц — по реальному положению планет.', 'moon.html': 'Фазы, лунные сутки для вашего города, Луна без курса и советы на день.', 'sky.html': 'Ретроградные планеты с теневыми периодами, затмения, новолуния.', 'numerology.html': 'Число жизненного пути, квадрат Пифагора, личный год и числа имени.' };
+    const d = { 'natal.html': 'Колесо карты, планеты в знаках и домах, аспекты и подробное толкование.', 'synastry.html': 'Синастрия двух карт: притяжение, эмоции, общение и надёжность союза.', 'forecast.html': 'Транзиты к вашей карте по месяцам, соляр, прогрессии и профекция года.', 'horoscope.html': 'На сегодня, завтра и месяц — по реальному положению планет.', 'moon.html': 'Фазы, лунные сутки для вашего города, Луна без курса и советы на день.', 'sky.html': 'Ретроградные планеты с теневыми периодами, затмения, новолуния.', 'numerology.html': 'Число жизненного пути, квадрат Пифагора, личный год и числа имени.', 'astro.html': 'Для астрологов: сохранённые карты, натал, прогноз, числа, гороскоп и совместимость человека в одном месте.' };
     $('toolsGrid').innerHTML = UI.TOOLS.map(([h, t, ic], i) => `
       <a class="card hover tool-tile reveal" style="--d:${(i % 3) * 0.08}s" href="${h}">
         <span class="tag new free">бесплатно</span>
@@ -169,7 +169,7 @@
       $('toolsGrid').insertAdjacentHTML('afterend', `<a class="card hover premium-band reveal" id="premiumBand" href="premium.html">
         <span class="pw-crown" aria-hidden="true">${icon('crown')}</span>
         <div><span class="eyebrow" style="margin-bottom:4px">${esc(P.name || 'Премиум-доступ')}</span>
-          <h3>Хотите глубже? Прогноз по датам и подробные разборы</h3>
+          <h3>Хотите подробнее? Прогноз по датам и полные разборы</h3>
           <p class="muted">${(P.features || []).map((f) => esc(f.title)).join(' · ')}</p></div>
         <span class="premium-band-go">${isFinite(from) ? 'от ' + fmt.money(from) : ''}<b>Подробнее ${icon('arrow')}</b></span>
       </a>`);
@@ -257,8 +257,43 @@
     }
   }
 
+  // ---------- натальная карта прямо на главной: сначала — небо сейчас, после ввода — карта человека ----------
+  function natalHome() {
+    const box = $('nhResult'), formBox = $('nhForm');
+    if (!box || !formBox || !window.Wheel) return;
+    const W = window.Wheel, CV = window.ChartView;
+    let form = null, last = null;
+    function show(c, p, sample) {
+      last = [c, p, sample];
+      const b3 = ['sun', 'moon', 'asc'].filter((id) => c.byId[id]).map((id) => `<span><span class="glyph" style="color:var(--lav-strong)">${T.planets[id].glyph}</span>${T.planets[id].name}: <b>${T.signs[c.byId[id].sign].name}</b></span>`).join('');
+      const q = new URLSearchParams({ y: p.y, mo: p.mo, d: p.d, h: p.h, mi: p.mi, tk: p.timeKnown === false ? 0 : 1, lat: (+p.lat).toFixed(4), lon: (+p.lon).toFixed(4), tz: typeof p.zone === 'string' ? p.zone : '', place: p.place || '', name: p.name || '' });
+      box.innerHTML = `<div class="wheel-box" id="nhWheel">${W.svg(c, { minor: UI.settings.minor })}</div>
+        <p class="nh-cap small muted">${sample ? `Так выглядит небо прямо сейчас${p.place ? ' · ' + esc(p.place) : ''}. Наведите на линии и планеты — появятся подсказки; введите свои данные — построю вашу карту.` : `${esc(p.name || 'Ваша карта')} · ${fmt.birth(p)}${p.place ? ' · ' + esc(p.place) : ''}`}</p>
+        ${sample ? '' : `<div class="nh-b3">${b3}</div><div class="nh-go"><a class="btn btn-primary btn-sm" href="natal.html?${q.toString()}">${icon('chart')} Толкование и все разделы</a>${p.personId ? `<a class="btn btn-ghost btn-sm" href="astro.html#p=${encodeURIComponent(p.personId)}">${icon('address-book')} Прогноз, числа, совместимость</a>` : `<a class="btn btn-ghost btn-sm" href="astro.html">${icon('address-book')} Астропроцессор</a>`}</div>`}`;
+      W.attach($('nhWheel'));
+      if (!sample) UI.fadeIn(box, 6);
+    }
+    function build(p) {
+      let c;
+      try { c = AC.chart(p, CV ? CV.chartOpts() : {}); } catch (e) { UI.toast('Не получилось рассчитать карту — проверьте данные', 'info'); return; }
+      UI.recent.add(p);
+      show(c, p, false);
+      if (window.innerWidth < 900) box.scrollIntoView({ behavior: UI.reduceMotion() ? 'auto' : 'smooth', block: 'start' });
+    }
+    form = UI.birthForm(formBox, { onPick: (it) => build(Object.assign({}, it.p, it.person ? { personId: it.person.id } : {})) });
+    $('nhGo').addEventListener('click', () => { const p = form.get(); if (p) build(p); });
+    formBox.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.matches('input:not([role=combobox])')) { const p = form.get(); if (p) build(p); } });
+    // пока данных нет — карта текущего момента для города посетителя (видно, что сайт считает по-настоящему)
+    const city = UI.defaultCity(), d = new Date();
+    const now = { name: 'Небо сейчас', y: d.getFullYear(), mo: d.getMonth() + 1, d: d.getDate(), h: d.getHours(), mi: d.getMinutes(), timeKnown: true, lat: city.lat, lon: city.lon, zone: UI.browserTz || city.tz, place: city.name };
+    try { show(AC.chart(now, CV ? CV.chartOpts() : {}), now, true); } catch (e) { console.error(e); }
+    // смена темы — колесо перерисовываем в новых цветах
+    document.addEventListener('themechange', () => { if (last) show(last[0], last[1], last[2]); });
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     $('zodiacRing').innerHTML = zodiacRing();
+    try { natalHome(); } catch (e) { console.error(e); }
     media();
     hero(); needs(); curSwitch(); services(); offers(); tools(); about(); academy(); reviews(); faq(); booking();
     UI.reveal();

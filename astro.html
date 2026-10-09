@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Астропроцессор онлайн — мои карты: натал, прогноз, числа, совместимость · Алина Малышко</title>
+<meta name="description" content="Бесплатный астропроцессор для астрологов и всех, кто изучает астрологию: сохраняйте карты близких и клиентов, открывайте натальную карту, прогноз, нумерологию, гороскоп и совместимость человека в одном месте.">
+<meta name="theme-color" content="#9b87d9">
+<meta property="og:title" content="Астропроцессор онлайн — мои карты">
+<meta property="og:image" content="https://sneznyj.github.io/alina-malyshko/assets/img/og-image.jpg">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&family=Caveat:wght@500;600;700&family=Noto+Sans+Symbols&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>try{var t=localStorage.getItem('am_theme');document.documentElement.setAttribute('data-theme',t?JSON.parse(t):(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}try{if(!window.CSSViewTransitionRule&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('pt-fallback')}catch(e){}</script>
+<link rel="expect" href="#pt-ready" blocking="render">
+</head>
+<body>
+<main id="main">
+  <section class="page-hero" style="padding-bottom:18px">
+    <div class="container hero-anim">
+      <span class="eyebrow">Для астрологов и всех, кто изучает астрологию</span>
+      <h1>Астропроцессор · <em class="accent">мои карты</em></h1>
+      <p class="lead">Сохраняйте карты близких и клиентов — и открывайте всё о человеке в одном месте: натальную карту с профи-расчётами, прогноз, числа, гороскоп и совместимость. Данные хранятся только в вашем браузере.</p>
+    </div>
+  </section>
+  <section class="section tight" style="padding-top:0">
+    <div class="container astro-layout">
+      <aside class="card astro-list" aria-label="Мои карты">
+        <div class="row between" style="gap:8px"><h3 style="margin:0">Мои карты</h3><button class="btn btn-primary btn-xs" type="button" data-ap="new"><span data-ic="plus"></span> Новая</button></div>
+        <input class="input" id="apQ" type="search" placeholder="Поиск по имени или городу" aria-label="Поиск по картам" style="margin-top:12px">
+        <div class="ap-people" id="apPeople"></div>
+        <details class="details-adv" style="margin-top:12px"><summary>Перенести на другое устройство</summary>
+          <p class="small muted" style="margin:8px 0">Карты хранятся в этом браузере. Сохраните файл и загрузите его на другом телефоне или компьютере.</p>
+          <div class="row" style="gap:8px"><button class="btn btn-ghost btn-xs" type="button" data-ap="export"><span data-ic="download"></span> Скачать файл</button><label class="btn btn-ghost btn-xs" style="cursor:pointer"><span data-ic="upload"></span> Загрузить<input type="file" id="apImport" accept=".json,application/json" hidden></label></div>
+        </details>
+      </aside>
+      <div id="apMain"></div>
+    </div>
+  </section>
+</main>
+
+<script src="js/content.js"></script>
+<script src="js/vendor/astronomy.browser.min.js"></script>
+<script src="js/chiron-data.js"></script>
+<script src="js/astro.js"></script>
+<script src="js/texts.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/ui.js"></script>
+<span id="pt-ready" hidden></span>
+<script src="js/admin.js"></script>
+<script src="js/premium.js"></script>
+<script src="js/wheel.js"></script>
+<script src="js/chart-view.js"></script>
+<script src="js/cards.js"></script>
+<script src="js/pro.js"></script>
+<script src="js/pro-view.js"></script>
+<script src="js/numerology.js"></script>
+<script src="js/numerology-data.js"></script>
+<script src="js/horoscope-core.js"></script>
+<script src="js/person-view.js"></script>
+<script src="js/pages/astro.js"></script>
+</body>
+</html>

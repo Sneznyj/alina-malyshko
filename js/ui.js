@@ -92,6 +92,7 @@
   // ---------- шапка и подвал ----------
   const TOOLS = [
     ['natal.html', 'Натальная карта', 'planet', 'ваша карта рождения'],
+    ['astro.html', 'Астропроцессор', 'address-book', 'мои карты и все расчёты'],
     ['synastry.html', 'Совместимость', 'heart-handshake', 'синастрия пары'],
     ['horoscope.html', 'Гороскоп', 'sparkle', 'на сегодня и месяц'],
     ['moon.html', 'Лунный календарь', 'moon-stars', 'лунные сутки'],
@@ -240,6 +241,7 @@
         </a>
         <nav class="nav" aria-label="Основное меню">
           <a href="index.html#services">Консультации</a>
+          <a href="energy.html"${page === 'energy.html' ? ' aria-current="page"' : ''}>Энергетическая работа</a>
           <div class="nav-drop">
             <button type="button" class="nav-drop-btn${onTool ? ' active' : ''}" aria-expanded="false" aria-haspopup="true">Бесплатно ${icon('chevron-down', 'chev')}</button>
             <div class="nav-panel" role="menu">
@@ -329,7 +331,7 @@
         <a class="brand" href="index.html"><span class="brand-mark"><img src="assets/img/alina-avatar.webp" alt="" width="40" height="40"></span><span class="brand-name">${esc(SITE.name)}</span></a>
         <button class="icon-btn" type="button" data-close-menu aria-label="Закрыть меню">${icon('close')}</button>
       </div>
-      <nav class="mm-main">${[['index.html', 'Главная'], ['index.html#services', 'Консультации и цены'], ['index.html#about', 'Обо мне'], ...(hasReviews ? [['index.html#reviews', 'Отзывы']] : []), ...(academyOn ? [['academy.html', 'Уроки астрологии']] : [])].map(([h, t], i) => `<a href="${h}" style="transition-delay:${0.04 * i}s">${t}</a>`).join('')}</nav>
+      <nav class="mm-main">${[['index.html', 'Главная'], ['index.html#services', 'Консультации и цены'], ['energy.html', 'Энергетическая работа'], ['index.html#about', 'Обо мне'], ...(hasReviews ? [['index.html#reviews', 'Отзывы']] : []), ...(academyOn ? [['academy.html', 'Уроки астрологии']] : [])].map(([h, t], i) => `<a href="${h}" style="transition-delay:${0.04 * i}s">${t}</a>`).join('')}</nav>
       <p class="mm-label">Бесплатно на сайте</p>
       <div class="mm-tools">${TOOLS.map(([h, t, ic]) => `<a href="${h}">${icon(ic)}<span>${t}</span></a>`).join('')}</div>
       ${premOn ? `<a class="mm-premium" data-premium-link href="premium.html">${icon('crown')}<span><b>Премиум-доступ</b><small>прогноз по датам и подробные разборы</small></span>${icon('arrow')}</a>` : ''}
@@ -379,7 +381,7 @@
           </div>
           <div><h4>Бесплатно</h4>${TOOLS.map(([h, t]) => `<a href="${h}">${t}</a>`).join('')}</div>
           <div><h4>Консультации</h4>${SITE.services.slice(0, 6).map((s) => `<a href="index.html#services">${esc(s.title)}</a>`).join('')}</div>
-          <div><h4>Сайт</h4>${academyOn ? '<a href="academy.html">Уроки астрологии</a>' : ''}<a href="index.html#about">Обо мне</a><a href="index.html#faq">Вопросы и ответы</a><a href="index.html#booking">Запись</a>${premOn ? '<a href="premium.html">Премиум-доступ</a>' : ''}<a href="privacy.html">Политика конфиденциальности</a>${isAlina() ? '<a href="cabinet.html" class="muted">Кабинет астролога</a>' : ''}</div>
+          <div><h4>Сайт</h4><a href="energy.html">Энергетическая работа</a><a href="astro.html">Астропроцессор · мои карты</a>${academyOn ? '<a href="academy.html">Уроки астрологии</a>' : ''}<a href="index.html#about">Обо мне</a><a href="index.html#faq">Вопросы и ответы</a><a href="index.html#booking">Запись</a>${premOn ? '<a href="premium.html">Премиум-доступ</a>' : ''}<a href="privacy.html">Политика конфиденциальности</a>${isAlina() ? '<a href="cabinet.html" class="muted">Кабинет астролога</a>' : ''}</div>
         </div>
         <p class="disclaimer">Астрология — инструмент самопознания. Она не заменяет медицинскую, психологическую, юридическую или финансовую помощь. Расчёты: тропический зодиак, эфемериды astronomy-engine и NASA JPL; точность положений — около угловой минуты.</p>
         <div class="footer-bottom"><span>© ${new Date().getFullYear()} ${esc(SITE.name)}</span><span>Иконки — Tabler Icons</span></div>
@@ -979,6 +981,7 @@
     container.innerHTML = `
       <div class="form" data-bf>
         ${opts.title ? `<h3 style="margin:0">${opts.title}</h3>` : ''}
+        ${opts.noPicker ? '' : '<div class="pp-box" data-pp-box hidden></div>'}
         <div class="field"><label for="${u}n">Имя</label><input class="input" id="${u}n" autocomplete="off" placeholder="${opts.namePlaceholder || 'Как вас зовут?'}"></div>
         <div class="form-row dob-row">
           <div class="field"><label for="${u}d">Дата рождения</label>${dobHTML(u + 'd')}</div>
@@ -1000,6 +1003,7 @@
           <div class="field" style="margin-top:12px"><label for="${u}z">Часовой пояс</label><select class="select" id="${u}z">${timeZones().map((z) => `<option>${z}</option>`).join('')}</select>
           <span class="hint">История перехода на летнее и декретное время учитывается автоматически.</span></div>
         </details>
+        ${opts.noSave ? '' : `<label class="check pp-save"><input type="checkbox" id="${u}s"${store.get('ppSave', true) ? ' checked' : ''}> Сохранить в «Мои карты» — в следующий раз выберете одним нажатием</label>`}
       </div>`;
     const el = (s) => container.querySelector('#' + u + s);
     enhanceDob(container);
@@ -1031,7 +1035,11 @@
         if (!isFinite(lat) || !isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
           city.classList.add('invalid'); city.focus(); toast('Выберите город из списка или укажите координаты', 'pin'); return null;
         }
-        return { name: el('n').value.trim(), y, mo, d, h: tk ? h : 12, mi: tk ? mi : 0, timeKnown: tk, lat, lon, zone: el('z').value, place: city.value.trim() || fmtCoord(lat, lon) };
+        const params = { name: el('n').value.trim(), y, mo, d, h: tk ? h : 12, mi: tk ? mi : 0, timeKnown: tk, lat, lon, zone: el('z').value, place: city.value.trim() || fmtCoord(lat, lon) };
+        // «Мои карты»: запомнить человека, чтобы в другой раз подставить одним нажатием
+        const sv = el('s');
+        if (sv && sv.checked) { const sp = people.remember(params); if (sp) params.personId = sp.id; }
+        return params;
       },
       set(p) {
         if (!p) return;
@@ -1043,6 +1051,10 @@
       },
       focus() { el('n').focus(); },
     };
+    const sv = el('s');
+    if (sv) sv.addEventListener('change', () => store.set('ppSave', sv.checked));
+    const ppBox = container.querySelector('[data-pp-box]');
+    if (ppBox) peopleChips(ppBox, (it) => { api.set(it.p); if (opts.onPick) opts.onPick(it); }, { clients: opts.clients });
     return api;
   }
 
@@ -1068,6 +1080,110 @@
     get: (id) => clients.all().find((c) => c.id === id),
   };
 
+  // ---------- «Мои карты»: люди, чьи данные уже вводили ----------
+  // Хранятся только в этом браузере (am_people). Формы данных рождения предлагают их одним нажатием и (если стоит
+  // галочка «Сохранить в Мои карты») запоминают новых. Алине на страницах сайта — ещё и клиенты кабинета.
+  const PKEY = (b) => [b.y, b.mo, b.d, b.timeKnown === false ? '-' : `${+b.h}:${+b.mi}`, (+b.lat).toFixed(2), (+b.lon).toFixed(2)].join('|');
+  const birthOf = (p) => ({ y: +p.y, mo: +p.mo, d: +p.d, h: p.timeKnown === false ? 12 : +p.h, mi: p.timeKnown === false ? 0 : +p.mi, timeKnown: p.timeKnown !== false, lat: +p.lat, lon: +p.lon, zone: p.zone, place: p.place || '' });
+  const pid = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  let peopleReady = false;
+  function migratePeople() {
+    if (peopleReady) return;
+    peopleReady = true;
+    if (store.get('people', null) !== null) return;
+    // первый раз: «Недавние карты» становятся «Моими картами» — то, что человек уже вводил, не пропадает
+    const now = new Date().toISOString(), seen = new Set(), l = [];
+    for (const r of store.get('recent', [])) {
+      if (!r || r.lat == null || !r.y) continue;
+      const b = birthOf(r), k = PKEY(b) + '|' + normName(r.name || '');
+      if (seen.has(k)) continue;
+      seen.add(k);
+      l.push({ id: pid(), name: r.name || '', fullName: '', note: '', tags: [], birth: b, created: now, updated: now });
+    }
+    store.set('people', l);
+  }
+  const people = {
+    all() { migratePeople(); return store.get('people', []); },
+    get: (id) => people.all().find((p) => p.id === id),
+    save(list) { store.set('people', list); document.dispatchEvent(new CustomEvent('peoplechange')); },
+    add(p) {
+      const now = new Date().toISOString();
+      const x = Object.assign({ id: pid(), name: '', fullName: '', note: '', tags: [], created: now }, p, { updated: now });
+      const l = people.all(); l.unshift(x); people.save(l); return x;
+    },
+    update(id, patch) { const l = people.all(); const i = l.findIndex((x) => x.id === id); if (i < 0) return null; l[i] = Object.assign({}, l[i], patch, { updated: new Date().toISOString() }); people.save(l); return l[i]; },
+    remove(id) { people.save(people.all().filter((x) => x.id !== id)); },
+    /** Запомнить данные из формы: тот же человек (дата, время, место, имя) — обновить, иначе добавить. */
+    remember(params) {
+      if (!params || params.lat == null || !params.y) return null;
+      const b = birthOf(params), k = PKEY(b), name = String(params.name || '').trim();
+      const same = people.all().find((x) => x.birth && PKEY(x.birth) === k && (!name || !x.name || normName(x.name) === normName(name)));
+      if (same) return people.update(same.id, Object.assign({ birth: b, used: new Date().toISOString() }, name && !same.name ? { name } : {}));
+      return people.add({ name, birth: b, used: new Date().toISOString() });
+    },
+    label: (p) => p.name || (p.birth ? `${pad(p.birth.d)}.${pad(p.birth.mo)}.${p.birth.y}` : 'Без имени'),
+    /** Данные для формы: { name, y, mo, d, h, mi, timeKnown, lat, lon, zone, place }. */
+    params: (p) => Object.assign({ name: p.name || '' }, p.birth),
+  };
+  /** Кого предложить: «Мои карты» (свежие сверху) и — Алине — клиенты кабинета. */
+  function pickList(opts) {
+    opts = opts || {};
+    const out = people.all().filter((p) => p.birth && p.birth.y).sort((a, b) => String(b.used || b.updated || '').localeCompare(String(a.used || a.updated || ''))).map((p) => ({ key: 'p:' + p.id, group: 'Мои карты', name: people.label(p), p: people.params(p), fullName: p.fullName || '', person: p }));
+    if (opts.clients !== false && isAlina()) for (const c of clients.all()) if (c.birth && c.birth.y) out.push({ key: 'c:' + c.id, group: 'Клиенты кабинета', name: c.name || 'Клиент', p: Object.assign({}, c.birth, { name: c.name }), fullName: c.fullName || '', client: c });
+    return out;
+  }
+  const dShort = (p) => `${pad(p.d)}.${pad(p.mo)}.${String(p.y).slice(2)}`;
+  /** Чипы «Мои карты» в блоке box: onPick(item) — item.p (данные рождения), item.person / item.client.
+      opts: max (сколько чипов видно), sub(item) — подпись, clients — показывать ли клиентов кабинета, label. */
+  function peopleChips(box, onPick, opts) {
+    opts = opts || {};
+    const max = opts.max || 5;
+    let pop = null, active = '';
+    function draw() {
+      const list = pickList(opts);
+      box.hidden = !list.length;
+      if (!list.length) { box.innerHTML = ''; return; }
+      const sub = (it) => esc(opts.sub ? opts.sub(it) : dShort(it.p));
+      box.innerHTML = `<div class="pp"><span class="pp-label">${icon('address-book')}${esc(opts.label || 'Мои карты')}</span><div class="pp-chips">${list.slice(0, max).map((it) => `<button type="button" class="pp-chip${it.key === active ? ' on' : ''}" data-pp-pick="${esc(it.key)}" title="${esc(it.name)} · ${fmt.birth(it.p)}${it.p.place ? ' · ' + esc(it.p.place) : ''}"><b>${esc(it.name)}</b><small>${sub(it)}</small></button>`).join('')}${list.length > max || opts.alwaysAll ? `<button type="button" class="pp-chip more" data-pp-more aria-expanded="false">${list.length > max ? 'Все · ' + list.length : 'Все'}</button>` : ''}</div></div>`;
+    }
+    function closePop() { if (pop) { pop.remove(); pop = null; const m = box.querySelector('[data-pp-more]'); if (m) m.setAttribute('aria-expanded', 'false'); document.removeEventListener('mousedown', outside, true); } }
+    function outside(e) { if (pop && !box.contains(e.target)) closePop(); }
+    function openPop() {
+      if (pop) { closePop(); return; }
+      const list = pickList(opts);
+      pop = document.createElement('div'); pop.className = 'pp-pop'; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', 'Выбрать человека');
+      const render = (q) => {
+        const nq = normName(q || '');
+        const items = list.filter((it) => !nq || normName(it.name + ' ' + (it.p.place || '')).includes(nq));
+        const groups = Array.from(new Set(items.map((it) => it.group)));
+        pop.querySelector('.pp-list').innerHTML = groups.map((g) => `<div class="pp-g">${esc(g)}</div>${items.filter((it) => it.group === g).map((it) => `<button type="button" data-pp-pick="${esc(it.key)}"><b>${esc(it.name)}</b><small>${fmt.birth(it.p)}${it.p.place ? ' · ' + esc(it.p.place) : ''}</small></button>`).join('')}`).join('') || '<p class="small muted" style="margin:8px">Никого не нашлось.</p>';
+      };
+      pop.innerHTML = `<input class="input pp-q" type="search" placeholder="Поиск по имени или городу" aria-label="Поиск по сохранённым"><div class="pp-list"></div>${opts.manage === false ? '' : '<a class="pp-manage" href="astro.html">Все мои карты →</a>'}`;
+      box.querySelector('.pp').appendChild(pop);
+      render('');
+      pop.querySelector('.pp-q').addEventListener('input', (e) => render(e.target.value));
+      box.querySelector('[data-pp-more]').setAttribute('aria-expanded', 'true');
+      document.addEventListener('mousedown', outside, true);
+      fadeIn(pop, -4);
+      setTimeout(() => { const q = pop && pop.querySelector('.pp-q'); if (q && !matchMedia('(hover: none)').matches) q.focus(); }, 30);
+    }
+    box.addEventListener('click', (e) => {
+      if (e.target.closest('[data-pp-more]')) { openPop(); return; }
+      const b = e.target.closest('[data-pp-pick]');
+      if (!b) return;
+      const it = pickList(opts).find((x) => x.key === b.dataset.ppPick);
+      closePop();
+      if (!it) return;
+      active = it.key;
+      box.querySelectorAll('.pp-chip').forEach((c) => c.classList.toggle('on', c.dataset.ppPick === it.key));
+      onPick(it);
+    });
+    box.addEventListener('keydown', (e) => { if (e.key === 'Escape' && pop) { e.stopPropagation(); closePop(); } });
+    document.addEventListener('peoplechange', () => { if (!pop && box.isConnected) draw(); });
+    draw();
+    return { redraw: draw };
+  }
+
   // ---------- анкета на консультацию ----------
   // Календаря для клиентов нет: клиент заполняет анкету, она шифруется и сразу попадает в кабинет Алины (ящик заявок,
   // content.js → api.url); если сервер недоступен — уходит Алине в Telegram готовым сообщением
@@ -1080,7 +1196,7 @@
   let inboxP = null;
   const loadInbox = () => (window.Inbox ? Promise.resolve() : inboxP || (inboxP = new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'js/inbox.js'; s.onload = res; s.onerror = () => { inboxP = null; rej(new Error('inbox.js')); }; document.body.appendChild(s); })));
   function serviceOptions() {
-    return SITE.services.map((s) => ({ id: s.id, title: s.title })).concat(academyOn ? [{ id: 'lessons', title: 'Индивидуальные уроки астрологии' }, { id: 'course', title: 'Курс «Астрология с нуля»' }] : [], [{ id: 'numerology', title: 'Нумерология: разбор чисел' }, { id: 'gift', title: 'Подарочный сертификат' }, { id: 'other', title: 'Другое / пока не знаю' }]);
+    return SITE.services.map((s) => ({ id: s.id, title: s.title })).concat(academyOn ? [{ id: 'lessons', title: 'Индивидуальные уроки астрологии' }, { id: 'course', title: 'Курс «Астрология с нуля»' }] : [], [{ id: 'numerology', title: 'Нумерология: разбор чисел' }], SITE.energy && SITE.energy.enabled !== false ? [{ id: 'energy', title: 'Энергетическое выравнивание' }] : [], [{ id: 'gift', title: 'Подарочный сертификат' }, { id: 'other', title: 'Другое / пока не знаю' }]);
   }
   const intakeOf = (id) => (INTAKE.services || {})[id] || {};
   /** «Берлин, UTC+2»: город по часовому поясу и смещение от UTC сейчас. */
@@ -1103,7 +1219,7 @@
     let price = '';
     if (svc && svc.price) { const p = priceFor(svc); price = `${p.old ? `<s>${money(p.old, p.code)}</s> ` : ''}<b>${money(p.now, p.code)}</b>`; }
     else if (fa && fa.price) { const p = priceOf(fa); price = `<b>${money(p.n, p.code)}</b>${fa.unit ? ' ' + esc(fa.unit) : ''}`; }
-    const what = svc ? esc(svc.duration || '') : id === 'gift' ? 'красивый сертификат на любую консультацию' : id === 'numerology' ? 'разбор чисел по дате рождения и имени' : '';
+    const what = svc ? esc(svc.duration || '') : id === 'gift' ? 'красивый сертификат на любую консультацию' : id === 'numerology' ? 'разбор чисел по дате рождения и имени' : id === 'energy' ? `${(SITE.energy && SITE.energy.duration) || 30} минут онлайн · оплата — донейшн · <a href="energy.html">подробнее и выбор времени</a>` : '';
     return what || price ? `${icon('info')}<span>${what}${what && price ? ' · ' : ''}${price}</span>` : '';
   }
   /** Анкета — коротко: услуга, вопрос, данные рождения одной строкой, имя и контакт. Остальное Алина уточнит сама. opts.note — подпись под кнопкой. */
@@ -1220,7 +1336,24 @@
       <li>Если нужно, уточню пару деталей — так консультация будет точнее.</li>
       <li>Предложу время по вашему часовому поясу и пришлю детали оплаты.</li></ol>`;
   /** Анкета уже в кабинете Алины: спокойно рассказываем, что дальше; написать в Telegram — по желанию. */
-  function sentToInbox(code, data) {
+  /** Отправить заявку со своей формы (например, «Энергетическая работа»): в ящик Алины, иначе — окно мессенджеров.
+      o: { data, text, hp, when } — when: строка «Предварительно: …» для окна благодарности. */
+  async function submitIntake(o) {
+    if (inboxOn) {
+      try {
+        await loadInbox();
+        const code = window.Inbox.code();
+        await window.Inbox.send({ v: 1, code, at: new Date().toISOString(), data: o.data, text: o.text, page: location.pathname.split('/').pop() || 'index.html', lang: navigator.language || '' }, { hp: o.hp || '' });
+        goal('booking_inbox');
+        sentToInbox(code, o.data, o);
+        return true;
+      } catch (e) { /* сервер недоступен — через мессенджер */ }
+    }
+    chooseChannel(o.text);
+    return false;
+  }
+  function sentToInbox(code, data, o) {
+    o = o || {};
     const c = SITE.contacts || {};
     const tg = /(?:t\.me\/|@)([A-Za-z0-9_]{4,})/.exec(data.contact || '');
     const how = tg ? `напишу вам в Telegram — @${esc(tg[1])}` : `свяжусь с вами: ${esc(data.contact || '')}`;
@@ -1228,10 +1361,11 @@
     const m = modal(`<div class="center"><div style="font-size:3rem;color:var(--gold);line-height:1">✦</div>
         <h3 style="margin:8px 0 4px">Спасибо${data.name ? ', ' + esc(data.name.split(' ')[0]) : ''}! Анкета у меня</h3>
         <p class="muted" style="margin:0">Номер анкеты: <b class="ix-code">${esc(code)}</b></p></div>
+      ${o.when ? `<p class="center" style="margin:10px 0 0"><span class="badge gold">${esc(o.when)}</span></p>` : ''}
       <ol class="ix-next">
         <li>Я спокойно прочитаю анкету и ${how} ${esc(INTAKE.replyTime || 'в течение дня')}.</li>
         <li>Если нужно, уточню пару деталей — так консультация будет точнее.</li>
-        <li>Предложу время по вашему часовому поясу и пришлю детали оплаты.</li></ol>
+        <li>${o.when ? 'Подтвержу время и пришлю, как подготовиться, и детали оплаты.' : 'Предложу время по вашему часовому поясу и пришлю детали оплаты.'}</li></ol>
       <div style="display:grid;gap:10px;margin-top:6px">
         <a class="btn btn-primary btn-block" href="natal.html">Пока — моя натальная карта</a>
         ${c.telegram ? `<a class="btn btn-ghost btn-block" target="_blank" rel="noopener" href="https://t.me/${esc(c.telegram.replace(/^@/, ''))}?text=${encodeURIComponent(note)}">${icon('telegram')} Написать мне в Telegram — по желанию</a>` : ''}
@@ -1301,7 +1435,7 @@
     return { date, moon: ms, sunSign, retro, pts };
   }
 
-  window.UI = { localApi, dateHTML, cityField, cityAutocomplete, searchCities, checkDate, premOn, currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, serviceOptions, academyOn, isAlina, bookingFormHTML, bindBooking, tzLabel, dobHTML, enhanceDob, reveal, fadeIn, reduceMotion, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
+  window.UI = { submitIntake, people, peopleChips, pickList, localApi, dateHTML, cityField, cityAutocomplete, searchCities, checkDate, premOn, currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, serviceOptions, academyOn, isAlina, bookingFormHTML, bindBooking, tzLabel, dobHTML, enhanceDob, reveal, fadeIn, reduceMotion, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
 
   // Шапку, подвал и небо рисуем сразу (скрипт стоит в конце <body>, разметка страницы уже есть), а не по DOMContentLoaded:
   // так первый кадр страницы — и плавный переход между страницами — уже с шапкой, без мигания.

@@ -115,6 +115,10 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     form = UI.birthForm($('birthForm'));
+    // из астропроцессора: forecast.html?person=<id>
+    const pq = new URLSearchParams(location.search).get('person');
+    const pp = pq && UI.people.get(pq);
+    if (pp && pp.birth) setTimeout(() => { form.set(UI.people.params(pp)); calc(UI.people.params(pp)); }, 0);
     $('startMonth').value = fmt.ymd(new Date()).slice(0, 7);
     $('calcBtn').addEventListener('click', () => calc());
     // код доступа введён (или вход Алины) — показать полный прогноз без повторного расчёта

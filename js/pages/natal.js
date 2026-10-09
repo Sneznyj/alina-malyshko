@@ -23,6 +23,7 @@
           <button class="btn btn-ghost btn-sm" type="button" data-act="link" title="Скопировать ссылку: по ней эта карта откроется на любом устройстве">${icon('link')} Ссылка</button>
           <button class="btn btn-ghost btn-sm" type="button" data-act="png">${icon('download')} PNG</button>
           <button class="btn btn-ghost btn-sm" type="button" data-act="print">${icon('print')} Печать / PDF</button>
+          ${p.personId ? `<a class="btn btn-ghost btn-sm" href="astro.html#p=${encodeURIComponent(p.personId)}" title="Открыть в астропроцессоре: прогноз, числа, гороскоп, совместимость">${icon('address-book')} Мои карты</a>` : ''}
           ${UI.isAlina() ? `<button class="btn btn-ghost btn-sm" type="button" data-act="save">${icon('user')} В кабинет</button>` : ''}
         </div>
       </div>
@@ -161,23 +162,20 @@
     if (window.innerWidth < 1000) document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  function renderRecent() {
-    const list = UI.recent.list();
-    const box = document.getElementById('recentBox');
-    box.hidden = !list.length;
-    document.getElementById('recentList').innerHTML = list.map((p, i) => `<button type="button" data-i="${i}"><span>${esc(p.name || 'Без имени')}</span><small>${p.d}.${String(p.mo).padStart(2, '0')}.${p.y}</small></button>`).join('');
-  }
+  // «Недавние карты» теперь — «Мои карты» прямо в форме (UI.peopleChips); старый блок не показываем
+  function renderRecent() { const box = document.getElementById('recentBox'); if (box) box.hidden = true; }
 
   document.addEventListener('DOMContentLoaded', () => {
-    form = UI.birthForm(document.getElementById('birthForm'));
+    // «Мои карты»: нажали на человека — сразу строим его карту
+    form = UI.birthForm(document.getElementById('birthForm'), { onPick: (it) => calc(Object.assign({}, it.p, it.person ? { personId: it.person.id } : {})) });
     document.getElementById('settingsBox').appendChild(CV.settingsForm(() => { if (params) calc(params); }));
     document.getElementById('calcBtn').addEventListener('click', () => calc());
     document.getElementById('birthForm').addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.matches('input:not([role=combobox])')) calc(); });
-    document.getElementById('recentList').addEventListener('click', (e) => {
-      const b = e.target.closest('[data-i]'); if (!b) return;
-      const p = UI.recent.list()[+b.dataset.i]; form.set(p); calc(p);
-    });
     renderRecent();
+    // из астропроцессора: natal.html?person=<id>
+    const pq = new URLSearchParams(location.search).get('person');
+    const pp = pq && UI.people.get(pq);
+    if (pp && pp.birth) { const p = UI.people.params(pp); p.personId = pp.id; form.set(p); calc(p); }
     // код доступа введён или закончился — перерисовать карту с нужным толкованием
     document.addEventListener('premiumchange', () => { if (current) render(); });
     document.addEventListener('themechange', () => { if (current) { const wb = document.getElementById('wheelBox'); if (wb) { wb.innerHTML = W.svg(current, { minor: UI.settings.minor, animate: false }); W.attach(wb); } } });

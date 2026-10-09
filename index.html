@@ -58,6 +58,22 @@
     </div>
   </section>
 
+  <!-- ===== Натальная карта прямо на главной ===== -->
+  <section class="section tight" id="natalHome" aria-labelledby="nhTitle" style="padding-top:0">
+    <div class="container">
+      <div class="card nh reveal">
+        <div class="nh-form">
+          <span class="eyebrow">бесплатно · за несколько секунд</span>
+          <h2 id="nhTitle">Ваша натальная карта</h2>
+          <p class="muted">Дата, время и город рождения — и карта перед вами: колесо с подсказками, большая тройка и аспекты. Для астрологов — достоинства, мидпоинты, фирдарии, дирекции и другие расчёты.</p>
+          <div id="nhForm"></div>
+          <button class="btn btn-primary btn-block" type="button" id="nhGo" style="margin-top:14px">Построить карту</button>
+        </div>
+        <div class="nh-result" id="nhResult" aria-live="polite"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ===== Небо сегодня ===== -->
   <section class="section tight" style="padding-top:0" aria-labelledby="skyTitle">
     <div class="container">
@@ -219,6 +235,8 @@
 <span id="pt-ready" hidden></span>
 <script src="js/admin.js"></script>
 <script src="js/premium.js"></script>
+<script src="js/wheel.js"></script>
+<script src="js/chart-view.js"></script>
 <script src="js/cards.js"></script>
 <script src="js/pages/home.js"></script>
 </body>
