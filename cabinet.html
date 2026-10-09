@@ -16,7 +16,7 @@
 </head>
 <body>
 <main id="main">
-  <section class="page-hero" style="padding-bottom:18px">
+  <section class="page-hero" style="padding-bottom:18px" data-private hidden>
     <div class="container">
       <span class="eyebrow">Рабочее место</span>
       <h1 style="font-size:clamp(2rem,4vw,3rem)">Кабинет <em class="accent">астролога</em></h1>
@@ -26,7 +26,7 @@
       </div>
     </div>
   </section>
-  <section class="section tight" style="padding-top:8px">
+  <section class="section tight" style="padding-top:8px" data-private hidden>
     <div class="container cab-layout">
       <nav class="cab-nav" id="cabNav" aria-label="Разделы кабинета"></nav>
       <div id="view"></div>
@@ -44,10 +44,11 @@
 <script src="js/ui.js"></script>
 <span id="pt-ready" hidden></span>
 <script src="js/booking.js"></script>
+<script src="js/admin.js"></script>
 <script src="js/wheel.js"></script>
 <script src="js/chart-view.js"></script>
 <script src="js/cards.js"></script>
-<script src="js/pages/cabinet-schedule.js"></script>
-<script src="js/pages/cabinet.js"></script>
+<!-- код кабинета зашифрован (js/locked), открывается после входа Алины -->
+<script>Admin.page({ names: ['cabinet-schedule', 'cabinet'] });</script>
 </body>
 </html>

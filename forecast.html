@@ -19,7 +19,7 @@
 </head>
 <body>
 <main id="main">
-  <section class="page-hero">
+  <section class="page-hero" data-private hidden>
     <div class="container hero-anim">
       <span class="eyebrow">Прогноз</span>
       <h1>Ваш <em class="accent">личный</em> прогноз</h1>
@@ -27,7 +27,7 @@
     </div>
   </section>
 
-  <section class="section tight" style="padding-top:0">
+  <section class="section tight" style="padding-top:0" data-private hidden>
     <div class="container tool-layout">
       <aside>
         <div class="card">
@@ -64,8 +64,10 @@
 <script src="js/ui.js"></script>
 <span id="pt-ready" hidden></span>
 <script src="js/booking.js"></script>
+<script src="js/admin.js"></script>
 <script src="js/wheel.js"></script>
 <script src="js/chart-view.js"></script>
-<script src="js/pages/forecast.js"></script>
+<!-- код прогноза зашифрован (js/locked), открывается после входа Алины -->
+<script>Admin.page({ names: ['forecast'], title: 'Личный прогноз', text: 'Транзиты по месяцам, соляр и прогрессии — личный прогноз Алина готовит на консультации.', visitor: '<div class="hero-cta" style="justify-content:center;margin:6px 0 18px"><button class="btn btn-primary" type="button" data-book="forecast">Записаться на прогноз на год</button><a class="btn btn-ghost" href="index.html#services">Все консультации</a></div>' });</script>
 </body>
 </html>

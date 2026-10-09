@@ -79,6 +79,13 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    // обучение пока скрыто (content.js → academy.enabled: false): вместо уроков — короткая записка и запись на консультацию
+    if (!UI.academyOn) {
+      document.getElementById('main').innerHTML = `<section class="page-hero"><div class="container hero-anim"><span class="eyebrow">Обучение</span><h1>Уроки астрологии <em class="accent">скоро</em></h1>
+        <p class="lead">Я готовлю обучение — здесь появятся уроки, когда всё будет готово. А пока можно записаться на личную консультацию.</p>
+        <div class="hero-cta"><button class="btn btn-primary" type="button" data-book>Записаться на консультацию</button><a class="btn btn-ghost" href="index.html#services">Консультации и цены</a></div></div></section>`;
+      return;
+    }
     const m = location.hash.match(/lesson-(\d+)/);
     if (m && D.lessons.find((x) => x.id === +m[1])) cur = +m[1];
     else { const firstUndone = D.lessons.find((l) => !done.includes(l.id)); cur = firstUndone ? firstUndone.id : 1; }

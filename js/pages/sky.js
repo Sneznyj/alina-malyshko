@@ -4,12 +4,13 @@
   const AC = window.AstroCore, T = window.ASTRO_TEXTS, UI = window.UI;
   const { esc, fmt } = UI;
   let year = new Date().getFullYear();
-  const RETRO = ['mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'chiron'];
+  // Хирон в прогностике не рассматриваем — ни в ретроградных, ни в таблице «сейчас»
+  const RETRO = ['mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto'];
 
   function nowTable() {
     const now = new Date();
     const sky = AC.sky(now);
-    const ids = ['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'node', 'chiron', 'lilith'];
+    const ids = ['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'node', 'lilith'];
     const rows = ids.map((id) => sky.byId[id]).filter(Boolean).map((p) => `<tr><td><span class="g glyph">${T.planets[p.id].glyph}</span> ${T.planets[p.id].name}</td><td>${AC.fmtDeg(p.lon)} <span class="glyph" style="color:var(--gold)">${T.signs[p.sign].glyph}</span> ${T.signs[p.sign].name}</td><td>${p.retro ? '<span class="badge rose">ретроградный</span>' : p.id === 'node' || p.id === 'lilith' ? '' : '<span class="badge ok">директный</span>'}</td><td>${p.dignity ? `<span class="badge ${p.dignity === 'domicile' || p.dignity === 'exaltation' ? 'ok' : 'warn'}">${T.dignity[p.dignity]}</span>` : ''}</td></tr>`).join('');
     document.getElementById('nowTable').innerHTML = `<p class="small muted">На ${fmt.dateTime(now)}</p><div class="table-wrap"><table class="table"><thead><tr><th>Планета</th><th>Положение</th><th>Движение</th><th>Статус</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }

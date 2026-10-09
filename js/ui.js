@@ -93,14 +93,16 @@
   const TOOLS = [
     ['natal.html', 'Натальная карта', 'planet', 'ваша карта рождения'],
     ['synastry.html', 'Совместимость', 'heart-handshake', 'синастрия пары'],
-    ['forecast.html', 'Личный прогноз', 'crystal-ball', 'транзиты, соляр'],
     ['horoscope.html', 'Гороскоп', 'sparkle', 'на сегодня и месяц'],
     ['moon.html', 'Лунный календарь', 'moon-stars', 'лунные сутки'],
     ['sky.html', 'Астрособытия', 'telescope', 'ретро, затмения'],
   ];
-  const NAV = TOOLS.concat([['academy.html', 'Уроки', 'school', 'мини-курс']]);
   // пункт «Отзывы» в меню — только когда в content.js есть отзывы (иначе блок на главной скрыт)
   const hasReviews = !!(SITE.reviews && SITE.reviews.length);
+  // обучение можно скрыть целиком: academy.enabled: false в content.js
+  const academyOn = !!(SITE.academy && SITE.academy.enabled !== false);
+  // Алина вошла в кабинет на этом устройстве (ключ хранит js/admin.js) — показываем ей ссылки на кабинет
+  const isAlina = () => { try { return !!(localStorage.getItem('am_adminKey') || sessionStorage.getItem('am_adminKey')); } catch (e) { return false; } };
   const isPreview = location.protocol === 'file:' || /^(localhost|127\.|192\.168\.|\[::1\])/.test(location.hostname);
 
   /** Действующая акция или null (после даты окончания — исчезает сама). */
@@ -241,7 +243,7 @@
               ${TOOLS.map(([h, t, ic, d]) => `<a role="menuitem" href="${h}"${page === h ? ' aria-current="page"' : ''}><span class="np-ic">${icon(ic)}</span><span><b>${t}</b><small>${d}</small></span></a>`).join('')}
             </div>
           </div>
-          <a href="academy.html"${page === 'academy.html' ? ' aria-current="page"' : ''}>Уроки</a>
+          ${academyOn ? `<a href="academy.html"${page === 'academy.html' ? ' aria-current="page"' : ''}>Уроки</a>` : ''}
           <a href="index.html#about">Обо мне</a>
           ${hasReviews ? '<a href="index.html#reviews">Отзывы</a>' : ''}
         </nav>
@@ -323,14 +325,14 @@
         <a class="brand" href="index.html"><span class="brand-mark"><img src="assets/img/alina-avatar.webp" alt="" width="40" height="40"></span><span class="brand-name">${esc(SITE.name)}</span></a>
         <button class="icon-btn" type="button" data-close-menu aria-label="Закрыть меню">${icon('close')}</button>
       </div>
-      <nav class="mm-main">${[['index.html', 'Главная'], ['index.html#services', 'Консультации и цены'], ['index.html#about', 'Обо мне'], ...(hasReviews ? [['index.html#reviews', 'Отзывы']] : []), ['academy.html', 'Уроки астрологии']].map(([h, t], i) => `<a href="${h}" style="transition-delay:${0.04 * i}s">${t}</a>`).join('')}</nav>
+      <nav class="mm-main">${[['index.html', 'Главная'], ['index.html#services', 'Консультации и цены'], ['index.html#about', 'Обо мне'], ...(hasReviews ? [['index.html#reviews', 'Отзывы']] : []), ...(academyOn ? [['academy.html', 'Уроки астрологии']] : [])].map(([h, t], i) => `<a href="${h}" style="transition-delay:${0.04 * i}s">${t}</a>`).join('')}</nav>
       <p class="mm-label">Бесплатно на сайте</p>
       <div class="mm-tools">${TOOLS.map(([h, t, ic]) => `<a href="${h}">${icon(ic)}<span>${t}</span></a>`).join('')}</div>
       <div style="margin-top:22px;display:grid;gap:10px">
         <button class="btn btn-primary btn-block" type="button" data-book>Записаться на консультацию</button>
         ${pr ? `<p class="small center" style="margin:0"><span class="sticker sm">−${pr.percent}%</span> ${esc(pr.short)} до ${pr.end.getDate()} ${fmt.MONTHS_GEN[pr.end.getMonth()]}</p>` : ''}
       </div>
-      <a class="mm-cabinet" href="cabinet.html">${icon('lock')} Кабинет астролога</a>`;
+      ${isAlina() ? `<a class="mm-cabinet" href="cabinet.html">${icon('lock')} Кабинет астролога</a>` : ''}`;
     document.body.appendChild(mm);
     const burger = $('.burger', header);
     const openMenu = (o) => { mm.classList.toggle('open', o); burger.setAttribute('aria-expanded', String(o)); document.body.style.overflow = o ? 'hidden' : ''; };
@@ -372,7 +374,7 @@
           </div>
           <div><h4>Бесплатно</h4>${TOOLS.map(([h, t]) => `<a href="${h}">${t}</a>`).join('')}</div>
           <div><h4>Консультации</h4>${SITE.services.slice(0, 6).map((s) => `<a href="index.html#services">${esc(s.title)}</a>`).join('')}</div>
-          <div><h4>Сайт</h4><a href="academy.html">Уроки астрологии</a><a href="index.html#about">Обо мне</a><a href="index.html#faq">Вопросы и ответы</a><a href="index.html#booking">Запись</a><a href="privacy.html">Политика конфиденциальности</a><a href="cabinet.html" class="muted">Кабинет астролога</a></div>
+          <div><h4>Сайт</h4>${academyOn ? '<a href="academy.html">Уроки астрологии</a>' : ''}<a href="index.html#about">Обо мне</a><a href="index.html#faq">Вопросы и ответы</a><a href="index.html#booking">Запись</a><a href="privacy.html">Политика конфиденциальности</a>${isAlina() ? '<a href="cabinet.html" class="muted">Кабинет астролога</a>' : ''}</div>
         </div>
         <p class="disclaimer">Астрология — инструмент самопознания. Она не заменяет медицинскую, психологическую, юридическую или финансовую помощь. Расчёты: тропический зодиак, эфемериды astronomy-engine и NASA JPL; точность положений — около угловой минуты.</p>
         <div class="footer-bottom"><span>© ${new Date().getFullYear()} ${esc(SITE.name)}</span><span>Иконки — Tabler Icons</span></div>
@@ -1005,7 +1007,7 @@
 
   // ---------- запись на консультацию ----------
   function serviceOptions() {
-    return SITE.services.map((s) => ({ id: s.id, title: s.title })).concat([{ id: 'lessons', title: 'Индивидуальные уроки астрологии' }, { id: 'course', title: 'Курс «Астрология с нуля»' }, { id: 'gift', title: 'Подарочный сертификат' }, { id: 'other', title: 'Другое / пока не знаю' }]);
+    return SITE.services.map((s) => ({ id: s.id, title: s.title })).concat(academyOn ? [{ id: 'lessons', title: 'Индивидуальные уроки астрологии' }, { id: 'course', title: 'Курс «Астрология с нуля»' }] : [], [{ id: 'gift', title: 'Подарочный сертификат' }, { id: 'other', title: 'Другое / пока не знаю' }]);
   }
   /** Форма заявки. opts.noService — услуга выбрана раньше (календарь записи), opts.prefer — поле «когда удобно», opts.note — подпись под кнопкой. */
   function bookingFormHTML(prefix, preset, opts) {
@@ -1130,7 +1132,7 @@
     return { date, moon: ms, sunSign, retro, pts };
   }
 
-  window.UI = { currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, serviceOptions, bookingFormHTML, bindBooking, dobHTML, enhanceDob, reveal, fadeIn, reduceMotion, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
+  window.UI = { currency, setCurrency, priceOf, money, browserTz, botHref, botCta, goal, defaultCity, promoInfo, priceFor, minPrice, alinaNote, isPreview, TOOLS, icon, store, settings, saveSettings, fmt, esc, $, $$, glyph, pname, toast, modal, copyText, download, moonSVG, birthForm, recent, clients, openBooking, serviceOptions, academyOn, isAlina, bookingFormHTML, bindBooking, dobHTML, enhanceDob, reveal, fadeIn, reduceMotion, tabs, skyNow, contactLinks, CITIES, fmtCoord, timeZones };
 
   // Шапку, подвал и небо рисуем сразу (скрипт стоит в конце <body>, разметка страницы уже есть), а не по DOMContentLoaded:
   // так первый кадр страницы — и плавный переход между страницами — уже с шапкой, без мигания.

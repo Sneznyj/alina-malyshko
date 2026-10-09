@@ -19,7 +19,7 @@
           <button class="btn btn-primary btn-sm" type="button" data-act="story">${icon('sparkle')} Сторис</button>
           <button class="btn btn-ghost btn-sm" type="button" data-act="png">${icon('download')} PNG</button>
           <button class="btn btn-ghost btn-sm" type="button" data-act="print">${icon('print')} Печать / PDF</button>
-          <button class="btn btn-ghost btn-sm" type="button" data-act="save">${icon('user')} В кабинет</button>
+          ${UI.isAlina() ? `<button class="btn btn-ghost btn-sm" type="button" data-act="save">${icon('user')} В кабинет</button>` : ''}
         </div>
       </div>
       ${!c.timeKnown ? `<div class="notice" style="margin-bottom:16px">${icon('clock')}<span>Время рождения не указано: карта построена на полдень. Асцендент и дома не рассчитаны, положение Луны может отличаться до 6–7°.</span></div>` : ''}

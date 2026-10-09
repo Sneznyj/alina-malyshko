@@ -1367,3 +1367,24 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
 .card:has(.dob-pop) { z-index: 5; }
 /* дата рождения шире времени: «23.11.1988» целиком даже в узкой колонке */
 @media (min-width: 641px) { .form-row.dob-row { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); } }
+
+/* ---------- вход Алины (js/admin.js): кабинет, личный прогноз, подробная совместимость ---------- */
+.admin-lock { padding-top: clamp(40px, 8vw, 90px); }
+.lock-card { max-width: 440px; margin: 0 auto; text-align: center; display: grid; gap: 4px; }
+.lock-card h1 { font-size: clamp(1.9rem, 4vw, 2.5rem); margin: 6px 0 2px; }
+.lock-card > .muted { margin: 0 0 14px; }
+.lock-ic { width: 64px; height: 64px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; background: var(--lav-soft); color: var(--lav-strong); box-shadow: 0 0 0 6px color-mix(in srgb, var(--lav-soft) 55%, transparent); }
+.lock-ic svg { width: 30px; height: 30px; }
+.lock-form { text-align: left; gap: 14px; }
+.pw-wrap { position: relative; }
+.pw-wrap .input { padding-right: 48px; }
+.pw-eye { position: absolute; right: 6px; top: 6px; width: 34px; height: 34px; border-radius: 10px; border: 0; background: transparent; color: var(--ink-3); display: grid; place-items: center; cursor: pointer; }
+.pw-eye svg { width: 19px; height: 19px; }
+.pw-eye:hover, .pw-eye[aria-pressed="true"] { color: var(--lav-strong); background: var(--lav-soft); }
+.lock-err { margin: 0; min-height: 1.2em; color: var(--bad); font-weight: 600; }
+.lock-alina { text-align: left; margin-top: 4px; }
+.lock-alina .lock-form { margin-top: 12px; }
+.cab-nav .cab-logout { margin-top: 10px; color: var(--ink-3); border-top: 1px solid var(--line); border-radius: 0 0 12px 12px; padding-top: 14px; }
+.cab-nav .cab-logout:hover { color: var(--bad); }
+@media (max-width: 900px) { .cab-nav .cab-logout { margin-top: 0; border-top: 0; border-radius: 12px; padding-top: 12px; } }
+.syn-pro .badge svg { width: 13px; height: 13px; }

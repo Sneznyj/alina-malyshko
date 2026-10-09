@@ -608,7 +608,8 @@
 
   /** Транзитные положения на дату + аспекты к натальной карте (снимок). */
   function transitSnapshot(natal, date, opts) {
-    const now = PLANETS.concat(['node', 'chiron']).map((id) => body(id, date, opts)).filter(Boolean);
+    // транзитный Хирон не рассматриваем в прогностике
+    const now = PLANETS.concat(['node']).map((id) => body(id, date, opts)).filter(Boolean);
     for (const p of now) { p.sign = signOf(p.lon); p.signIndex = signIndex(p.lon); p.house = natal.houses ? houseOf(p.lon, natal.houses.cusps) : null; }
     const nat = natal.points.filter((p) => p.id !== 'fortune' && p.id !== 'lilith');
     const asp = aspectsBetween(now, nat, { orbMult: 0.3 });

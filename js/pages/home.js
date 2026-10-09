@@ -176,6 +176,12 @@
 
   function academy() {
     const ac = SITE.academy;
+    // обучение скрыто (academy.enabled: false) — ни блока, ни кнопки «Уроки астрологии» в «Обо мне»
+    if (!UI.academyOn) {
+      $('academy').hidden = true;
+      document.querySelectorAll('#about a[href="academy.html"]').forEach((a) => a.remove());
+      return;
+    }
     $('acTitle').innerHTML = esc(ac.title);
     $('acText').textContent = ac.text;
     $('acFormats').innerHTML = ac.formats.map((f, i) => `
