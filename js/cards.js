@@ -95,7 +95,7 @@
     ctx.restore(); ctx.textBaseline = 'alphabetic';
   }
 
-  /** Подпись Алины: аватар и имя, выровнены по левому краю (x — левый край аватара, y — его центр). */
+  /** Подпись Аликы: аватар и имя, выровнены по левому краю (x — левый край аватара, y — его центр). */
   async function brand(ctx, x0, y, dark) {
     const av = await loadImg('assets/img/alina-avatar.webp');
     const r = 44;
@@ -109,7 +109,7 @@
     return x0 + r * 2 + 22 + nameW; // правый край подписи
   }
 
-  /** Низ сторис: кнопка-призыв по центру, под ней — подпись Алины слева и адрес сайта справа. */
+  /** Низ сторис: кнопка-призыв по центру, под ней — подпись Аликы слева и адрес сайта справа. */
   async function footer(ctx, w, y, text, dark) {
     ctx.save();
     ctx.font = font(700, 34, F.body);
@@ -330,7 +330,7 @@
     ctx.font = font(600, 28, F.body); ctx.fillStyle = col.ink2;
     if (d.validUntil) ctx.fillText(`действителен до ${fmt.date(new Date(d.validUntil))}`, W - 190, by + 36);
     ctx.textAlign = 'center'; ctx.font = font(500, 26, F.body); ctx.fillStyle = col.ink2;
-    ctx.fillText('Чтобы воспользоваться, напишите Алине и назовите номер сертификата', W / 2, H - 120);
+    ctx.fillText('Чтобы воспользоваться, напишите Алике и назовите номер сертификата', W / 2, H - 120);
     return cv;
   }
 

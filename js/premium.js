@@ -1,8 +1,8 @@
-/* Премиум-доступ: коды на срок, проверка прямо в браузере, блок с тарифами, заявка Алине.
-   Код — подписанная Алиной запись (номер, тариф, срок, имя) + ключ доступа к премиум-разделам (зашифрованы в js/locked).
-   Подпись проверяется открытым ключом из js/locked/meta.js: без ключа подписи (он только у Алины) код не подделать.
+/* Премиум-доступ: коды на срок, проверка прямо в браузере, блок с тарифами, заявка Алике.
+   Код — подписанная Аликой запись (номер, тариф, срок, имя) + ключ доступа к премиум-разделам (зашифрованы в js/locked).
+   Подпись проверяется открытым ключом из js/locked/meta.js: без ключа подписи (он только у Аликы) код не подделать.
    Ссылка доступа: …/premium.html#k=<код> — часть после # на сервер не уходит; код запоминается в этом браузере (am_access).
-   Формат кода — см. _dev/premium_token.js. Алине (вход в кабинет) открыто всё без кода. */
+   Формат кода — см. _dev/premium_token.js. Алике (вход в кабинет) открыто всё без кода. */
 (function () {
   'use strict';
   const UI = window.UI, SITE = window.SITE, Admin = window.Admin;
@@ -82,10 +82,10 @@
     return { ok: true, info, key };
   }
   const WHY = {
-    format: () => 'Это не похоже на код доступа. Скопируйте ссылку из сообщения Алины целиком.',
+    format: () => 'Это не похоже на код доступа. Скопируйте ссылку из сообщения Аликы целиком.',
     sig: () => 'Код не подходит — скорее всего, он скопирован не полностью. Скопируйте ссылку целиком.',
-    old: () => 'Этот код из прежней серии и больше не действует. Напишите Алине — она пришлёт новый.',
-    revoked: () => 'Этот код отключён. Если это ошибка — напишите Алине.',
+    old: () => 'Этот код из прежней серии и больше не действует. Напишите Алике — она пришлёт новый.',
+    revoked: () => 'Этот код отключён. Если это ошибка — напишите Алике.',
     expired: (i) => `Срок этого кода закончился ${fmt.date(dateOf(i.to))}. Продлить можно здесь же — выберите тариф.`,
     notyet: (i) => `Код сохранён и начнёт действовать ${fmt.date(dateOf(i.from))}.`,
     crypto: () => 'Этот браузер не умеет проверять коды — откройте сайт в Chrome, Safari или Firefox.',
@@ -136,7 +136,7 @@
     document.dispatchEvent(new CustomEvent('premiumchange', { detail: s }));
     return s;
   }
-  /** Ключ премиум-разделов по коду клиента (для js/admin.js). Алине ключ даёт сам admin.js. */
+  /** Ключ премиум-разделов по коду клиента (для js/admin.js). Алике ключ даёт сам admin.js. */
   async function contentKey() { const s = await ready(); return s.kind === 'active' ? s.key : null; }
   /** Есть доступ — расшифровать и запустить модули (true), нет — false. */
   async function ensure(names) {
@@ -153,11 +153,11 @@
 
   // ---------- вид ----------
   const crown = () => `<span class="pw-crown" aria-hidden="true">${icon('crown')}</span>`;
-  /** Метка над платным разделом: «Премиум до …» или «Алина: всё открыто». */
+  /** Метка над платным разделом: «Премиум до …» или «Алика: всё открыто». */
   function chip() {
     const s = state;
     if (!s) return '';
-    if (s.kind === 'alina') return `<span class="badge gold pw-chip">${icon('crown')} Алина: всё открыто</span>`;
+    if (s.kind === 'alina') return `<span class="badge gold pw-chip">${icon('crown')} Алика: всё открыто</span>`;
     if (s.kind === 'active') return `<span class="badge gold pw-chip">${icon('crown')} Премиум до ${fmt.date(dateOf(s.info.to))}</span>`;
     return '';
   }
@@ -210,7 +210,7 @@
     if (p.payUrl) { window.open(p.payUrl, '_blank', 'noopener'); return; }
     const m = UI.modal(`
       <div class="pw-order-head">${crown()}<div><span class="eyebrow" style="margin:0">${esc(P.name || 'Премиум-доступ')}</span><h3 style="margin:2px 0 0">${esc(p.title)} — ${fmt.money(p.price)}</h3></div></div>
-      <p class="muted small" style="margin-top:12px">Алина ответит, как удобнее оплатить, и пришлёт личную ссылку. Откроете её — и все премиум-разделы будут открыты ${days(p.days)}.</p>
+      <p class="muted small" style="margin-top:12px">Алика ответит, как удобнее оплатить, и пришлёт личную ссылку. Откроете её — и все премиум-разделы будут открыты ${days(p.days)}.</p>
       <form class="form pw-order" novalidate>
         <div class="field"><label for="poName">Как к вам обращаться</label><input class="input" id="poName" autocomplete="given-name" required></div>
         <div class="field"><label for="poContact">Куда прислать ссылку</label><input class="input" id="poContact" autocomplete="off" placeholder="@ник в Telegram, телефон или почта" required></div>
@@ -229,7 +229,7 @@
       const gift = m.el.querySelector('#poGift').checked, giftTo = m.el.querySelector('#poGiftTo').value.trim();
       const feat = features().find((x) => x.id === feature);
       const text = [
-        `Здравствуйте, Алина! Хочу ${(P.name || 'премиум-доступ').toLowerCase()} на сайте ✨`,
+        `Здравствуйте, Алика! Хочу ${(P.name || 'премиум-доступ').toLowerCase()} на сайте ✨`,
         `Тариф: ${p.title} (${days(p.days)}) — ${fmt.money(p.price)}`,
         `Имя: ${name.value.trim()}`,
         `Связь: ${contact.value.trim()}`,
@@ -240,7 +240,7 @@
       sendDialog(text);
     });
   }
-  /** Куда отправить заявку: Telegram / WhatsApp / почта Алины или скопировать текст. */
+  /** Куда отправить заявку: Telegram / WhatsApp / почта Аликы или скопировать текст. */
   function sendDialog(text) {
     const c = SITE.contacts || {};
     const btns = [];
@@ -248,10 +248,10 @@
     if (c.whatsapp) btns.push(`<a class="btn btn-ghost btn-block" target="_blank" rel="noopener" href="https://wa.me/${c.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(text)}">${icon('whatsapp')} Отправить в WhatsApp</a>`);
     if (c.email) btns.push(`<a class="btn btn-ghost btn-block" href="mailto:${esc(c.email)}?subject=${encodeURIComponent(P.name || 'Премиум-доступ')}&body=${encodeURIComponent(text)}">${icon('mail')} Отправить на почту</a>`);
     const m = UI.modal(`<h3>Почти готово ✨</h3>
-      <p class="muted">Текст заявки уже составлен — отправьте его Алине.</p>
+      <p class="muted">Текст заявки уже составлен — отправьте его Алике.</p>
       <pre class="pw-text">${esc(text)}</pre>
       <div class="pw-send">${btns.join('')}<button class="btn btn-gold btn-block" type="button" data-send="copy">${icon('copy')} Скопировать текст</button></div>
-      ${c.telegram ? '<p class="tiny muted" style="margin:10px 0 0">В Telegram текст скопируется сам — откроется чат с Алиной, останется вставить.</p>' : ''}`);
+      ${c.telegram ? '<p class="tiny muted" style="margin:10px 0 0">В Telegram текст скопируется сам — откроется чат с Аликой, останется вставить.</p>' : ''}`);
     m.el.addEventListener('click', async (e) => {
       const b = e.target.closest('[data-send]'); if (!b) return;
       if (b.dataset.send === 'copy') { if (await UI.copyText(text)) UI.toast('Текст заявки скопирован', 'check'); return; }
@@ -264,7 +264,7 @@
   function codeDialog() {
     const m = UI.modal(`
       <h3>${icon('key')} Код доступа</h3>
-      <p class="muted small">Вставьте ссылку из сообщения Алины (или сам код) — премиум-разделы откроются на этом устройстве.</p>
+      <p class="muted small">Вставьте ссылку из сообщения Аликы (или сам код) — премиум-разделы откроются на этом устройстве.</p>
       <form class="form" novalidate>
         <div class="field"><label for="pcCode">Ссылка или код</label><textarea class="textarea" id="pcCode" rows="3" spellcheck="false" autocomplete="off" placeholder="https://…/premium.html#k=…"></textarea></div>
         <p class="lock-err small" role="alert"></p>
@@ -302,7 +302,7 @@
     const s = state, on = isOpen(s);
     document.querySelectorAll('[data-premium-link]').forEach((a) => {
       a.classList.toggle('on', on);
-      a.title = s && s.kind === 'active' ? `Премиум-доступ до ${fmt.date(dateOf(s.info.to))}` : s && s.kind === 'alina' ? 'Алине открыто всё' : '';
+      a.title = s && s.kind === 'active' ? `Премиум-доступ до ${fmt.date(dateOf(s.info.to))}` : s && s.kind === 'alina' ? 'Алике открыто всё' : '';
     });
     // скоро закончится — мягкое напоминание раз в день
     if (s && s.kind === 'active') {

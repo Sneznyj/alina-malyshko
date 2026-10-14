@@ -19,7 +19,7 @@
         <div class="seg" role="group" aria-label="Период">${[['today', 'Сегодня'], ['tomorrow', 'Завтра'], ['month', 'Месяц']].map(([k, t]) => `<button type="button" data-mode="${k}" aria-pressed="${mode === k}">${t}</button>`).join('')}</div>
       </div>
       <p class="muted" style="margin:14px 0 6px">${s.about}</p>
-      ${note ? `<div class="notice" style="margin:14px 0">${icon('heart')}<span><b>Алина${SITE.weeklyNotes.week ? ' · ' + esc(SITE.weeklyNotes.week) : ''}:</b> ${esc(note)}</span></div>` : ''}
+      ${note ? `<div class="notice" style="margin:14px 0">${icon('heart')}<span><b>Алика${SITE.weeklyNotes.week ? ' · ' + esc(SITE.weeklyNotes.week) : ''}:</b> ${esc(note)}</span></div>` : ''}
       <div class="tab-panel" style="margin-top:12px">
         <h3 style="margin-top:8px">${mode === 'month' ? fmt.MONTHS[now.getMonth()] + ' ' + now.getFullYear() : mode === 'today' ? 'Сегодня, ' + fmt.dm(now) : 'Завтра, ' + fmt.dm(tomorrow)}</h3>
         ${mode === 'month' ? monthBlock(si) : dayBlock(mode === 'today' ? now : tomorrow, si)}

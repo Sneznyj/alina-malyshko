@@ -201,7 +201,7 @@
           <div class="tab-panel" role="tabpanel" id="tab-year" hidden>${yearHTML(r)}</div>
         </div>
       </div>
-      <div class="card note-card" style="margin-top:20px">${UI.alinaNote('Числа — первые штрихи портрета. На консультации я соединяю нумерологию с натальной картой: так видно не только «какой вы», но и когда лучше действовать.', '<button class="btn btn-primary btn-sm" type="button" data-book="numerology">Разобрать с Алиной</button><a class="btn btn-ghost btn-sm" href="natal.html">Натальная карта</a>')}</div>`;
+      <div class="card note-card" style="margin-top:20px">${UI.alinaNote('Числа — первые штрихи портрета. На консультации я соединяю нумерологию с натальной картой: так видно не только «какой вы», но и когда лучше действовать.', '<button class="btn btn-primary btn-sm" type="button" data-book="numerology">Разобрать с Аликой</button><a class="btn btn-ghost btn-sm" href="natal.html">Натальная карта</a>')}</div>`;
     UI.tabs(box);
     showMeaning(r.lp.value);
     yearUpgrade();
@@ -294,7 +294,7 @@
         st.disabled = false;
       }
     });
-    // клиент из кабинета Алины, затем последний расчёт, затем последняя натальная карта
+    // клиент из кабинета Аликы, затем последний расчёт, затем последняя натальная карта
     const q = new URLSearchParams(location.search);
     const cl = q.get('client') && UI.clients.get(q.get('client'));
     const last = UI.store.get('numerology', null);

@@ -1,7 +1,7 @@
 /* «Энергетическая работа» (energy.html): что такое энергетическое / духовное выравнивание, как проходит, что даёт —
    и предварительная запись: человек выбирает дату и время (сессия 30 минут, часы — content.js → energy.schedule
-   по поясу Алины, показ — по часам посетителя). Заявка уходит в кабинет Алины (ящик заявок) или в Telegram;
-   время Алина подтверждает сама. Оплата — донейшн. Тексты — content.js → energy. */
+   по поясу Аликы, показ — по часам посетителя). Заявка уходит в кабинет Аликы (ящик заявок) или в Telegram;
+   время Алика подтверждает сама. Оплата — донейшн. Тексты — content.js → energy. */
 (function () {
   'use strict';
   const UI = window.UI, SITE = window.SITE, BC = window.BookingCore;
@@ -76,8 +76,8 @@
       const g = (k) => String(f.querySelector(`[name=${k}]`).value || '').trim();
       try { UI.store.set('ixMe', { name: g('name'), contact: g('contact') }); } catch (x) { /* без памяти браузера */ }
       const alinaTz = (E.schedule && E.schedule.timezone) || 'Europe/Minsk';
-      const mine = whenText(pick), hers = `${BC.hm(BC.partsIn(pick.start, alinaTz).min)} у Алины`;
-      const text = ['Здравствуйте, Алина! Хочу на энергетическое выравнивание ✨', `Имя: ${g('name')}`, `Связь: ${g('contact')}`, 'Услуга: Энергетическое выравнивание', `Желаемое время: ${mine} (моё время)${alinaTz !== tz ? ' — ' + hers : ''}`, g('question') ? `Запрос: ${g('question')}` : '', `Мой часовой пояс: ${tz} (${UI.tzLabel(tz)})`].filter(Boolean).join('\n');
+      const mine = whenText(pick), hers = `${BC.hm(BC.partsIn(pick.start, alinaTz).min)} у Аликы`;
+      const text = ['Здравствуйте, Алика! Хочу на энергетическое выравнивание ✨', `Имя: ${g('name')}`, `Связь: ${g('contact')}`, 'Услуга: Энергетическое выравнивание', `Желаемое время: ${mine} (моё время)${alinaTz !== tz ? ' — ' + hers : ''}`, g('question') ? `Запрос: ${g('question')}` : '', `Мой часовой пояс: ${tz} (${UI.tzLabel(tz)})`].filter(Boolean).join('\n');
       const data = { name: g('name'), contact: g('contact'), service: 'Энергетическое выравнивание', serviceId: 'energy', question: g('question'), birth: '', partner: '', fullname: '', format: '', timezone: tz, slot: new Date(pick.start).toISOString(), prefer: `${mine} (время клиента)` };
       const btn = f.querySelector('[type=submit]'), label = btn.innerHTML;
       btn.disabled = true; btn.innerHTML = `${icon('refresh')} Отправляю…`;

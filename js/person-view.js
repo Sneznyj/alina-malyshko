@@ -1,7 +1,7 @@
-/* Карточка человека — общая для астропроцессора на сайте (astro.html, «Мои карты») и кабинета Алины (карточка клиента).
+/* Карточка человека — общая для астропроцессора на сайте (astro.html, «Мои карты») и кабинета Аликы (карточка клиента).
    Вкладки: Натал · Прогноз · Числа · Гороскоп · Совместимость. Расчёты бесплатны; толкования, транзиты по датам, соляр,
    прогрессии, небо на дату и гороскоп на неделю/месяц — в премиуме (закрытые модули natal-pro, synastry-pro,
-   numerology-pro, pro-texts и person-pro — js/premium.js; Алине открыто всё).
+   numerology-pro, pro-texts и person-pro — js/premium.js; Алике открыто всё).
    Хозяин страницы рисует шапку и полосу вкладок, а тело вкладки берёт отсюда:
      PersonView.body(вкладка, ctx) → разметка · PersonView.after(вкладка, блок, ctx) — оживить · PersonView.handle(событие, ctx) → true, если обработано.
    ctx: { person: { id, name, birth, fullName }, chart, state, save(patch), partners() → [{ key, name, birth }], partner() → { key, name, birth } | null,
@@ -21,7 +21,7 @@
   const open = () => { try { return !!(window.Premium && window.Premium.isOpen()); } catch (e) { return false; } };
   const MODULES = ['natal-pro', 'synastry-pro', 'numerology-pro', 'pro-texts', 'person-pro'];
   let ensureP = null;
-  /** Подгрузить премиум-модули, если доступ есть (Алина или код). */
+  /** Подгрузить премиум-модули, если доступ есть (Алика или код). */
   function ensure() { return ensureP || (ensureP = (window.Premium ? window.Premium.ensure(MODULES) : Promise.resolve(false)).catch(() => false)); }
   document.addEventListener('premiumchange', () => { ensureP = null; });
   const locked = (title, meta) => (window.Premium && window.Premium.locked ? window.Premium.locked(esc(title), { lines: 3, meta: meta || 'премиум' }) : '');

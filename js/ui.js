@@ -155,7 +155,7 @@
   const academyOn = !!(SITE.academy && SITE.academy.enabled !== false);
   // премиум-доступ (платные разделы по коду, js/premium.js): premium.enabled: false в content.js — ссылки не показываются
   const premOn = !!(SITE.premium && SITE.premium.enabled !== false);
-  // Алина вошла в кабинет на этом устройстве (ключ хранит js/admin.js) — показываем ей ссылки на кабинет
+  // Алика вошла в кабинет на этом устройстве (ключ хранит js/admin.js) — показываем ей ссылки на кабинет
   const isAlina = () => { try { return !!(localStorage.getItem('am_adminKey') || sessionStorage.getItem('am_adminKey')); } catch (e) { return false; } };
   const isPreview = location.protocol === 'file:' || /^(localhost|127\.|192\.168\.|\[::1\])/.test(location.hostname);
 
@@ -229,7 +229,7 @@
     return out;
   }
 
-  /** Ссылка на Telegram-бота Алины с меткой (start=src_site__natal и т. п.). Пусто, если бот не указан. */
+  /** Ссылка на Telegram-бота Аликы с меткой (start=src_site__natal и т. п.). Пусто, если бот не указан. */
   function botHref(payload) {
     const b = (SITE.contacts || {}).telegramBot;
     return b ? `https://t.me/${b.replace(/^@/, '')}${payload ? '?start=' + payload : ''}` : '';
@@ -253,9 +253,9 @@
   function goal(name) { try { if (metrikaId && window.ym) window.ym(+metrikaId, 'reachGoal', name); } catch (e) { /* без аналитики */ } }
   document.addEventListener('click', (e) => { const a = e.target.closest && e.target.closest('a[href^="https://t.me/"]'); if (a) goal('telegram'); });
 
-  /** Записка от Алины с фото — для страниц-инструментов. */
+  /** Записка от Аликы с фото — для страниц-инструментов. */
   function alinaNote(text, cta) {
-    return `<div class="alina-note"><img src="assets/img/alina-avatar.webp" alt="Алина" width="56" height="56" loading="lazy"><div class="bubble"><span class="note-who">Алина</span><p>${text}</p>${cta ? `<div class="row" style="gap:10px">${cta}</div>` : ''}</div></div>`;
+    return `<div class="alina-note"><img src="assets/img/alina-avatar.webp" alt="Алика" width="56" height="56" loading="lazy"><div class="bubble"><span class="note-who">Алика</span><p>${text}</p>${cta ? `<div class="row" style="gap:10px">${cta}</div>` : ''}</div></div>`;
   }
 
   function renderChrome() {
@@ -404,7 +404,7 @@
     if (page !== 'cabinet.html') {
       const cta = document.createElement('div');
       cta.className = 'mobile-cta';
-      cta.innerHTML = `<img src="assets/img/alina-avatar.webp" alt="" width="40" height="40"><div class="mc-text"><b>Консультация с Алиной</b><small>${pr ? `<span class="sticker xs">−${pr.percent}%</span> ${esc(pr.short)}` : 'онлайн из любой страны'}</small></div><button class="btn btn-primary btn-sm" type="button" data-book>Записаться</button>`;
+      cta.innerHTML = `<img src="assets/img/alina-avatar.webp" alt="" width="40" height="40"><div class="mc-text"><b>Консультация с Аликой</b><small>${pr ? `<span class="sticker xs">−${pr.percent}%</span> ${esc(pr.short)}` : 'онлайн из любой страны'}</small></div><button class="btn btn-primary btn-sm" type="button" data-book>Записаться</button>`;
       document.body.appendChild(cta);
       const toggleCta = () => {
         const bk = document.getElementById('booking');
@@ -1142,7 +1142,7 @@
 
   // ---------- «Мои карты»: люди, чьи данные уже вводили ----------
   // Хранятся только в этом браузере (am_people). Формы данных рождения предлагают их одним нажатием и (если стоит
-  // галочка «Сохранить в Мои карты») запоминают новых. Алине на страницах сайта — ещё и клиенты кабинета.
+  // галочка «Сохранить в Мои карты») запоминают новых. Алике на страницах сайта — ещё и клиенты кабинета.
   const PKEY = (b) => [b.y, b.mo, b.d, b.timeKnown === false ? '-' : `${+b.h}:${+b.mi}`, (+b.lat).toFixed(2), (+b.lon).toFixed(2)].join('|');
   const birthOf = (p) => ({ y: +p.y, mo: +p.mo, d: +p.d, h: p.timeKnown === false ? 12 : +p.h, mi: p.timeKnown === false ? 0 : +p.mi, timeKnown: p.timeKnown !== false, lat: +p.lat, lon: +p.lon, zone: p.zone, place: p.place || '' });
   const pid = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -1185,7 +1185,7 @@
     /** Данные для формы: { name, y, mo, d, h, mi, timeKnown, lat, lon, zone, place }. */
     params: (p) => Object.assign({ name: p.name || '' }, p.birth),
   };
-  /** Кого предложить: «Мои карты» (свежие сверху) и — Алине — клиенты кабинета. */
+  /** Кого предложить: «Мои карты» (свежие сверху) и — Алике — клиенты кабинета. */
   function pickList(opts) {
     opts = opts || {};
     const out = people.all().filter((p) => p.birth && p.birth.y).sort((a, b) => String(b.used || b.updated || '').localeCompare(String(a.used || a.updated || ''))).map((p) => ({ key: 'p:' + p.id, group: 'Мои карты', name: people.label(p), p: people.params(p), fullName: p.fullName || '', person: p }));
@@ -1245,11 +1245,11 @@
   }
 
   // ---------- анкета на консультацию ----------
-  // Календаря для клиентов нет: клиент заполняет анкету, она шифруется и сразу попадает в кабинет Алины (ящик заявок,
-  // content.js → api.url); если сервер недоступен — уходит Алине в Telegram готовым сообщением
-  // (или в WhatsApp, на почту). Алина отвечает сама, уточняет детали и предлагает время из кабинета («Заявки»).
+  // Календаря для клиентов нет: клиент заполняет анкету, она шифруется и сразу попадает в кабинет Аликы (ящик заявок,
+  // content.js → api.url); если сервер недоступен — уходит Алике в Telegram готовым сообщением
+  // (или в WhatsApp, на почту). Алика отвечает сама, уточняет детали и предлагает время из кабинета («Заявки»).
   const INTAKE = SITE.intake || {};
-  // ящик заявок (content.js → api.url): анкета шифруется в браузере и сразу попадает в кабинет Алины.
+  // ящик заявок (content.js → api.url): анкета шифруется в браузере и сразу попадает в кабинет Аликы.
   // Копия сайта на компьютере разработки и превью не пишут в боевой ящик (только в локальный сервер для проверок).
   const localApi = (u) => /^https?:\/\/(localhost|127\.|\[::1\])/.test(String(u || ''));
   const inboxOn = !!(SITE.api && SITE.api.url && window.crypto && crypto.subtle && window.fetch && ((!isPreview && !window.ARTIFACT_PREVIEW) || localApi(SITE.api.url)));
@@ -1282,7 +1282,7 @@
     const what = svc ? esc(svc.duration || '') : id === 'gift' ? 'красивый сертификат на любую консультацию' : id === 'numerology' ? 'разбор чисел по дате рождения и имени' : id === 'energy' ? `${(SITE.energy && SITE.energy.duration) || 30} минут онлайн · оплата — донейшн · <a href="energy.html">подробнее и выбор времени</a>` : '';
     return what || price ? `${icon('info')}<span>${what}${what && price ? ' · ' : ''}${price}</span>` : '';
   }
-  /** Какие данные рождения нужны для услуги: 'full' — дата, время (или «не знаю») и город обязательны: по ним Алина сразу
+  /** Какие данные рождения нужны для услуги: 'full' — дата, время (или «не знаю») и город обязательны: по ним Алика сразу
       видит карту человека; 'optional' — по желанию; 'none' — не нужны. content.js → intake.services[id].birth;
       по умолчанию — 'full' для консультаций, 'optional' для экспресс-ответа, уроков и «другого», 'none' для сертификата,
       курса и энергетического выравнивания. */
@@ -1334,7 +1334,7 @@
         <input class="ix-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
         <label class="check pp-save" data-ix="save"><input type="checkbox" name="ppsave"${store.get('ppSave', true) ? ' checked' : ''}> <span>Сохранить данные в «Мои карты» — в следующий раз выберете одним нажатием</span></label>
         <label class="check ix-consent"><input type="checkbox" name="consent" required> <span>Согласен(на) на <a href="privacy.html" target="_blank">обработку данных</a></span></label>
-        <button class="btn btn-primary btn-block" type="submit">${inboxOn ? `${icon('send')} Отправить анкету Алине` : `${icon('telegram')} Отправить Алине в Telegram`}</button>
+        <button class="btn btn-primary btn-block" type="submit">${inboxOn ? `${icon('send')} Отправить анкету Алике` : `${icon('telegram')} Отправить Алике в Telegram`}</button>
         <p class="tiny muted center" style="margin:0">${opts.note ? esc(opts.note) : `Со звёздочкой — обязательно, вопрос — по желанию. ${inboxOn ? 'Анкета сразу придёт мне — отвечу' : 'Отвечу'} ${esc(INTAKE.replyTime || 'в течение дня')} и сама предложу время.`}</p>
       </form>`;
   }
@@ -1372,7 +1372,7 @@
     const ptLine = pt ? `${pt.name ? pt.name + ', ' : ''}${birthLine(pt)}` : '';
     const tz = browserTz;
     const lines = [
-      id === 'gift' ? 'Здравствуйте, Алина! Хочу подарочный сертификат ✨' : 'Здравствуйте, Алина! Хочу на консультацию ✨',
+      id === 'gift' ? 'Здравствуйте, Алика! Хочу подарочный сертификат ✨' : 'Здравствуйте, Алика! Хочу на консультацию ✨',
       `Имя: ${who}`,
       `Связь: ${g('contact')}`,
       `Услуга: ${svc ? svc.title : ''}`,
@@ -1540,8 +1540,8 @@
       <li>Я прочитаю анкету и отвечу ${esc(INTAKE.replyTime || 'в течение дня')}.</li>
       <li>Если нужно, уточню пару деталей — так консультация будет точнее.</li>
       <li>Предложу время по вашему часовому поясу и пришлю детали оплаты.</li></ol>`;
-  /** Анкета уже в кабинете Алины: спокойно рассказываем, что дальше; написать в Telegram — по желанию. */
-  /** Отправить заявку со своей формы (например, «Энергетическая работа»): в ящик Алины, иначе — окно мессенджеров.
+  /** Анкета уже в кабинете Аликы: спокойно рассказываем, что дальше; написать в Telegram — по желанию. */
+  /** Отправить заявку со своей формы (например, «Энергетическая работа»): в ящик Аликы, иначе — окно мессенджеров.
       o: { data, text, hp, when } — when: строка «Предварительно: …» для окна благодарности. */
   async function submitIntake(o) {
     if (inboxOn) {
@@ -1562,7 +1562,7 @@
     const c = SITE.contacts || {};
     const tg = /(?:t\.me\/|@)([A-Za-z0-9_]{4,})/.exec(data.contact || '');
     const how = tg ? `напишу вам в Telegram — @${esc(tg[1])}` : `свяжусь с вами: ${esc(data.contact || '')}`;
-    const note = `Здравствуйте, Алина! Я отправил(а) анкету с сайта, № ${code} ✨`;
+    const note = `Здравствуйте, Алика! Я отправил(а) анкету с сайта, № ${code} ✨`;
     const m = modal(`<div class="center"><div style="font-size:3rem;color:var(--gold);line-height:1">✦</div>
         <h3 style="margin:8px 0 4px">Спасибо${data.name ? ', ' + esc(data.name.split(' ')[0]) : ''}! Анкета у меня</h3>
         <p class="muted" style="margin:0">Номер анкеты: <b class="ix-code">${esc(code)}</b></p></div>
@@ -1593,7 +1593,7 @@
       <p class="muted">${c.telegram ? 'Нажмите «Отправить в Telegram» — текст уже будет в поле сообщения, останется отправить.' : 'Выберите, куда отправить анкету — текст уже составлен.'}</p>
       <pre class="ix-pre">${esc(text)}</pre>
       <div style="display:grid;gap:10px;margin-top:14px">${btns.join('')}<button class="btn btn-gold btn-block" type="button" data-ch="copy">${icon('copy')} Скопировать текст</button></div>
-      ${btns.length ? '' : '<p class="notice info" style="margin-top:14px">' + icon('info') + '<span>Скопируйте текст анкеты и отправьте его Алине удобным способом.</span></p>'}
+      ${btns.length ? '' : '<p class="notice info" style="margin-top:14px">' + icon('info') + '<span>Скопируйте текст анкеты и отправьте его Алике удобным способом.</span></p>'}
       <h4 style="margin:20px 0 6px">Что будет дальше</h4>${nextSteps()}`);
     m.el.addEventListener('click', async (e) => {
       const b = e.target.closest('[data-ch]'); if (!b) return;
@@ -1603,7 +1603,7 @@
   }
   function openBooking(preset) {
     const pr = promoInfo();
-    const m = modal(`<div class="booking-head"><img src="assets/img/alina-avatar.webp" alt="" width="64" height="64"><div><span class="eyebrow" style="margin:0">анкета</span><h3 style="margin:2px 0 0">Консультация с Алиной</h3></div></div>
+    const m = modal(`<div class="booking-head"><img src="assets/img/alina-avatar.webp" alt="" width="64" height="64"><div><span class="eyebrow" style="margin:0">анкета</span><h3 style="margin:2px 0 0">Консультация с Аликой</h3></div></div>
       <p class="muted small" style="margin:0 0 14px">Укажите данные рождения — и анкета ${inboxOn ? 'сразу придёт мне вместе с вашей картой' : 'придёт мне в Telegram'}. Отвечу сама, обычно ${esc(INTAKE.replyTime || 'в течение дня')}.</p>
       ${pr ? `<div class="promo-inline"><span class="sticker">−${pr.percent}%</span><span><b>${esc(pr.title)}</b><br><small>действует до ${pr.end.getDate()} ${fmt.MONTHS_GEN[pr.end.getMonth()]}</small></span></div>` : ''}
       ${bookingFormHTML('bm', preset)}`, { cls: 'booking-modal' });

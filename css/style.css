@@ -1,6 +1,6 @@
 /* =========================================================
-   Алина Малышко · астролог — дизайн-система
-   Нежная лаванда (в цвет образа Алины), шампанское-золото, ночное небо.
+   Алика Снежная · астролог — дизайн-система
+   Нежная лаванда (в цвет образа Аликы), шампанское-золото, ночное небо.
    ========================================================= */
 
 :root {
@@ -1107,7 +1107,7 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
 .booking-head img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 3px var(--surface-solid), 0 0 0 4px var(--gold-2); }
 .promo-inline { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin: 4px 0 14px; border-radius: 14px; background: color-mix(in srgb, var(--hot) 9%, var(--surface)); border: 1px dashed color-mix(in srgb, var(--hot) 45%, transparent); font-size: .9rem; }
 
-/* ---- записка Алины на страницах-инструментах ---- */
+/* ---- записка Аликы на страницах-инструментах ---- */
 .alina-note { display: flex; gap: 12px; align-items: flex-start; }
 .alina-note img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex-shrink: 0; box-shadow: 0 0 0 3px var(--surface-solid), 0 0 0 4px var(--gold-2); }
 .alina-note .bubble p { margin: 0 0 8px; }
@@ -1162,7 +1162,7 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
 
 .field { align-content: start; }
 
-/* плашка «получать в Telegram» (бот Алины) */
+/* плашка «получать в Telegram» (бот Аликы) */
 .bot-cta { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding: 14px 18px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; box-shadow: var(--shadow); transition: transform .2s, border-color .2s; }
 .bot-cta:hover { transform: translateY(-2px); border-color: var(--gold-2); }
 .bot-cta svg { width: 26px; height: 26px; flex-shrink: 0; color: #2aa3df; }
@@ -1568,7 +1568,7 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
 /* дата рождения шире времени: «23.11.1988» целиком даже в узкой колонке */
 @media (min-width: 641px) { .form-row.dob-row { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); } }
 
-/* ---------- вход Алины (js/admin.js): кабинет, личный прогноз, подробная совместимость ---------- */
+/* ---------- вход Аликы (js/admin.js): кабинет, личный прогноз, подробная совместимость ---------- */
 .admin-lock { padding-top: clamp(40px, 8vw, 90px); }
 .lock-card { max-width: 440px; margin: 0 auto; text-align: center; display: grid; gap: 4px; }
 .lock-card h1 { font-size: clamp(1.9rem, 4vw, 2.5rem); margin: 6px 0 2px; }

@@ -1,9 +1,9 @@
-/* Вход Алины и закрытый код сайта.
+/* Вход Аликы и закрытый код сайта.
    Код кабинета лежит на сайте зашифрованным (js/locked/*, собирает _dev/lock.js): пароль превращается в ключ
    (PBKDF2-SHA256 → AES-256-GCM), ключ расшифровывает код прямо в браузере. Без пароля код не прочитать.
    «Запомнить на этом устройстве» хранит ключ (не пароль) в localStorage, иначе — до закрытия вкладки.
    Премиум-разделы (прогноз, подробная совместимость, полная натальная карта, нумерология-прогноз) зашифрованы
-   отдельным ключом доступа: Алине он достаётся из meta по её ключу (ей открыто всё), клиентам — из кода доступа (js/premium.js). */
+   отдельным ключом доступа: Алике он достаётся из meta по её ключу (ей открыто всё), клиентам — из кода доступа (js/premium.js). */
 (function () {
   'use strict';
   const STORE = 'am_adminKey';
@@ -56,9 +56,9 @@
     const url = URL.createObjectURL(new Blob([code + '\n//# sourceURL=locked/' + name + '.js'], { type: 'text/javascript' }));
     try { await loadScript(url); } catch (e) { new Function(code)(); } finally { URL.revokeObjectURL(url); }
   }
-  // ---------- премиум: ключ доступа и ключ подписи кодов — для Алины лежат в meta, зашифрованные её ключом ----------
+  // ---------- премиум: ключ доступа и ключ подписи кодов — для Аликы лежат в meta, зашифрованные её ключом ----------
   const isPremium = (m, n) => !!(m.premium && (m.premium.names || []).includes(n));
-  /** Ключ премиум-разделов по входу Алины (или null). */
+  /** Ключ премиум-разделов по входу Аликы (или null). */
   async function premiumKey() {
     if (cachedP) return cachedP;
     const k = await key();
@@ -68,7 +68,7 @@
     try { cachedP = await crypto.subtle.importKey('raw', b64d(await decrypt(k, m.premium.wrapK)), 'AES-GCM', false, ['decrypt']); } catch (e) { return null; }
     return cachedP;
   }
-  /** Ключ подписи кодов доступа — только у Алины (кабинет → «Доступы»). */
+  /** Ключ подписи кодов доступа — только у Аликы (кабинет → «Доступы»). */
   async function signKey() {
     if (cachedS) return cachedS;
     const k = await key();
@@ -79,7 +79,7 @@
     cachedS = await crypto.subtle.importKey('jwk', jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
     return cachedS;
   }
-  /** Ящик заявок и облако — только у Алины: адрес сервера, токен, закрытый ключ анкет, ключ облака (или null). */
+  /** Ящик заявок и облако — только у Аликы: адрес сервера, токен, закрытый ключ анкет, ключ облака (или null). */
   async function api() {
     if (cachedA) return cachedA;
     const k = await key();
@@ -94,7 +94,7 @@
     } catch (e) { console.error(e); return null; }
     return cachedA;
   }
-  /** Ключ для раздела: премиум — у Алины или по коду доступа (js/premium.js), остальное — только у Алины. */
+  /** Ключ для раздела: премиум — у Аликы или по коду доступа (js/premium.js), остальное — только у Аликы. */
   async function keyFor(m, n) {
     if (!isPremium(m, n)) return key();
     return (await premiumKey()) || (window.Premium && window.Premium.contentKey ? await window.Premium.contentKey() : null);
@@ -136,8 +136,8 @@
     box.innerHTML = `<div class="container"><div class="card lock-card">
         <span class="lock-ic">${icon('lock')}</span>
         <h1>${esc(opts.title || 'Кабинет астролога')}</h1>
-        <p class="muted">${opts.text || 'Рабочее место Алины. Вход по паролю.'}</p>
-        ${opts.visitor ? `${opts.visitor}<details class="details-adv lock-alina"><summary>Вход для Алины</summary>${form}</details>` : form}
+        <p class="muted">${opts.text || 'Рабочее место Аликы. Вход по паролю.'}</p>
+        ${opts.visitor ? `${opts.visitor}<details class="details-adv lock-alina"><summary>Вход для Аликы</summary>${form}</details>` : form}
       </div></div>`;
     (document.getElementById('main') || document.body).prepend(box);
     if (!canCrypto()) { box.querySelector('.lock-err').textContent = 'Этот браузер не умеет открывать закрытые разделы — откройте сайт в Chrome, Safari или Firefox.'; return; }
@@ -159,13 +159,13 @@
         return;
       }
       box.remove();
-      try { await open(); UI.toast('Добро пожаловать, Алина ✦', 'sparkle'); } catch (er) { console.error(er); UI.toast('Не получилось открыть раздел — обновите страницу', 'info'); }
+      try { await open(); UI.toast('Добро пожаловать, Алика ✦', 'sparkle'); } catch (er) { console.error(er); UI.toast('Не получилось открыть раздел — обновите страницу', 'info'); }
     });
   }
 
   window.Admin = { has: () => !!stored(), key, login, logout, run, page, meta, decrypt, premiumKey, signKey, canCrypto, api };
 
-  // Алине на страницах сайта (не в кабинете): в ящике есть новые анкеты — тихая плашка «в кабинет»
+  // Алике на страницах сайта (не в кабинете): в ящике есть новые анкеты — тихая плашка «в кабинет»
   document.addEventListener('DOMContentLoaded', async () => {
     try {
       if (!stored() || /cabinet\.html$/.test(location.pathname) || window.ARTIFACT_PREVIEW) return;
