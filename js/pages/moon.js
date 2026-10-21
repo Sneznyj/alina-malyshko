@@ -155,7 +155,7 @@
           <span class="ms">${T.signs[d.signStart].glyph}${d.ingress.length ? ` <small style="font-family:var(--ff-body);font-size:.7rem;color:var(--ink-3)">→</small> ${T.signs[d.ingress[0].to].glyph}<small style="font-family:var(--ff-body);font-size:.66rem;color:var(--ink-3)"> ${hm(d.ingress[0].date)}</small>` : ''}</span>
           <span class="ld">${lds.length ? lds.filter((v, j, a) => a.indexOf(v) === j).join('–') + ' л. д.' : ''}</span>
           ${ev ? `<span class="ev">${ev}</span>` : ''}
-          ${vl.length ? `<span class="voc"><i>без курса </i>${vl.map((x) => esc(x).replace('–', '–<wbr>')).join(', ')}</span>${vocBar(d)}` : ''}
+          ${vl.length ? `<span class="voc"><i>без курса </i>${vl.map((x) => esc(x).replace('–', '–<wbr>').replace('\u00a0', ' ')).join(', ')}</span>${vocBar(d)}` : ''}
         </button>`;
       });
       cal.innerHTML = h;

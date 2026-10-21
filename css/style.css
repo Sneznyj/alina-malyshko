@@ -158,6 +158,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 h1, h2, h3, h4 { font-family: var(--ff-display); font-weight: 500; line-height: 1.12; margin: 0 0 .5em; letter-spacing: -0.01em; color: var(--ink); }
 h1 { font-size: clamp(2.6rem, 5.4vw, 4.6rem); font-weight: 500; }
 h2 { font-size: clamp(2rem, 3.6vw, 3.1rem); }
+/* узкий телефон: длинные слова («конфиденциальности», «кольцеобразное») переносятся, а не вылезают из блока */
+@media (max-width: 420px) { h1, h2, h3, h4, .event .t b { hyphens: auto; overflow-wrap: break-word; } }
 h3 { font-size: clamp(1.4rem, 2vw, 1.75rem); }
 h4 { font-size: 1.2rem; font-family: var(--ff-body); font-weight: 700; letter-spacing: 0; }
 p { margin: 0 0 1em; }
@@ -421,7 +423,9 @@ em.accent, .accent { font-style: italic; color: var(--lav-strong); }
 .form-row { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .form-row.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 @media (max-width: 640px) { .form-row, .form-row.three { grid-template-columns: 1fr; } }
-.field { display: grid; gap: 6px; min-width: 0; position: relative; }
+/* боковая колонка прогноза (380px): «Начало» и «Период» — друг под другом, рядом месяц и «12 месяцев» не помещаются */
+@media (min-width: 1001px) { .tool-layout > aside .form-row:has(> .field > input[type="month"]) { grid-template-columns: minmax(0, 1fr); } }
+.field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; min-width: 0; position: relative; }
 .field > label, .field > .label { font-size: .82rem; font-weight: 600; color: var(--ink-2); letter-spacing: .01em; }
 .field .hint { font-size: .76rem; color: var(--ink-3); }
 .input, .select, .textarea { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--surface-solid); color: var(--ink); transition: border-color .2s, box-shadow .2s; min-height: 46px; }
@@ -480,6 +484,7 @@ em.accent, .accent { font-style: italic; color: var(--lav-strong); }
 /* ---------- страницы инструментов ---------- */
 .page-hero { padding: clamp(28px, 5vw, 56px) 0 clamp(20px, 3vw, 36px); }
 .page-hero h1 { font-size: clamp(2.3rem, 4.6vw, 3.8rem); }
+@media (max-width: 400px) { .page-hero h1 { font-size: clamp(1.9rem, 9.5vw, 2.3rem); } }  /* «конфиденциальности» целиком на 320 px */
 .tool-layout { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 28px; align-items: start; }
 .tool-layout > aside { position: sticky; top: calc(var(--header-h) + 16px); }
 @media (max-width: 1000px) { .tool-layout { grid-template-columns: minmax(0, 1fr); } .tool-layout > aside { position: static; } }
@@ -572,8 +577,10 @@ em.accent, .accent { font-style: italic; color: var(--lav-strong); }
 .cal .day .ms { font-family: var(--ff-glyph); color: var(--lav-strong); font-size: 1rem; }
 .cal .day .ld { color: var(--ink-3); }
 .cal .day .ev { font-weight: 700; color: var(--gold); font-size: .72rem; }
+@media (max-width: 480px) { .cal .day .ev { hyphens: auto; overflow-wrap: anywhere; } }
 .cal .day .voc { color: var(--rose-strong); font-weight: 600; font-size: .7rem; }
 @media (max-width: 700px) { .cal { gap: 3px; } .cal .day { min-height: 70px; padding: 5px; font-size: .64rem; } .cal .day .ld { display: none; } .cal .day .dn { font-size: .85rem; } .cal .day .dn svg { width: 16px; height: 16px; } }
+@media (max-width: 340px) { .cal .day { padding: 4px 3px; } }  /* 320 px: клетка 33px — время «без курса» («02:54», «06:41–») помещается */
 
 /* ---------- астрособытия ---------- */
 .gantt { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 8px 14px; align-items: center; }
@@ -583,8 +590,8 @@ em.accent, .accent { font-style: italic; color: var(--lav-strong); }
 .gantt .seg-r { position: absolute; top: 3px; bottom: 3px; border-radius: 6px; background: linear-gradient(90deg, var(--rose-strong), #b07ad8); box-shadow: 0 4px 12px -4px rgba(201, 107, 143, .6); cursor: help; }
 .gantt .seg-s { position: absolute; top: 9px; bottom: 9px; border-radius: 6px; background: var(--rose); }
 .gantt .today-line { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--gold); border-radius: 2px; }
-.gantt .months { display: grid; grid-template-columns: repeat(12, 1fr); font-size: .72rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: .08em; }
-@media (max-width: 600px) { .gantt { grid-template-columns: 1fr; } .gantt .months span:nth-child(2n) { visibility: hidden; } }
+.gantt .months { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); font-size: .72rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: .08em; }
+@media (max-width: 600px) { .gantt { grid-template-columns: minmax(0, 1fr); } .gantt .months span:nth-child(2n) { visibility: hidden; } }
 .event-list { display: grid; gap: 10px; }
 .event { display: grid; grid-template-columns: 74px 44px minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
 .event .d { font-weight: 700; font-size: .92rem; }
@@ -997,7 +1004,7 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
 .mobile-cta img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
 .mobile-cta .mc-text { flex: 1; min-width: 0; line-height: 1.25; }
 .mobile-cta b { display: block; font-size: .88rem; }
-.mobile-cta small { font-size: .74rem; color: var(--ink-3); display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mobile-cta small { font-size: .74rem; color: var(--ink-3); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }  /* block, а не flex: иначе многоточие не работает и текст обрывается на полуслове */
 .mobile-cta.show { transform: none; }
 @media (max-width: 768px) { .mobile-cta { display: flex; } .site-footer { padding-bottom: 96px; } }
 
@@ -1029,6 +1036,8 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
 @keyframes candle { 0%, 100% { opacity: .85; transform: translate(-50%, -50%) scale(1); } 30% { opacity: 1; transform: translate(-50%, -52%) scale(1.08); } 55% { opacity: .7; transform: translate(-50%, -50%) scale(.94); } 75% { opacity: .95; transform: translate(-50%, -51%) scale(1.04); } }
 .scene .float-card { z-index: 3; }
 .scene .fc-1 { left: -16%; top: 34%; }
+/* 961–1180 px: колонки ближе — карточка «Луна сегодня» иначе закрывает конец строки текста слева */
+@media (min-width: 961px) and (max-width: 1180px) { .scene .fc-1 { left: -6%; } }
 .scene .fc-2 { right: -8%; bottom: 4%; }
 .scene .sticker.big { position: absolute; right: -6%; top: 10%; z-index: 4; }
 .hand-note { position: absolute; left: -24%; top: 4%; font: 600 1.55rem/1.05 var(--ff-hand); color: var(--lav-strong); transform: rotate(-8deg); z-index: 3; display: flex; flex-direction: column; align-items: flex-end; }
@@ -1521,7 +1530,7 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
 .voc-item .glyph { color: var(--lav-strong); }
 .voc-tip { display: flex; gap: 8px; margin: 0; color: var(--ink-2); }
 .voc-tip svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--rose-strong); margin-top: 1px; }
-.voc-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+.voc-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 8px; }
 .voc-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-align: left; cursor: pointer; font: inherit; font-size: .88rem; transition: border-color .2s, transform .2s; }
 .voc-row:hover { border-color: var(--lav); transform: translateY(-1px); }
 .voc-row .vd { font-weight: 700; color: var(--ink-2); }
@@ -1538,6 +1547,8 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
   .voc-bar { height: 3px; }
   .voc-row { grid-template-columns: 68px minmax(0, 1fr) auto; }
 }
+/* узкий телефон: смена знака — под временем, иначе время наезжает на неё */
+@media (max-width: 380px) { .voc-row { grid-template-columns: 56px minmax(0, 1fr); row-gap: 2px; } .voc-row .vs { grid-column: 2; } }
 
 /* ---------- дата рождения: ввод цифрами и выбор в календаре (ui.js → dobHTML / enhanceDob) ---------- */
 .dob { position: relative; min-width: 0; }
@@ -1687,6 +1698,7 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
 /* у Cormorant по умолчанию старинные цифры («1» похожа на «I») — в нумерологии нужны обычные */
 .pq-digits, .num-cycle .cy, .pmo b, .num-seg button, .num-letters-table th, .num-empty-digits, .num-orb { font-variant-numeric: lining-nums tabular-nums; }
 #numResult .tabs .ts { display: none; }
+#today .btn-sm { white-space: normal; }  /* «Сторис «Луна сегодня»» в узкой колонке (768 px) не шире карточки */
 @media (max-width: 480px) { #numResult .tabs .tl { display: none; } #numResult .tabs .ts { display: inline; } #numResult .tabs button { padding: 10px 16px; } }
 @media (max-width: 760px) { .pq-wrap { grid-template-columns: minmax(0, 1fr); } .pq-grid { max-width: 340px; margin-inline: auto; width: 100%; } }
 @media (max-width: 560px) {
