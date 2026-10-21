@@ -294,7 +294,7 @@
         st.disabled = false;
       }
     });
-    // клиент из кабинета Аликы, затем последний расчёт, затем последняя натальная карта
+    // клиент из кабинета Алики, затем последний расчёт, затем последняя натальная карта
     const q = new URLSearchParams(location.search);
     const cl = q.get('client') && UI.clients.get(q.get('client'));
     const last = UI.store.get('numerology', null);

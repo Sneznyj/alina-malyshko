@@ -1,6 +1,6 @@
 /* Личный прогноз: форма и расчёт транзитов — открыто всем.
    Подробный вид (главные темы и календарь с толкованием, соляр, прогрессии с профекцией, небо на дату) — премиум:
-   зашифрованный модуль _private/forecast.js (ForecastPro), открывается кодом доступа или входом Аликы (js/premium.js).
+   зашифрованный модуль _private/forecast.js (ForecastPro), открывается кодом доступа или входом Алики (js/premium.js).
    Без доступа — превью: сколько транзитов и каких, главная тема периода целиком, остальное закрытыми карточками и тарифы. */
 (function () {
   'use strict';
@@ -123,7 +123,7 @@
     if (pp && pp.birth) setTimeout(() => { form.set(UI.people.params(pp)); calc(UI.people.params(pp)); }, 0);
     $('startMonth').value = fmt.ymd(new Date()).slice(0, 7);
     $('calcBtn').addEventListener('click', () => calc());
-    // код доступа введён (или вход Аликы) — показать полный прогноз без повторного расчёта
+    // код доступа введён (или вход Алики) — показать полный прогноз без повторного расчёта
     document.addEventListener('premiumchange', () => { if (ctx) show(); });
     const q = new URLSearchParams(location.search);
     const c = q.get('client') && UI.clients.get(q.get('client'));

@@ -67,7 +67,7 @@
     $('pmActivate').querySelector('form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const code = Pm.extract(ta.value);
-      if (!code) { err.textContent = 'Это не похоже на код доступа. Скопируйте ссылку из сообщения Аликы целиком.'; ta.classList.add('invalid'); return; }
+      if (!code) { err.textContent = 'Это не похоже на код доступа. Скопируйте ссылку из сообщения Алики целиком.'; ta.classList.add('invalid'); return; }
       const btn = e.target.querySelector('[type=submit]'); btn.disabled = true;
       const r = await Pm.activate(code);
       btn.disabled = false;

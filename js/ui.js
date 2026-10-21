@@ -231,7 +231,7 @@
     return out;
   }
 
-  /** Ссылка на Telegram-бота Аликы с меткой (start=src_site__natal и т. п.). Пусто, если бот не указан. */
+  /** Ссылка на Telegram-бота Алики с меткой (start=src_site__natal и т. п.). Пусто, если бот не указан. */
   function botHref(payload) {
     const b = (SITE.contacts || {}).telegramBot;
     return b ? `https://t.me/${b.replace(/^@/, '')}${payload ? '?start=' + payload : ''}` : '';
@@ -255,7 +255,7 @@
   function goal(name) { try { if (metrikaId && window.ym) window.ym(+metrikaId, 'reachGoal', name); } catch (e) { /* без аналитики */ } }
   document.addEventListener('click', (e) => { const a = e.target.closest && e.target.closest('a[href^="https://t.me/"]'); if (a) goal('telegram'); });
 
-  /** Записка от Аликы с фото — для страниц-инструментов. */
+  /** Записка от Алики с фото — для страниц-инструментов. */
   function alinaNote(text, cta) {
     return `<div class="alina-note"><img src="assets/img/alina-avatar.webp" alt="Алика" width="56" height="56" loading="lazy"><div class="bubble"><span class="note-who">Алика</span><p>${text}</p>${cta ? `<div class="row" style="gap:10px">${cta}</div>` : ''}</div></div>`;
   }
@@ -1247,11 +1247,11 @@
   }
 
   // ---------- анкета на консультацию ----------
-  // Календаря для клиентов нет: клиент заполняет анкету, она шифруется и сразу попадает в кабинет Аликы (ящик заявок,
+  // Календаря для клиентов нет: клиент заполняет анкету, она шифруется и сразу попадает в кабинет Алики (ящик заявок,
   // content.js → api.url); если сервер недоступен — уходит Алике в Telegram готовым сообщением
   // (или в WhatsApp, на почту). Алика отвечает сама, уточняет детали и предлагает время из кабинета («Заявки»).
   const INTAKE = SITE.intake || {};
-  // ящик заявок (content.js → api.url): анкета шифруется в браузере и сразу попадает в кабинет Аликы.
+  // ящик заявок (content.js → api.url): анкета шифруется в браузере и сразу попадает в кабинет Алики.
   // Копия сайта на компьютере разработки и превью не пишут в боевой ящик (только в локальный сервер для проверок).
   const localApi = (u) => /^https?:\/\/(localhost|127\.|\[::1\])/.test(String(u || ''));
   const inboxOn = !!(SITE.api && SITE.api.url && window.crypto && crypto.subtle && window.fetch && ((!isPreview && !window.ARTIFACT_PREVIEW) || localApi(SITE.api.url)));
@@ -1542,8 +1542,8 @@
       <li>Я прочитаю анкету и отвечу ${esc(INTAKE.replyTime || 'в течение дня')}.</li>
       <li>Если нужно, уточню пару деталей — так консультация будет точнее.</li>
       <li>Предложу время по вашему часовому поясу и пришлю детали оплаты.</li></ol>`;
-  /** Анкета уже в кабинете Аликы: спокойно рассказываем, что дальше; написать в Telegram — по желанию. */
-  /** Отправить заявку со своей формы (например, «Энергетическая работа»): в ящик Аликы, иначе — окно мессенджеров.
+  /** Анкета уже в кабинете Алики: спокойно рассказываем, что дальше; написать в Telegram — по желанию. */
+  /** Отправить заявку со своей формы (например, «Энергетическая работа»): в ящик Алики, иначе — окно мессенджеров.
       o: { data, text, hp, when } — when: строка «Предварительно: …» для окна благодарности. */
   async function submitIntake(o) {
     if (inboxOn) {
