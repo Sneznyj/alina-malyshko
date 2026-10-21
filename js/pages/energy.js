@@ -52,7 +52,7 @@
           <div class="field"><label for="enContact">Telegram или телефон *</label><input class="input" id="enContact" name="contact" required placeholder="@ник или +7…" autocomplete="tel"></div>
         </div>
         <input class="ix-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-        <label class="check ix-consent"><input type="checkbox" name="consent" required> <span>Согласен(на) на <a href="privacy.html" target="_blank">обработку данных</a></span></label>
+        <label class="check ix-consent"><input type="checkbox" name="consent" required> <span>Согласен(на) на <a href="privacy.html" target="_blank">обработку данных</a> и с <a href="terms.html" target="_blank">условиями</a></span></label>
         <button class="btn btn-primary btn-block" type="submit">${icon('send')} Записаться на выравнивание</button>
         <p class="tiny muted center" style="margin:0">Это предварительная запись: я подтвержу время и пришлю детали. Оплата — донейшн, после сессии.</p>
       </form>`;
@@ -89,7 +89,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    if (E.enabled === false) { $('main').innerHTML = '<section class="page-hero"><div class="container"><h1>Скоро</h1><p class="lead">Эта страница появится позже.</p></div></section>'; return; }
+    if (E.enabled === false) { $('main').innerHTML = `<section class="page-hero"><div class="container hero-anim"><span class="eyebrow">Энергетическая работа</span><h1>Сейчас на <em class="accent">паузе</em></h1><p class="lead">Энергетические сессии я сейчас не провожу. Если хочется спокойно разобраться в себе и в своём периоде — загляните в консультации.</p><div class="hero-cta"><a class="btn btn-primary" href="index.html#services">Консультации и цены</a></div></div></section>`; return; }
     staticBlocks();
     compute();
     form();

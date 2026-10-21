@@ -155,6 +155,8 @@
   const academyOn = !!(SITE.academy && SITE.academy.enabled !== false);
   // премиум-доступ (платные разделы по коду, js/premium.js): premium.enabled: false в content.js — ссылки не показываются
   const premOn = !!(SITE.premium && SITE.premium.enabled !== false);
+  // «Энергетическая работа»: enabled: false в content.js — пункт пропадает из меню, подвала и анкеты
+  const energyOn = !!(SITE.energy && SITE.energy.enabled !== false);
   // Алика вошла в кабинет на этом устройстве (ключ хранит js/admin.js) — показываем ей ссылки на кабинет
   const isAlina = () => { try { return !!(localStorage.getItem('am_adminKey') || sessionStorage.getItem('am_adminKey')); } catch (e) { return false; } };
   const isPreview = location.protocol === 'file:' || /^(localhost|127\.|192\.168\.|\[::1\])/.test(location.hostname);
@@ -291,7 +293,7 @@
         </a>
         <nav class="nav" aria-label="Основное меню">
           <a href="index.html#services">Консультации</a>
-          <a href="energy.html"${page === 'energy.html' ? ' aria-current="page"' : ''}>Энергетическая работа</a>
+          ${energyOn ? `<a href="energy.html"${page === 'energy.html' ? ' aria-current="page"' : ''}>Энергетическая работа</a>` : ''}
           <div class="nav-drop">
             <button type="button" class="nav-drop-btn${onTool ? ' active' : ''}" aria-expanded="false" aria-haspopup="true">Сервисы ${icon('chevron-down', 'chev')}</button>
             <div class="nav-panel" role="menu">
@@ -381,7 +383,7 @@
         <a class="brand" href="index.html"><span class="brand-mark"><img src="assets/img/alina-avatar.webp" alt="" width="40" height="40"></span><span class="brand-name">${esc(SITE.name)}</span></a>
         <button class="icon-btn" type="button" data-close-menu aria-label="Закрыть меню">${icon('close')}</button>
       </div>
-      <nav class="mm-main">${[['index.html', 'Главная'], ['index.html#services', 'Консультации и цены'], ['energy.html', 'Энергетическая работа'], ['index.html#about', 'Обо мне'], ...(hasReviews ? [['index.html#reviews', 'Отзывы']] : []), ...(academyOn ? [['academy.html', 'Уроки астрологии']] : [])].map(([h, t], i) => `<a href="${h}" style="transition-delay:${0.04 * i}s">${t}</a>`).join('')}</nav>
+      <nav class="mm-main">${[['index.html', 'Главная'], ['index.html#services', 'Консультации и цены'], ...(energyOn ? [['energy.html', 'Энергетическая работа']] : []), ['index.html#about', 'Обо мне'], ...(hasReviews ? [['index.html#reviews', 'Отзывы']] : []), ...(academyOn ? [['academy.html', 'Уроки астрологии']] : [])].map(([h, t], i) => `<a href="${h}" style="transition-delay:${0.04 * i}s">${t}</a>`).join('')}</nav>
       <p class="mm-label">Сервисы на сайте</p>
       <div class="mm-tools">${TOOLS.map(([h, t, ic]) => `<a href="${h}">${icon(ic)}<span>${t}</span></a>`).join('')}</div>
       ${premOn ? `<a class="mm-premium" data-premium-link href="premium.html">${icon('crown')}<span><b>Премиум-доступ</b><small>прогноз по датам и подробные разборы</small></span>${icon('arrow')}</a>` : ''}
@@ -431,7 +433,7 @@
           </div>
           <div><h4>Сервисы</h4>${TOOLS.map(([h, t]) => `<a href="${h}">${t}</a>`).join('')}</div>
           <div><h4>Консультации</h4>${SITE.services.slice(0, 6).map((s) => `<a href="index.html#services">${esc(s.title)}</a>`).join('')}</div>
-          <div><h4>Сайт</h4><a href="energy.html">Энергетическая работа</a><a href="astro.html">Астропроцессор · мои карты</a>${academyOn ? '<a href="academy.html">Уроки астрологии</a>' : ''}<a href="index.html#about">Обо мне</a><a href="index.html#faq">Вопросы и ответы</a><a href="index.html#booking">Запись</a>${premOn ? '<a href="premium.html">Премиум-доступ</a>' : ''}<a href="privacy.html">Политика конфиденциальности</a>${isAlina() ? '<a href="cabinet.html" class="muted">Кабинет астролога</a>' : ''}</div>
+          <div><h4>Сайт</h4>${energyOn ? '<a href="energy.html">Энергетическая работа</a>' : ''}<a href="astro.html">Астропроцессор · мои карты</a>${academyOn ? '<a href="academy.html">Уроки астрологии</a>' : ''}<a href="index.html#about">Обо мне</a><a href="index.html#faq">Вопросы и ответы</a><a href="index.html#booking">Запись</a>${premOn ? '<a href="premium.html">Премиум-доступ</a>' : ''}<a href="terms.html">Условия консультаций</a><a href="privacy.html">Политика конфиденциальности</a>${isAlina() ? '<a href="cabinet.html" class="muted">Кабинет астролога</a>' : ''}</div>
         </div>
         <p class="disclaimer">Астрология — инструмент самопознания. Она не заменяет медицинскую, психологическую, юридическую или финансовую помощь. Расчёты: тропический зодиак, эфемериды astronomy-engine и NASA JPL; точность положений — около угловой минуты.</p>
         <div class="footer-bottom"><span>© ${new Date().getFullYear()} ${esc(SITE.name)}</span><span>Иконки — Tabler Icons</span></div>
@@ -1256,7 +1258,7 @@
   let inboxP = null;
   const loadInbox = () => (window.Inbox ? Promise.resolve() : inboxP || (inboxP = new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'js/inbox.js'; s.onload = res; s.onerror = () => { inboxP = null; rej(new Error('inbox.js')); }; document.body.appendChild(s); })));
   function serviceOptions() {
-    return SITE.services.map((s) => ({ id: s.id, title: s.title })).concat(academyOn ? [{ id: 'lessons', title: 'Индивидуальные уроки астрологии' }, { id: 'course', title: 'Курс «Астрология с нуля»' }] : [], [{ id: 'numerology', title: 'Нумерология: разбор чисел' }], SITE.energy && SITE.energy.enabled !== false ? [{ id: 'energy', title: 'Энергетическое выравнивание' }] : [], [{ id: 'gift', title: 'Подарочный сертификат' }, { id: 'other', title: 'Другое / пока не знаю' }]);
+    return SITE.services.map((s) => ({ id: s.id, title: s.title })).concat(academyOn ? [{ id: 'lessons', title: 'Индивидуальные уроки астрологии' }, { id: 'course', title: 'Курс «Астрология с нуля»' }] : [], [{ id: 'numerology', title: 'Нумерология: разбор чисел' }], energyOn ? [{ id: 'energy', title: 'Энергетическое выравнивание' }] : [], [{ id: 'gift', title: 'Подарочный сертификат' }, { id: 'other', title: 'Другое / пока не знаю' }]);
   }
   const intakeOf = (id) => (INTAKE.services || {})[id] || {};
   /** «Берлин, UTC+2»: город по часовому поясу и смещение от UTC сейчас. */
@@ -1333,7 +1335,7 @@
         </div>
         <input class="ix-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
         <label class="check pp-save" data-ix="save"><input type="checkbox" name="ppsave"${store.get('ppSave', true) ? ' checked' : ''}> <span>Сохранить данные в «Мои карты» — в следующий раз выберете одним нажатием</span></label>
-        <label class="check ix-consent"><input type="checkbox" name="consent" required> <span>Согласен(на) на <a href="privacy.html" target="_blank">обработку данных</a></span></label>
+        <label class="check ix-consent"><input type="checkbox" name="consent" required> <span>Согласен(на) на <a href="privacy.html" target="_blank">обработку данных</a> и с <a href="terms.html" target="_blank">условиями</a></span></label>
         <button class="btn btn-primary btn-block" type="submit">${inboxOn ? `${icon('send')} Отправить анкету Алике` : `${icon('telegram')} Отправить Алике в Telegram`}</button>
         <p class="tiny muted center" style="margin:0">${opts.note ? esc(opts.note) : `Со звёздочкой — обязательно, вопрос — по желанию. ${inboxOn ? 'Анкета сразу придёт мне — отвечу' : 'Отвечу'} ${esc(INTAKE.replyTime || 'в течение дня')} и сама предложу время.`}</p>
       </form>`;

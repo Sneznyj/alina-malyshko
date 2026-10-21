@@ -85,7 +85,8 @@
       'Расчёты и толкования носят информационный характер — это инструмент самопознания. Они не заменяют помощь врача, психолога, юриста или финансового специалиста.',
       'Вопросы по оплате и доступу — Алике, контакты внизу страницы.',
     ];
-    $('pmTerms').innerHTML = `<h3 style="margin-top:0">Условия</h3><ul class="small" style="margin:0;padding-left:1.1em;display:grid;gap:6px">${terms.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>${P.seller ? `<p class="small muted" style="margin:12px 0 0">${esc(P.seller)}</p>` : ''}`;
+    const seller = P.seller || (SITE.legal || {}).seller || '';
+    $('pmTerms').innerHTML = `<h3 style="margin-top:0">Условия</h3><ul class="small" style="margin:0;padding-left:1.1em;display:grid;gap:6px">${terms.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>${seller ? `<p class="small muted" style="margin:12px 0 0">${esc(seller)}</p>` : ''}`;
     $('pmNote').innerHTML = UI.alinaNote('Премиум — для тех, кто любит разбираться сам: даты, аспекты, числа. А если захочется поговорить о вашей карте вживую — я рядом.', '<button class="btn btn-primary btn-sm" type="button" data-book>Записаться на консультацию</button>');
   }
 
