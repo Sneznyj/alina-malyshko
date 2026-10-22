@@ -19,7 +19,7 @@
   const addDays = (d, n) => new Date(d.getTime() + n * 86400000);
   const now = () => new Date();
   const open = () => { try { return !!(window.Premium && window.Premium.isOpen()); } catch (e) { return false; } };
-  const MODULES = ['natal-pro', 'synastry-pro', 'numerology-pro', 'pro-texts', 'person-pro'];
+  const MODULES = ['natal-pro', 'synastry-method', 'synastry-pro', 'numerology-pro', 'pro-texts', 'person-pro'];
   let ensureP = null;
   /** Подгрузить премиум-модули, если доступ есть (Алика или код). */
   function ensure() { return ensureP || (ensureP = (window.Premium ? window.Premium.ensure(MODULES) : Promise.resolve(false)).catch(() => false)); }

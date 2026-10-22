@@ -64,7 +64,7 @@
     const box = document.getElementById('synPro');
     if (!box || !window.Premium) return;
     const s0 = S;
-    if ((await window.Premium.ensure(['synastry-pro'])) && window.SynastryPro) { if (S === s0) window.SynastryPro.render(box, { A, B, S, nA, nB }); return; }
+    if ((await window.Premium.ensure(['synastry-method', 'synastry-pro'])) && window.SynastryPro) { if (S === s0) window.SynastryPro.render(box, { A, B, S, nA, nB }); return; }
     if (S === s0) teaser(box, nA, nB);
   }
   function teaser(box, nA, nB) {
