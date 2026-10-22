@@ -700,6 +700,30 @@
         if (!x.sphere) x.sphere = 'intimacy';
       }
     }
+    // взаимопонимание (бытовая совместимость): Солнце — отношение к жизни, Луна — чувства, Венера — вкусы; гармония помогает, напряжение мешает.
+    // взаимное влияние: Юпитер в гармонии с Солнцем/Луной партнёра — счастье и лёгкость, Сатурн в напряжении — строгость, контроль, поучения.
+    const UND = ['sun', 'moon', 'venus'];
+    const understandAsp = [], influenceAsp = [];
+    let uv = 0, joy = 0, strict = 0;
+    for (const x of asp) {
+      if (!MAJ.includes(x.type)) continue;
+      const w = 0.5 + x.strength;
+      if (UND.includes(x.a) && UND.includes(x.b) && (x.a === x.b || [x.a, x.b].sort().join() === 'moon,sun')) {
+        uv += (x.nature === 'soft' ? 1 : x.type === 'conj' ? 0.9 : -0.8) * w;
+        understandAsp.push(x);
+        if (!x.sphere) x.sphere = 'understanding';
+      }
+      const lum = (id) => id === 'sun' || id === 'moon';
+      if ((x.a === 'jupiter' && lum(x.b)) || (x.b === 'jupiter' && lum(x.a))) {
+        if (x.nature === 'soft' || x.type === 'conj') { joy += w; influenceAsp.push(Object.assign(x, { infl: 'joy' })); if (!x.sphere) x.sphere = 'influence'; }
+      }
+      if ((x.a === 'saturn' && lum(x.b)) || (x.b === 'saturn' && lum(x.a))) {
+        if (x.nature === 'hard' || x.type === 'conj') { strict += w; influenceAsp.push(Object.assign(x, { infl: 'strict' })); if (!x.sphere) x.sphere = 'influence'; }
+      }
+    }
+    spheres.understanding = Math.round(100 / (1 + Math.exp(-(uv - 0.4) * 1.1)));
+    spheres.influence = Math.round(100 / (1 + Math.exp(-(joy - strict) * 1.1)));
+    const influenceKind = !influenceAsp.length ? null : joy > strict * 1.5 ? 'joy' : strict > joy * 1.5 ? 'strict' : 'mixed';
     spheres.conflict = Math.round(100 / (1 + Math.exp(-(cv - 1.5) * 1.1)));
     spheres.intimacy = Math.round(100 / (1 + Math.exp(-(iv - 1.3) * 1.1)));
     const intimacyKind = !intimacyAsp.length ? null : passion > idyll * 1.5 ? 'passion' : idyll > passion * 1.5 ? 'idyll' : 'mixed';
@@ -708,7 +732,7 @@
     const harmony = (e1, e2) => (e1 === e2 ? 1 : ({ fire: 'air', air: 'fire', earth: 'water', water: 'earth' })[e1] === e2 ? 0.8 : 0.35);
     const elemScore = Math.round(100 * (harmony(elem(a, 'sun'), elem(b, 'sun')) * 0.4 + harmony(elem(a, 'moon'), elem(b, 'moon')) * 0.35 + harmony(elem(a, 'sun'), elem(b, 'moon')) * 0.125 + harmony(elem(a, 'moon'), elem(b, 'sun')) * 0.125));
     const total = Math.round(spheres.attraction * 0.22 + spheres.emotion * 0.26 + spheres.communication * 0.18 + spheres.stability * 0.2 + spheres.growth * 0.14);
-    return { aspects: asp, spheres, elemScore, total, conflictAsp, intimacyAsp, intimacyKind };
+    return { aspects: asp, spheres, elemScore, total, conflictAsp, intimacyAsp, intimacyKind, understandAsp, influenceAsp, influenceKind };
   }
 
   /** Композит по средним точкам (короткая дуга). */
