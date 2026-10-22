@@ -93,6 +93,22 @@
     }
     return { chains, self, final, loops };
   }
+  /** Цепочки домов (доска №56): дом → управитель знака на его куспиде → дом, где этот управитель стоит → … пока дом не повторится.
+      Шаг: { ruler, house }. ends — дома, где цепочки замыкаются (сколько цепочек туда приходит). Без времени рождения — null. */
+  function houseChains(chart, traditional) {
+    if (!chart.houses) return null;
+    const R = traditional ? TRAD : AC.RULER, cusps = chart.houses.cusps;
+    const step = (h) => { const ruler = R[AC.signOf(cusps[h - 1])], p = chart.byId[ruler]; return p && p.house ? { ruler, house: p.house } : null; };
+    const chains = [];
+    for (let h = 1; h <= 12; h++) {
+      const path = [{ ruler: null, house: h }], seen = [h];
+      for (let k = 0; k < 13; k++) { const n = step(path[path.length - 1].house); if (!n) break; path.push(n); if (seen.includes(n.house)) break; seen.push(n.house); }
+      chains.push(path);
+    }
+    const ends = {};
+    for (const c of chains) { const last = c[c.length - 1].house, i = c.findIndex((x) => x.house === last); const loop = c.slice(i, c.length - 1).map((x) => x.house); const key = loop.length > 1 ? loop.slice().sort((a, b) => a - b).join('↔') : String(last); ends[key] = (ends[key] || 0) + 1; }
+    return { chains, ends: Object.entries(ends).sort((a, b) => b[1] - a[1]).map(([k, n]) => ({ houses: k.split('↔').map(Number), n })) };
+  }
 
   // ---------- 3. Фигуры аспектов и форма карты ----------
   const PAT_ORB = { 0: 8, 60: 5, 90: 7, 120: 7, 150: 2.5, 180: 8 };
@@ -487,7 +503,7 @@
 
   root.ProAstro = {
     SEVEN, TEN, TRAD, EXALT, TRIP, TERMS, FACE_ORDER, STARS, CHALDEAN, DAY_RULER, termOf, faceOf, starLon,
-    dignities, receptions, dispositors, patterns, jonesShape, houseStrength, midpoints, fixedStars, firdaria,
+    dignities, receptions, dispositors, houseChains, patterns, jonesShape, houseStrength, midpoints, fixedStars, firdaria,
     solarArc, arcAt, lunarReturn, lunarReturnDate, planetaryHours, horary, relocate, angularCities, timeWindow, ephemeris, dynamics,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

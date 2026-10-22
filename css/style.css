@@ -523,7 +523,11 @@ em.accent, .accent { font-style: italic; color: var(--lav-strong); }
 .asp-grid td { width: 34px; height: 34px; text-align: center; border: 1px solid var(--line); font-size: 1rem; }
 .asp-grid td.h { background: var(--surface-2); color: var(--lav-strong); }
 .asp-grid td.e { border: 0; }
-.asp-grid td.a { cursor: help; }
+.asp-grid td.a { cursor: pointer; transition: background .15s; }
+.asp-grid td.a:hover, .asp-grid td.a:focus-visible { background: var(--lav-soft); outline: none; }
+.asp-row { cursor: pointer; }
+.asp-row:hover td, .asp-row:focus-visible td { background: var(--lav-soft); }
+.asp-row:focus-visible { outline: none; }
 .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: .82rem; color: var(--ink-2); }
 .legend i { display: inline-block; width: 18px; height: 3px; border-radius: 3px; vertical-align: middle; margin-right: 6px; }
 .recent { display: grid; gap: 8px; }
@@ -1868,6 +1872,9 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
 .pv-seg { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; scrollbar-width: none; }
 .pv-seg::-webkit-scrollbar { display: none; }
 .pv-seg button { white-space: nowrap; }
+.pv-seg.pv-sorting, .pv-seg.pv-sorting button { cursor: grabbing; user-select: none; -webkit-user-select: none; }
+.pv-seg button.pv-dragging { outline: 2px dashed var(--lav-strong); outline-offset: -3px; opacity: .8; }
+.pv-seg button { -webkit-touch-callout: none; }
 .pv-g { font-size: 1.05em; color: var(--lav-strong); }
 .pv-dig td { white-space: nowrap; }
 .pv-dig td.wrap { white-space: normal; min-width: 150px; }
@@ -1883,6 +1890,10 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
 .pv-chains { display: grid; gap: 6px; }
 .pv-chains > div { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: .86rem; }
 .pv-ch { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; background: var(--bg-2); border: 1px solid var(--line); }
+.pv-hn { font-size: .72em; font-weight: 600; color: var(--ink-3); margin-left: 2px; }
+.pv-hc { font-weight: 600; min-width: 2.4em; justify-content: center; }
+.pv-hc.pv-loop { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 12%, var(--bg-2)); }
+.pv-hr { display: inline-flex; align-items: center; }
 .pv-arr { color: var(--ink-3); }
 .pv-mini { padding: 14px 16px; }
 .pv-mini h4 { margin: 4px 0; }

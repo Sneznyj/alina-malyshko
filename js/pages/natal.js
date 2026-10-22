@@ -99,8 +99,8 @@
   }
   function aspTeaser(c) {
     if (!window.Premium) return '';
-    const n = majorAspects(c).length;
-    return n ? `<div style="margin-top:22px">${window.Premium.locked(`Толкование всех аспектов вашей карты — ${n}: соединения, гармоничные и напряжённые`, { lines: 3, meta: 'премиум' })}</div>` : '';
+    const n = c.aspects.filter((a) => T.planets[a.a] && T.planets[a.b]).length;
+    return n ? `<div style="margin-top:22px">${window.Premium.locked(`Расшифровка всех аспектов вашей карты — ${n}: соединения, гармоничные и напряжённые`, { lines: 3, meta: 'премиум' })}</div>` : '';
   }
   /** Есть доступ — подменяем закрытые карточки полным толкованием. */
   async function upgrade(c) {

@@ -48,9 +48,16 @@
   }
   function dispositorsHTML(c) {
     const ds = P.dispositors(c), t = PT();
-    const chain = (path) => path.map((id, i) => `${i ? '<span class="pv-arr">→</span>' : ''}<span class="pv-ch">${gl(id)}${pn(id)}</span>`).join('');
-    return `<p class="small muted">Цепочки управителей: планета → управитель знака, где она стоит → его управитель… Где цепочки сходятся — там «главная» планета карты.</p>
+    const hs = (id) => (c.byId[id] && c.byId[id].house ? `<small class="pv-hn">${ROMAN[c.byId[id].house - 1]}</small>` : '');
+    const chain = (path) => path.map((id, i) => `${i ? '<span class="pv-arr">→</span>' : ''}<span class="pv-ch">${gl(id)}${pn(id)}${hs(id)}</span>`).join('');
+    const hc = P.houseChains(c);
+    const hChain = (path) => path.map((x, i) => `${i ? `<span class="pv-arr">→</span><span class="pv-hr" title="управитель — ${esc(pn(x.ruler))}">${gl(x.ruler)}</span><span class="pv-arr">→</span>` : ''}<span class="pv-ch pv-hc${i && i === path.length - 1 && path.findIndex((y) => y.house === x.house) < i ? ' pv-loop' : ''}" title="${esc(T.houses[x.house].title)}">${ROMAN[x.house - 1]}</span>`).join('');
+    const endW = (e) => (e.houses.length > 1 ? `${e.houses.map((h) => ROMAN[h - 1]).join(' ↔ ')} — петля` : `${ROMAN[e.houses[0] - 1]} дом · ${esc(T.houses[e.houses[0]].title.toLowerCase())}`);
+    return `<p class="small muted">Цепочки управителей: планета → управитель знака, где она стоит → его управитель… Где цепочки сходятся — там «главная» планета карты. Римская цифра — дом, где стоит планета.</p>
       <div class="pv-chains">${ds.chains.map((p) => `<div>${chain(p)}</div>`).join('')}</div>
+      ${hc ? `<h4 style="margin:18px 0 4px">Цепочки домов</h4><p class="small muted" style="margin-top:0">Дом → управитель знака на его куспиде → дом, где этот управитель стоит → и дальше, пока дом не повторится. Показывает, куда «утекают» дела каждого дома и какой дом их собирает.</p>
+      <div class="pv-chains">${hc.chains.map((p) => `<div>${hChain(p)}</div>`).join('')}</div>
+      <p class="small" style="margin:10px 0 0">Сходятся к: ${hc.ends.map((e) => `<b>${endW(e)}</b> <span class="muted">(${e.n} ${fmt.plural(e.n, 'цепочка', 'цепочки', 'цепочек')})</span>`).join(' · ')}</p>` : '<p class="small muted" style="margin-top:14px">Цепочки домов появятся, когда известно время рождения.</p>'}
       <div class="grid grid-2" style="margin-top:14px">
         <div class="card pv-mini"><span class="eyebrow">Конечный диспозитор</span><h4>${ds.final ? `${gl(ds.final)} ${pn(ds.final)}` : 'нет'}</h4><p class="small muted">${ds.final ? 'Все цепочки сходятся к этой планете — она задаёт общий тон.' : ds.loops.length ? 'Цепочки замыкаются в петлю — несколько равноправных центров.' : 'Несколько планет в своих обителях — у карты несколько опор.'}</p></div>
         <div class="card pv-mini"><span class="eyebrow">В своей обители</span><h4>${ds.self.length ? ds.self.map((id) => `${gl(id)} ${pn(id)}`).join(', ') : '—'}</h4>${ds.loops.length ? `<p class="small muted">Петли: ${ds.loops.map((l) => l.map(pn).join(' ↔ ')).join('; ')}</p>` : ''}</div>
@@ -134,11 +141,55 @@
     }, 30);
   }
 
+  /** Вкладки инструментов можно переставлять (доска №55): мышью — потянуть, на телефоне — подержать и потянуть.
+      Порядок хранится в браузере: am_pvOrder:<natal|fc>. */
+  const savedOrder = (key, list) => { const o = UI.store.get('pvOrder:' + key, []), i = (k) => { const n = o.indexOf(k); return n < 0 ? 99 : n; }; return list.slice().sort((a, b) => i(a[0]) - i(b[0])); };
+  function sortTabs(seg, key) {
+    seg.title = 'Вкладки можно переставлять: потяните мышью или подержите пальцем';
+    let st = null, timer = 0;
+    const btns = () => Array.from(seg.querySelectorAll('[data-pv]'));
+    const begin = () => { st.on = true; st.b.classList.add('pv-dragging'); seg.classList.add('pv-sorting'); if (navigator.vibrate) try { navigator.vibrate(15); } catch (e) { /* ничего */ } };
+    const finish = () => {
+      clearTimeout(timer);
+      if (!st) return;
+      const was = st.on, b = st.b; st = null;
+      b.classList.remove('pv-dragging'); seg.classList.remove('pv-sorting');
+      if (!was) return;
+      seg._moved = true; setTimeout(() => { seg._moved = false; }, 0);
+      UI.store.set('pvOrder:' + key, btns().map((x) => x.dataset.pv));
+      const on = btns().find((x) => x.getAttribute('aria-pressed') === 'true'); if (on) on.setAttribute('aria-pressed', 'true'); // подсветка встанет на новое место
+    };
+    seg.addEventListener('pointerdown', (e) => {
+      const b = e.target.closest('[data-pv]');
+      if (!b || e.button > 0) return;
+      st = { b, x: e.clientX, y: e.clientY, on: false, id: e.pointerId, touch: e.pointerType !== 'mouse' };
+      if (st.touch) timer = setTimeout(() => { if (st) { begin(); try { seg.setPointerCapture(st.id); } catch (er) { /* ничего */ } } }, 380);
+    });
+    seg.addEventListener('pointermove', (e) => {
+      if (!st) return;
+      const dist = Math.hypot(e.clientX - st.x, e.clientY - st.y);
+      if (!st.on) {
+        if (st.touch) { if (dist > 8) { clearTimeout(timer); st = null; } return; } // палец двинулся раньше — это прокрутка
+        if (dist < 6) return;
+        begin(); try { seg.setPointerCapture(st.id); } catch (er) { /* ничего */ }
+      }
+      const over = btns().find((x) => { if (x === st.b) return false; const r = x.getBoundingClientRect(); return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top - 6 && e.clientY <= r.bottom + 6; });
+      if (!over) return;
+      const l = btns(), a = l.indexOf(st.b), z = l.indexOf(over);
+      seg.insertBefore(st.b, a < z ? over.nextSibling : over);
+    });
+    seg.addEventListener('pointerup', finish);
+    seg.addEventListener('pointercancel', finish);
+    seg.addEventListener('touchmove', (e) => { if (st && st.on) e.preventDefault(); }, { passive: false });
+    seg.addEventListener('contextmenu', (e) => { if (st) e.preventDefault(); });
+    seg.addEventListener('click', (e) => { if (seg._moved) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+  }
+
   /** Вкладка «Профи» натальной карты. tools — какие показать (по умолчанию все). */
   const NATAL_TOOLS = [['dig', 'Достоинства'], ['disp', 'Диспозиторы'], ['pat', 'Фигуры и дома'], ['mid', 'Мидпоинты'], ['stars', 'Звёзды'], ['fird', 'Фирдарии'], ['time', 'Время рождения'], ['reloc', 'Релокация']];
   function natal(box, c, params, opts) {
     opts = opts || {};
-    const tools = NATAL_TOOLS.filter(([k]) => !opts.only || opts.only.includes(k));
+    const tools = savedOrder('natal', NATAL_TOOLS.filter(([k]) => !opts.only || opts.only.includes(k)));
     let cur = opts.start || tools[0][0];
     box.innerHTML = `<div class="pv"><div class="row between pv-top"><div class="seg pv-seg" role="group" aria-label="Профи-инструменты">${tools.map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${k === cur}">${t}</button>`).join('')}</div>${premiumChip()}</div><div class="pv-panel"></div></div>`;
     const panel = box.querySelector('.pv-panel');
@@ -148,6 +199,7 @@
       if (cur === 'reloc') relocBind(panel, c, params);
       UI.fadeIn(panel, 4);
     };
+    sortTabs(box.querySelector('.pv-seg'), 'natal');
     box.querySelector('.pv-seg').addEventListener('click', (e) => { const b = e.target.closest('[data-pv]'); if (!b) return; cur = b.dataset.pv; box.querySelectorAll('[data-pv]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); render(); });
     render();
     loadTexts().then((ok) => { if (ok && box.isConnected) render(); });
@@ -192,8 +244,8 @@
   const FORECAST_TOOLS = [['dir', 'Дирекции'], ['lunar', 'Лунар'], ['fird', 'Фирдарии'], ['dyn', 'Динамика']];
   function forecast(box, c, params, opts) {
     opts = opts || {};
-    let cur = opts.start || 'dir', place = null;
-    box.innerHTML = `<div class="pv"><div class="row between pv-top"><div class="seg pv-seg" role="group" aria-label="Методы прогноза">${FORECAST_TOOLS.map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${k === cur}">${t}</button>`).join('')}</div>${premiumChip()}</div><div class="pv-panel"></div></div>`;
+    let cur = opts.start || savedOrder('fc', FORECAST_TOOLS)[0][0], place = null;
+    box.innerHTML = `<div class="pv"><div class="row between pv-top"><div class="seg pv-seg" role="group" aria-label="Методы прогноза">${savedOrder('fc', FORECAST_TOOLS).map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${k === cur}">${t}</button>`).join('')}</div>${premiumChip()}</div><div class="pv-panel"></div></div>`;
     const panel = box.querySelector('.pv-panel');
     const render = () => {
       if (cur === 'lunar' && !c.timeKnown) { panel.innerHTML = '<p class="muted">Для лунара нужно время рождения.</p>'; return; }
@@ -204,6 +256,7 @@
       }
       UI.fadeIn(panel, 4);
     };
+    sortTabs(box.querySelector('.pv-seg'), 'fc');
     box.querySelector('.pv-seg').addEventListener('click', (e) => { const b = e.target.closest('[data-pv]'); if (!b) return; cur = b.dataset.pv; box.querySelectorAll('[data-pv]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); render(); });
     render();
     loadTexts().then((ok) => { if (ok && box.isConnected) render(); });

@@ -100,17 +100,52 @@
     requestAnimationFrame(() => setTimeout(() => root.querySelectorAll('.fill[data-w]').forEach((f) => { f.style.width = f.dataset.w + '%'; }), 60));
   }
 
+  // ключ аспекта в формате колеса (Wheel.parseAsp): a|b|тип|орбис|сходящийся — natal.js по нему открывает толкование
+  const aspKey = (x) => `${x.a}|${x.b}|${x.type}|${x.orb != null ? x.orb.toFixed(3) : ''}|${x.applying == null ? '' : x.applying ? 1 : 0}`;
+  // доска №57: нажатие на аспект в сетке или таблице — окно с толкованием, как у линии на колесе (Wheel.aspDetail;
+  // полный текст — в премиуме, Алике открыт). Карта для таблицы — в реестре по data-ck.
+  const CK = new Map();
+  let ckN = 0;
+  function ckOf(chart) {
+    if (!chart._ck) { chart._ck = 'k' + (++ckN); CK.set(chart._ck, chart); if (CK.size > 40) CK.delete(CK.keys().next().value); }
+    return chart._ck;
+  }
+  function openAsp(chart, key) {
+    const W = window.Wheel;
+    if (!W || !UI.modal) return;
+    const html = W.aspDetail(W.parseAsp(key), { mode: 'natal', chart, opts: {} });
+    if (!html) return;
+    const m = UI.modal(html, { cls: 'am-modal' });
+    m.el.addEventListener('click', (e) => { // в окне — ссылки на другие аспекты этой же планеты
+      const b = e.target.closest('[data-am-asp]'), body = m.el.querySelector('.am');
+      if (!b || !body) return;
+      const h2 = W.aspDetail(W.parseAsp(b.dataset.amAsp), { mode: 'natal', chart, opts: {} });
+      if (h2) { body.outerHTML = h2; if (UI.fadeIn) UI.fadeIn(m.el.querySelector('.am'), 4); }
+    });
+  }
+  if (typeof document !== 'undefined') {
+    const onAsp = (e) => {
+      const t = e.target.closest && e.target.closest('[data-ck] [data-asp]');
+      if (!t || (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ')) return;
+      const chart = CK.get(t.closest('[data-ck]').dataset.ck);
+      if (!chart) return;
+      e.preventDefault();
+      openAsp(chart, t.dataset.asp);
+    };
+    document.addEventListener('click', onAsp);
+    document.addEventListener('keydown', onAsp);
+  }
   function aspectGrid(chart) {
     const ids = PL_ORDER.filter((id) => chart.byId[id] && id !== 'fortune');
     const find = (a, b) => chart.aspects.find((x) => (x.a === a && x.b === b) || (x.a === b && x.b === a));
-    let h = '<div style="overflow-x:auto"><table class="asp-grid">';
+    let h = `<div style="overflow-x:auto" data-ck="${ckOf(chart)}"><table class="asp-grid">`;
     ids.forEach((row, i) => {
       h += '<tr>';
       for (let j = 0; j < i; j++) {
         const x = find(ids[j], row);
         if (x) {
           const col = getComputedStyle(document.documentElement).getPropertyValue(x.type === 'conj' ? '--w-conj' : x.nature === 'soft' ? '--w-soft' : '--w-hard');
-          h += `<td class="a" style="color:${col}" title="${T.planets[ids[j]].name} — ${T.aspects[x.type].name.toLowerCase()} — ${T.planets[row].name}, орбис ${x.orb.toFixed(1)}°">${T.aspects[x.type].glyph}</td>`;
+          h += `<td class="a" style="color:${col}" data-asp="${aspKey(x)}" tabindex="0" role="button" title="${T.planets[ids[j]].name} — ${T.aspects[x.type].name.toLowerCase()} — ${T.planets[row].name}, орбис ${x.orb.toFixed(1)}° · нажмите — толкование">${T.aspects[x.type].glyph}</td>`;
         } else h += '<td></td>';
       }
       h += `<td class="h" title="${T.planets[row].name}">${T.planets[row].glyph.length > 3 ? '' : T.planets[row].glyph}</td></tr>`;
@@ -123,9 +158,9 @@
     if (!chart.aspects.length) return '<p class="muted">Аспектов не найдено.</p>';
     const rows = chart.aspects.map((a) => {
       const asp = T.aspects[a.type];
-      return `<tr><td>${g(a.a)} ${T.planets[a.a].name}</td><td><span class="glyph" style="color:${asp.color};font-size:1.1rem">${asp.glyph}</span> ${asp.name}</td><td>${g(a.b)} ${T.planets[a.b].name}</td><td>${a.orb.toFixed(2)}°</td><td class="muted small">${a.applying == null ? '' : a.applying ? 'сходящийся' : 'расходящийся'}</td></tr>`;
+      return `<tr class="asp-row" data-asp="${aspKey(a)}" tabindex="0" title="Нажмите — откроется толкование"><td>${g(a.a)} ${T.planets[a.a].name}</td><td><span class="glyph" style="color:${asp.color};font-size:1.1rem">${asp.glyph}</span> ${asp.name}</td><td>${g(a.b)} ${T.planets[a.b].name}</td><td>${a.orb.toFixed(2)}°</td><td class="muted small">${a.applying == null ? '' : a.applying ? 'сходящийся' : 'расходящийся'}</td></tr>`;
     }).join('');
-    return `<div class="table-wrap"><table class="table"><thead><tr><th>Планета</th><th>Аспект</th><th>Планета</th><th>Орбис</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    return `<div class="table-wrap" data-ck="${ckOf(chart)}"><table class="table"><thead><tr><th>Планета</th><th>Аспект</th><th>Планета</th><th>Орбис</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }
 
   function legend() {
