@@ -418,6 +418,15 @@
       window.addEventListener('scroll', toggleCta, { passive: true }); toggleCta();
     }
 
+    // стрелка «наверх» (22.10.2026, Алина, доска №45): появляется, когда опустились ниже первого экрана; на телефоне — над кнопкой записи
+    const up = document.createElement('button');
+    up.type = 'button'; up.className = 'to-top'; up.setAttribute('aria-label', 'Наверх'); up.title = 'Наверх';
+    up.innerHTML = icon('arrow-up');
+    up.addEventListener('click', () => window.scrollTo({ top: 0, behavior: reduceMotion() ? 'auto' : 'smooth' }));
+    document.body.appendChild(up);
+    const toggleUp = () => up.classList.toggle('show', window.scrollY > Math.max(500, window.innerHeight * 0.9));
+    window.addEventListener('scroll', toggleUp, { passive: true }); toggleUp();
+
     const links = contactLinks();
     const footer = document.createElement('footer');
     footer.className = 'site-footer';
