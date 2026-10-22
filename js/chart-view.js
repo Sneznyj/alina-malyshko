@@ -109,7 +109,7 @@
       for (let j = 0; j < i; j++) {
         const x = find(ids[j], row);
         if (x) {
-          const col = getComputedStyle(document.documentElement).getPropertyValue(x.type === 'conj' ? '--conj-asp' : x.nature === 'soft' ? '--soft-asp' : '--hard-asp');
+          const col = getComputedStyle(document.documentElement).getPropertyValue(x.type === 'conj' ? '--w-conj' : x.nature === 'soft' ? '--w-soft' : '--w-hard');
           h += `<td class="a" style="color:${col}" title="${T.planets[ids[j]].name} — ${T.aspects[x.type].name.toLowerCase()} — ${T.planets[row].name}, орбис ${x.orb.toFixed(1)}°">${T.aspects[x.type].glyph}</td>`;
         } else h += '<td></td>';
       }
@@ -129,7 +129,7 @@
   }
 
   function legend() {
-    return `<div class="legend" style="justify-content:center;margin-top:12px"><span><i style="background:var(--soft-asp)"></i>трин, секстиль</span><span><i style="background:var(--hard-asp)"></i>квадрат, оппозиция</span><span><i style="background:var(--conj-asp)"></i>углы карты</span><span><b style="color:#c96b8f;font-size:.75rem">R</b> ретроградная</span></div>`;
+    return `<div class="legend" style="justify-content:center;margin-top:12px"><span><i style="background:var(--w-soft)"></i>трин, секстиль</span><span><i style="background:var(--w-hard)"></i>квадрат, оппозиция</span><span><i style="background:var(--w-conj)"></i>соединение</span><span><b style="color:var(--w-retro);font-size:.75rem">R</b> ретроградная</span></div>`;
   }
 
   function chartOpts() {

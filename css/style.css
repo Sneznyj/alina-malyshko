@@ -38,6 +38,8 @@
   --soft-asp: #3f7fcf;
   --hard-asp: #d7506f;
   --conj-asp: #b8893b;
+  /* колесо и таблица аспектов — как на Saliastro (доска №50): гармония красная, напряжение чёрное, соединение синее */
+  --w-soft: #d7332b; --w-hard: #111018; --w-conj: #2563d6; --w-retro: #e0605a;
   --star: rgba(91, 58, 158, 0.6);
   /* матовое стекло: карточки полупрозрачные, небо под ними размыто */
   --glass: color-mix(in srgb, var(--surface) 74%, transparent);
@@ -89,6 +91,8 @@
   --soft-asp: #86b6f2;
   --hard-asp: #f58aa3;
   --conj-asp: #ecc98a;
+  /* колесо и таблица аспектов — как на Saliastro, тёмная тема */
+  --w-soft: #ff8a80; --w-hard: #f1edff; --w-conj: #7fa8ff; --w-retro: #ff8a80;
   --star: rgba(255, 248, 235, 0.9);
   --star-gold: rgba(243, 217, 160, 0.95);
   --aurora-1: rgba(230, 194, 122, 0.10);
@@ -125,6 +129,8 @@
   --soft-asp: #86b6f2;
   --hard-asp: #f58aa3;
   --conj-asp: #ecc98a;
+  /* колесо и таблица аспектов — как на Saliastro, тёмная тема */
+  --w-soft: #ff8a80; --w-hard: #f1edff; --w-conj: #7fa8ff; --w-retro: #ff8a80;
   --star: rgba(255, 248, 235, 0.9);
   --star-gold: rgba(243, 217, 160, 0.95);
   --aurora-1: rgba(230, 194, 122, 0.10);
@@ -780,7 +786,7 @@ body.scroll-lock { overflow: hidden; }
 @keyframes conjBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @media (max-width: 640px) { .conj { min-height: 300px; } }
 .w-hover { cursor: pointer; }
-.w-hover:hover circle.pbg { stroke-width: 2; }
+.w-hover:hover circle.pbg, .w-hover:focus circle.pbg { stroke-width: 2; stroke-opacity: .5; }
 .wheel-tip { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 6; background: var(--night); color: #fff; padding: 9px 13px 10px; border-radius: 12px; font-size: .82rem; line-height: 1.35; box-shadow: var(--shadow-lg); width: max-content; max-width: min(300px, calc(100vw - 32px)); display: grid; gap: 3px; opacity: 0; transition: opacity .15s; }
 .wheel-tip.show { opacity: 1; }
 .wheel-tip .wt-t { font-weight: 700; font-size: .86rem; }
