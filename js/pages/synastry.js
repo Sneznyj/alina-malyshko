@@ -27,6 +27,7 @@
   function render() {
     const nA = pa.name || 'Партнёр 1', nB = pb.name || 'Партнёр 2';
     const box = document.getElementById('result');
+    const ex = T.synExtra(S);
     const sph = Object.entries(S.spheres).map(([k, v]) => `<div class="bar" style="grid-template-columns:190px 1fr 44px"><span title="${T.synSpheres[k].about}">${T.synSpheres[k].name}</span><span class="track"><span class="fill" data-w="${v}" style="background:linear-gradient(90deg,var(--lav),var(--rose-strong))"></span></span><span class="pct">${v}</span></div>`).join('');
     box.innerHTML = `
       <div class="card">
@@ -41,6 +42,7 @@
           </div>
         </div>
         <div class="bars" style="margin-top:24px">${sph}</div>
+        <div class="syn-extra small" style="margin-top:14px;display:grid;gap:6px"><p style="margin:0"><b>Конфликтность ${S.spheres.conflict}:</b> ${ex.conflict}</p><p style="margin:0"><b>Сексуальная совместимость ${S.spheres.intimacy}:</b> ${ex.intimacy}</p></div>
       </div>
       <div id="synPro"></div>
       <div class="card note-card" style="margin-top:20px">${UI.alinaNote('Цифры — только ориентир. Любую пару делают люди, а не планеты. На консультации разберу ваши карты вместе: аспекты между вами, карту союза и как мягко проходить острые углы.', '<button class="btn btn-primary btn-sm" type="button" data-book="synastry">Разобрать нашу пару</button>')}</div>`;
@@ -91,7 +93,7 @@
           <p>${T.synastryText(sample.a, sample.b, sample.type, nA, nB)}</p></div></article></div>` : ''}
         <h4 style="margin:22px 0 10px">Ещё в разборе</h4>
         <div class="locked-list">
-          ${list.length > 1 ? P.locked(`Все аспекты пары с толкованием — ещё ${list.length - 1}, по сферам: ${['attraction', 'emotion', 'communication', 'stability', 'growth', 'other'].filter((k) => spheres[k] && T.synSpheres[k]).map((k) => T.synSpheres[k].name.toLowerCase()).join(', ')}`, { lines: 3 }) : ''}
+          ${list.length > 1 ? P.locked(`Все аспекты пары с толкованием — ещё ${list.length - 1}, по сферам: ${['attraction', 'emotion', 'communication', 'stability', 'growth', 'intimacy', 'conflict', 'other'].filter((k) => spheres[k] && T.synSpheres[k]).map((k) => T.synSpheres[k].name.toLowerCase()).join(', ')}`, { lines: 3 }) : ''}
           ${P.locked('Двойное колесо: ваши планеты внутри карты партнёра', { lines: 2 })}
           ${P.locked('Композит — карта вашего союза как отдельного «существа»', { lines: 3 })}
           ${P.locked('Сравнение карт: стихии и планеты рядом', { lines: 2 })}

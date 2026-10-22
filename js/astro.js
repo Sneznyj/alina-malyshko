@@ -677,12 +677,38 @@
       const v = raw[k][0];
       spheres[k] = Math.round(100 / (1 + Math.exp(-(v - 0.4) * 1.1)));
     }
+    // правила Алики (доска №52), в общую оценку не входят:
+    // конфликтность — напряжённые аспекты между Марсом, Юпитером, Сатурном, Плутоном партнёров (чем выше — тем больше острых углов; Плутон–Плутон — поколенческий, не считаем);
+    // сексуальная совместимость — «женские» Солнце и Марс одного к «мужским» Луне и Венере другого (пол не спрашиваем — смотрим в обе стороны):
+    // напряжённые аспекты дают страсть и роковые чувства, гармоничные — идиллию и взаимопонимание.
+    const MAJ = ['conj', 'opp', 'trine', 'square', 'sextile'], HEAVY = ['mars', 'jupiter', 'saturn', 'pluto'];
+    const conflictAsp = [], intimacyAsp = [];
+    let cv = 0, iv = 0, passion = 0, idyll = 0;
+    for (const x of asp) {
+      if (!MAJ.includes(x.type)) continue;
+      const w = 0.5 + x.strength;
+      if (HEAVY.includes(x.a) && HEAVY.includes(x.b) && !(x.a === 'pluto' && x.b === 'pluto') && (x.nature === 'hard' || (x.type === 'conj' && x.a !== 'jupiter' && x.b !== 'jupiter'))) {
+        cv += (x.type === 'conj' ? 0.6 : 1) * w;
+        conflictAsp.push(x);
+        if (!x.sphere) x.sphere = 'conflict';
+      }
+      if ((['sun', 'mars'].includes(x.a) && ['moon', 'venus'].includes(x.b)) || (['moon', 'venus'].includes(x.a) && ['sun', 'mars'].includes(x.b))) {
+        const hard = x.nature === 'hard', soft = x.nature === 'soft';
+        iv += (x.type === 'conj' ? 1.2 : soft ? 1 : 0.9) * w;
+        if (hard || (x.type === 'conj' && [x.a, x.b].includes('mars'))) passion += w; else idyll += w;
+        intimacyAsp.push(x);
+        if (!x.sphere) x.sphere = 'intimacy';
+      }
+    }
+    spheres.conflict = Math.round(100 / (1 + Math.exp(-(cv - 1.5) * 1.1)));
+    spheres.intimacy = Math.round(100 / (1 + Math.exp(-(iv - 1.3) * 1.1)));
+    const intimacyKind = !intimacyAsp.length ? null : passion > idyll * 1.5 ? 'passion' : idyll > passion * 1.5 ? 'idyll' : 'mixed';
     // совпадение стихий Солнца и Луны
     const elem = (c, id) => elementOf(c.byId[id].signIndex);
     const harmony = (e1, e2) => (e1 === e2 ? 1 : ({ fire: 'air', air: 'fire', earth: 'water', water: 'earth' })[e1] === e2 ? 0.8 : 0.35);
     const elemScore = Math.round(100 * (harmony(elem(a, 'sun'), elem(b, 'sun')) * 0.4 + harmony(elem(a, 'moon'), elem(b, 'moon')) * 0.35 + harmony(elem(a, 'sun'), elem(b, 'moon')) * 0.125 + harmony(elem(a, 'moon'), elem(b, 'sun')) * 0.125));
     const total = Math.round(spheres.attraction * 0.22 + spheres.emotion * 0.26 + spheres.communication * 0.18 + spheres.stability * 0.2 + spheres.growth * 0.14);
-    return { aspects: asp, spheres, elemScore, total };
+    return { aspects: asp, spheres, elemScore, total, conflictAsp, intimacyAsp, intimacyKind };
   }
 
   /** Композит по средним точкам (короткая дуга). */

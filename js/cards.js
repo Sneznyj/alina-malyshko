@@ -198,7 +198,7 @@
       rr(ctx, 150, y + 18, 780, 14, 7); ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fill();
       const gg = ctx.createLinearGradient(150, 0, 930, 0); gg.addColorStop(0, '#b49af0'); gg.addColorStop(1, C.hot);
       rr(ctx, 150, y + 18, Math.max(14, 780 * v / 100), 14, 7); ctx.fillStyle = gg; ctx.fill();
-      y += 82;
+      y += Object.keys(S.spheres).length > 5 ? 66 : 82;
     }
     await footer(ctx, W, 1600, 'Проверь вашу пару', true);
     return cv;
