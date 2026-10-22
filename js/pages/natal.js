@@ -53,8 +53,9 @@
           <div class="tab-panel" role="tabpanel" id="tab-aspects" aria-labelledby="tab-aspects-btn" hidden>
             <p class="muted small">Аспекты — угловые расстояния между планетами. Гармоничные (трин, секстиль) дают лёгкость, напряжённые (квадрат, оппозиция) — внутренний вызов и рост.</p>
             ${CV.aspectGrid(c)}
-            <div style="margin-top:20px">${CV.aspectList(c)}</div>
             <div id="aspMore">${aspTeaser(c)}</div>
+            <h4 style="margin-top:26px">Все аспекты списком</h4>
+            ${CV.aspectList(c)}
           </div>
           <div class="tab-panel" role="tabpanel" id="tab-balance" aria-labelledby="tab-balance-btn" hidden>${CV.balance(c)}</div>
           <div class="tab-panel" role="tabpanel" id="tab-data" aria-labelledby="tab-data-btn" hidden>

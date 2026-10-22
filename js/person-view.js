@@ -88,7 +88,7 @@
     let body = '';
     if (s === 'wheel') body = `<div class="wheel-box" id="pvWheel">${W.svg(ch, { animate: false, minor: UI.settings.minor })}</div>${CV.legend()}<p class="tiny muted center" style="margin:6px 0 0">Наведите на линию аспекта, планету или номер дома — подсказка; нажмите — толкование.</p><div style="margin-top:18px">${CV.big3(ch)}</div>`;
     if (s === 'interp') body = window.NatalPro && open() ? window.NatalPro.interpretation(ch) : CV.interpretation(ch) + `<div style="margin-top:16px">${locked('Планеты в домах, управитель карты, кармические точки, призвание (MC) и ключевые аспекты')}${paywall('natal', 'Натальная карта полностью — в премиум-доступе')}</div>`;
-    if (s === 'aspects') body = `${CV.aspectGrid(ch)}<div style="margin-top:18px">${CV.aspectList(ch)}</div>${window.NatalPro && open() ? window.NatalPro.aspects(ch) : `<div style="margin-top:16px">${locked('Толкование всех аспектов карты')}</div>`}`;
+    if (s === 'aspects') body = `${CV.aspectGrid(ch)}${window.NatalPro && open() ? window.NatalPro.aspects(ch) : `<div style="margin-top:16px">${locked('Толкование всех аспектов карты')}</div>`}<h4 style="margin-top:26px">Все аспекты списком</h4>${CV.aspectList(ch)}`;
     if (s === 'tables') body = `<h4>Планеты и точки</h4>${CV.planetTable(ch)}<h4 style="margin-top:20px">Куспиды домов</h4>${CV.housesTable(ch)}<div style="margin-top:20px">${CV.balance(ch)}</div>`;
     if (s === 'pro') body = '<div id="pvPro"></div>';
     return `<div class="row between cc-subbar"><div class="seg" role="group">${NATAL_SUB.map(([k, t]) => `<button type="button" data-pv-sub="natal:${k}" aria-pressed="${k === s}">${t}</button>`).join('')}</div>

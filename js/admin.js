@@ -165,6 +165,19 @@
 
   window.Admin = { has: () => !!stored(), key, login, logout, run, page, meta, decrypt, premiumKey, signKey, canCrypto, api };
 
+  // Алика пришла из кабинета на страницу инструмента — левая панель кабинета остаётся (доска №59; список разделов кладёт cabinet.js)
+  document.addEventListener('DOMContentLoaded', () => {
+    let nav = null;
+    try { nav = JSON.parse(sessionStorage.getItem('am_cabnav') || 'null'); } catch (e) { /* нет */ }
+    const main = document.getElementById('main');
+    if (!nav || !stored() || !main || /cabinet\.html$/.test(location.pathname)) return;
+    const el = document.createElement('div');
+    el.className = 'cab-rail-wrap no-print';
+    el.innerHTML = `<nav class="cab-nav cab-rail" aria-label="Разделы кабинета">${nav.map(([k, t, i]) => `<a href="cabinet.html#${k}"${k === 'tools' ? ' aria-current="true"' : ''}>${UI.icon(i)}${UI.esc(t)}</a>`).join('')}</nav>`;
+    main.prepend(el);
+    document.documentElement.classList.add('cab-rail-on');
+  });
+
   // Алике на страницах сайта (не в кабинете): в ящике есть новые анкеты — тихая плашка «в кабинет»
   document.addEventListener('DOMContentLoaded', async () => {
     try {
