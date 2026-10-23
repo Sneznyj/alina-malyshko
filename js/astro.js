@@ -40,7 +40,9 @@
     { id: 'sesquisquare', angle: 135, orb: 2, major: false, nature: 'hard' },
     { id: 'quintile', angle: 72, orb: 1.5, major: false, nature: 'soft' },
   ];
-  const ORB_FACTOR = { sun: 1.25, moon: 1.25, mercury: 1, venus: 1, mars: 1, jupiter: 0.9, saturn: 0.9, uranus: 0.8, neptune: 0.8, pluto: 0.8, node: 0.5, chiron: 0.5, lilith: 0.4, asc: 0.75, mc: 0.75, fortune: 0.35 };
+  // орбисы мажорных аспектов (0/60/90/120/180) по таблице Алины — одинаковые для всех пяти аспектов
+  const NATAL_ORB = { sun: 8, moon: 8, mercury: 6, venus: 6, mars: 6, jupiter: 5, saturn: 5, uranus: 4, neptune: 4, pluto: 4, node: 5, lilith: 5, chiron: 5, asc: 1.5, mc: 1.5, fortune: 1 };
+  const MINOR_ORB = 1;
 
   // ---------- время ----------
   const toTime = (d) => (d instanceof A.AstroTime ? d : A.MakeTime(d instanceof Date ? d : new Date(d)));
@@ -235,7 +237,7 @@
   function aspectBetween(a, b, opts) {
     opts = opts || {};
     const list = ASPECTS.filter((x) => (opts.minor ? true : x.major));
-    const fa = ORB_FACTOR[a.id] || 1, fb = ORB_FACTOR[b.id] || 1;
+    const oa = NATAL_ORB[a.id] != null ? NATAL_ORB[a.id] : 1, ob = NATAL_ORB[b.id] != null ? NATAL_ORB[b.id] : 1;
     const pointOnly = (x) => ['node', 'lilith', 'fortune', 'chiron'].includes(x.id);
     const mult = opts.orbMult || 1;
     const diff = d180(b.lon - a.lon);
@@ -243,7 +245,8 @@
     let best = null;
     for (const asp of list) {
       if (!asp.major && (pointOnly(a) || pointOnly(b))) continue;
-      const orbMax = asp.orb * Math.sqrt(fa * fb) * mult;
+      // орбисы Алины (таблица «Аспекты и орбисы», натал): у мажорных — полусумма орбисов двух точек (по моиетам), у минорных — 1°
+      const orbMax = (asp.major ? (oa + ob) / 2 : MINOR_ORB) * mult;
       const orb = Math.abs(sep - asp.angle);
       if (orb <= orbMax && (!best || orb < best.orb)) best = { type: asp.id, angle: asp.angle, nature: asp.nature, orb, orbMax };
     }
