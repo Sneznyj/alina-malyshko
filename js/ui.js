@@ -244,13 +244,20 @@
 
   // ---------- Яндекс Метрика (только на опубликованном сайте) ----------
   const metrikaId = SITE.analytics && String(SITE.analytics.metrikaId || '').trim();
-  if (metrikaId && !isPreview && !window.ARTIFACT_PREVIEW) {
+  // Без Вебвизора, внешних ссылок и параметров адреса: в анкетах и ссылках бывают данные рождения. Кабинет не считаем; в ЕС, Великобритании и Швейцарии (по часовому поясу) не грузим; ?notrack=1 выключает у себя.
+  const metrikaSkip = (() => {
+    try { if (/[?&]notrack=1/.test(location.search)) localStorage.setItem('notrack', '1'); if (localStorage.getItem('notrack')) return true; } catch (e) { /* без хранилища */ }
+    if (/cabinet\.html$/.test(location.pathname)) return true;
+    let z = ''; try { z = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { /* старый браузер */ }
+    return /^(Europe|Atlantic)./.test(z) && !/(Moscow|Minsk|Kaliningrad|Samara|Volgograd|Saratov|Ulyanovsk|Astrakhan|Kirov|Simferopol|Istanbul|Kyiv|Kiev|Chisinau|Belgrade|Sarajevo)$/.test(z);
+  })();
+  if (metrikaId && !isPreview && !window.ARTIFACT_PREVIEW && !metrikaSkip) {
     window.ym = window.ym || function () { (window.ym.a = window.ym.a || []).push(arguments); };
     window.ym.l = 1 * new Date();
     const s = document.createElement('script');
     s.async = true; s.src = 'https://mc.yandex.ru/metrika/tag.js';
     document.head.appendChild(s);
-    window.ym(+metrikaId, 'init', { clickmap: true, trackLinks: true, accurateTrackBounce: true, webvisor: true });
+    window.ym(+metrikaId, 'init', { clickmap: true, trackLinks: false, accurateTrackBounce: true, webvisor: false, url: location.origin + location.pathname });
   }
   function goal(name) { try { if (metrikaId && window.ym) window.ym(+metrikaId, 'reachGoal', name); } catch (e) { /* без аналитики */ } }
   document.addEventListener('click', (e) => { const a = e.target.closest && e.target.closest('a[href^="https://t.me/"]'); if (a) goal('telegram'); });
