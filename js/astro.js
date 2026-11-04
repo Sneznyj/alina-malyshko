@@ -40,8 +40,10 @@
     { id: 'sesquisquare', angle: 135, orb: 2, major: false, nature: 'hard' },
     { id: 'quintile', angle: 72, orb: 1.5, major: false, nature: 'soft' },
   ];
-  // орбисы мажорных аспектов (0/60/90/120/180) по таблице Алины — одинаковые для всех пяти аспектов
+  // орбисы мажорных аспектов (0/60/90/120/180) по таблице Алины — одинаковые для всех пяти аспектов (как таблица «Натал» на Saliastro)
   const NATAL_ORB = { sun: 8, moon: 8, mercury: 6, venus: 6, mars: 6, jupiter: 5, saturn: 5, uranus: 4, neptune: 4, pluto: 4, node: 5, lilith: 5, chiron: 5, asc: 1.5, mc: 1.5, fortune: 1 };
+  // орбис точки: южный узел — как северный, куспиды домов (c2…c12) — как оси
+  const pointOrb = (id) => (NATAL_ORB[id] != null ? NATAL_ORB[id] : id === 'snode' ? NATAL_ORB.node : /^c\d+$/.test(id) ? NATAL_ORB.asc : 1);
   const MINOR_ORB = 1;
 
   // ---------- время ----------
@@ -237,16 +239,16 @@
   function aspectBetween(a, b, opts) {
     opts = opts || {};
     const list = ASPECTS.filter((x) => (opts.minor ? true : x.major));
-    const oa = NATAL_ORB[a.id] != null ? NATAL_ORB[a.id] : 1, ob = NATAL_ORB[b.id] != null ? NATAL_ORB[b.id] : 1;
-    const pointOnly = (x) => ['node', 'lilith', 'fortune', 'chiron'].includes(x.id);
+    const oa = pointOrb(a.id), ob = pointOrb(b.id);
+    const pointOnly = (x) => ['node', 'snode', 'lilith', 'fortune', 'chiron'].includes(x.id) || /^c\d+$/.test(x.id);
     const mult = opts.orbMult || 1;
     const diff = d180(b.lon - a.lon);
     const sep = Math.abs(diff);
     let best = null;
     for (const asp of list) {
       if (!asp.major && (pointOnly(a) || pointOnly(b))) continue;
-      // орбисы Алины (таблица «Аспекты и орбисы», натал): у мажорных — полусумма орбисов двух точек (по моиетам), у минорных — 1°
-      const orbMax = (asp.major ? (oa + ob) / 2 : MINOR_ORB) * mult;
+      // орбисы как на Saliastro (доска №118, 04.11.2026): у мажорных — по большему из орбисов двух точек, у минорных — 1°
+      const orbMax = (asp.major ? Math.max(oa, ob) : MINOR_ORB) * mult;
       const orb = Math.abs(sep - asp.angle);
       if (orb <= orbMax && (!best || orb < best.orb)) best = { type: asp.id, angle: asp.angle, nature: asp.nature, orb, orbMax };
     }
@@ -559,11 +561,13 @@
   /**
    * Транзиты к натальной карте: окна действия (вход/выход из орбиса) и точные даты.
    * opts: { transiting: [...ids], natal: [...ids], aspects: [углы], orbMult }
+   * В natal можно и куспиды домов: 'c2'…'c12' (доска №119) — нужны дома карты (известное время рождения).
    */
   function transits(natal, start, end, opts) {
     opts = opts || {};
     const tIds = opts.transiting || ['mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto'];
-    const nIds = (opts.natal || ['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'asc', 'mc', 'node']).filter((id) => natal.byId[id]);
+    const natLon = (id) => { if (natal.byId[id]) return natal.byId[id].lon; const m = /^c(\d{1,2})$/.exec(id); return m && natal.houses && natal.houses.cusps[+m[1] - 1] != null ? natal.houses.cusps[+m[1] - 1] : null; };
+    const nIds = (opts.natal || ['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'asc', 'mc', 'node']).filter((id) => natLon(id) != null);
     const angles = opts.aspects || [0, 60, 90, 120, 180];
     const mult = opts.orbMult || 1;
     const days = Math.ceil((end - start) / 86400000);
@@ -577,7 +581,7 @@
     for (const tid of tIds) {
       const orb = (TRANSIT_ORB[tid] || 1) * mult;
       for (const nid of nIds) {
-        const nl = natal.byId[nid].lon;
+        const nl = natLon(nid);
         for (const ang of angles) {
           for (const sgn of (ang === 0 || ang === 180 ? [1] : [1, -1])) {
             const target = norm(nl + sgn * ang);

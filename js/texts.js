@@ -564,13 +564,20 @@
     const lead = `${pa.name} ${asp.phrase} ${asp.caseKey === 'ins' ? pb.ins : pb.dat}.`;
     return lead + ' ' + fill(natureText[nature], { a: pa.keys.split(',')[0].trim(), b: pb.keys.split(',')[0].trim() }) + ' ' + asp.about;
   }
+  // куспид дома как точка карты: 'c2'…'c12' (доска №119 — транзиты к куспидам)
+  function cuspPoint(id) {
+    const m = /^c(\d{1,2})$/.exec(id || ''), n = m ? +m[1] : 0;
+    if (!houses[n]) return null;
+    return { n, name: `куспид ${n} дома`, dat: `куспиду ${n} дома`, ins: `куспидом ${n} дома`, glyph: houses[n].name.split(' ')[0] };
+  }
   function transitText(tid, nid, type) {
-    const tp = planets[tid], np = planets[nid], asp = aspects[type];
+    const cu = cuspPoint(nid);
+    const tp = planets[tid], np = planets[nid] || cu, asp = aspects[type];
     if (!tp || !np || !asp) return { title: '', text: '' };
     const nature = type === 'conj' ? 'conj' : (['trine', 'sextile'].includes(type) ? 'soft' : 'hard');
     const lead = transitLead[tid] || '';
     const nat = (transitNature[tid] || transitNature.sun)[nature];
-    const theme = natalTheme[nid] ? ` Затрагивает ${natalTheme[nid]}.` : '';
+    const theme = natalTheme[nid] ? ` Затрагивает ${natalTheme[nid]}.` : cu ? ` Затрагивает темы ${cu.n} дома: ${houses[cu.n].topic}.` : '';
     return { title: `${tp.name} ${asp.phrase} ${asp.caseKey === 'ins' ? np.ins : np.dat}`, text: `${lead} ${nat}${theme}` };
   }
   function synastryText(aId, bId, type, nameA, nameB) {
@@ -585,6 +592,6 @@
     signs, planets, houses, aspects, natureText, dignity, dignityAbout, elements, modalities, moonPhase8, moonPhaseNow,
     lunarDays, moonInSign, moonSolarHouse, sunSolarHouse, venusSolarHouse, marsSolarHouse, retroMeaning, eclipseMeaning, eclipseKind,
     transitLead, transitNature, natalTheme, synNature, synSpheres, synExtra, dayRule,
-    fill, capital, planetInSign, planetInHouse, aspectText, transitText, synastryText,
+    fill, capital, planetInSign, planetInHouse, aspectText, transitText, synastryText, cuspPoint,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
