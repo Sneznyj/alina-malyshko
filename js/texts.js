@@ -577,7 +577,7 @@
     const nature = type === 'conj' ? 'conj' : (['trine', 'sextile'].includes(type) ? 'soft' : 'hard');
     const lead = transitLead[tid] || '';
     const nat = (transitNature[tid] || transitNature.sun)[nature];
-    const theme = natalTheme[nid] ? ` Затрагивает ${natalTheme[nid]}.` : cu ? ` Затрагивает темы ${cu.n} дома: ${houses[cu.n].topic}.` : '';
+    const theme = natalTheme[nid] ? ` Затрагивает ${natalTheme[nid]}.` : cu ? ` Затрагивает: ${houses[cu.n].topic}.` : '';
     return { title: `${tp.name} ${asp.phrase} ${asp.caseKey === 'ins' ? np.ins : np.dat}`, text: `${lead} ${nat}${theme}` };
   }
   function synastryText(aId, bId, type, nameA, nameB) {
